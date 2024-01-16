@@ -211,8 +211,6 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
     }
   });
 
-  // const isFocused = useIsFocused();
-
   const [isSelectFromTokenModal, setIsSelectFromTokenModal] = useState(false);
   const [isSelectToTokenModal, setIsSelectToTokenModal] = useState(false);
   const [isNetworkModal, setIsNetworkModal] = useState(false);
@@ -280,24 +278,25 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
   }, []);
 
   useEffect(() => {
-    delayedFunction();
-  }, []);
-
-  // useEffect(() => {
-  //   if (isFocused) {
-  //     handleFetchAmounts(accounts);
-  //   }
-  // }, [isFocused]);
+    if (accountOrai.bech32Address) {
+      delayedFunction();
+    }
+  }, [accountOrai.bech32Address]);
 
   // This section is for PnL display
-  // useEffect(() => {
-  //   if (Object.keys(universalSwapStore.getAmount).length > 0) {
-  //     appInitStore.updatePriceFeed(
-  //       accountOrai.bech32Address,
-  //       getTokenInfos({ tokens: universalSwapStore.getAmount, prices })
-  //     );
-  //   }
-  // }, [universalSwapStore.getAmount, accountOrai.bech32Address, prices]);
+  const updatePriceFeed = async () => {
+    await delay(2000);
+    appInitStore.updatePriceFeed(
+      accountOrai.bech32Address,
+      getTokenInfos({ tokens: universalSwapStore.getAmount, prices })
+    );
+  };
+
+  useEffect(() => {
+    if (Object.keys(universalSwapStore.getAmount).length > 0 && Object.keys(prices).length > 0) {
+      updatePriceFeed();
+    }
+  }, [universalSwapStore.getAmount, accountOrai.bech32Address, prices]);
 
   const subAmountFrom = toSubAmount(universalSwapStore.getAmount, originalFromToken);
   const subAmountTo = toSubAmount(universalSwapStore.getAmount, originalToToken);

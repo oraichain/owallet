@@ -3,7 +3,6 @@ import { PageWithScrollViewInBottomTabView } from '../../components/page';
 import { AccountCard } from './account-card';
 import { AppState, AppStateStatus, RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import { useStore } from '../../stores';
-import { EarningCard } from './earning-card';
 import { observer } from 'mobx-react-lite';
 import { TokensCard } from './tokens-card';
 import { usePrevious } from '../../hooks';
@@ -19,10 +18,11 @@ import { AccountCardBitcoin } from './account-card-bitcoin';
 import { TokensBitcoinCard } from './tokens-bitcoin-card';
 import { getAddress, getBase58Address, ChainIdEnum, delay } from '@owallet/common';
 import { TokensCardAll } from './tokens-card-all';
-import { AccountBoxAll } from './account-box-all';
+import { AccountBoxAll } from './account-box-new';
 import { oraichainNetwork } from '@oraichain/oraidex-common';
 import { useCoinGeckoPrices, useLoadTokens } from '@owallet/hooks';
 import { getTokenInfos, showToast } from '@src/utils/helper';
+import { EarningCardNew } from './earning-card-new';
 
 export const HomeScreen: FunctionComponent = observer(props => {
   const [refreshing, setRefreshing] = React.useState(false);
@@ -120,7 +120,7 @@ export const HomeScreen: FunctionComponent = observer(props => {
 
       handleFetchAmounts(accounts);
     }
-
+    handleFetchAmounts(accounts);
     setRefreshing(false);
     setRefreshDate(Date.now());
   }, [address, chainStore.current.chainId]);
@@ -175,8 +175,9 @@ export const HomeScreen: FunctionComponent = observer(props => {
     }
   };
 
-  const delayedFunction = useCallback(async () => {
-    await delay(2200);
+  const delayedFunction = useCallback(async (delayTime = 500) => {
+    await delay(delayTime);
+
     Object.keys(ChainIdEnum).map(key => {
       let defaultAddress = accountStore.getAccount(ChainIdEnum[key]).bech32Address;
       if (ChainIdEnum[key] === ChainIdEnum.TRON) {
@@ -193,7 +194,16 @@ export const HomeScreen: FunctionComponent = observer(props => {
 
   useEffect(() => {
     universalSwapStore.clearAmounts();
-    delayedFunction();
+    if (accountOrai.bech32Address) {
+      delayedFunction();
+    }
+  }, [accountOrai.bech32Address]);
+
+  useEffect(() => {
+    // just to make sure that our balance is up to date
+    if (accountOrai.bech32Address) {
+      delayedFunction(17000);
+    }
   }, [accountOrai.bech32Address]);
 
   // This section is for PnL display
@@ -204,14 +214,19 @@ export const HomeScreen: FunctionComponent = observer(props => {
     appInitStore.updatePrices(prices);
   }, [prices]);
 
-  // useEffect(() => {
-  //   if (Object.keys(universalSwapStore.getAmount).length > 0) {
-  //     appInitStore.updatePriceFeed(
-  //       accountOrai.bech32Address,
-  //       getTokenInfos({ tokens: universalSwapStore.getAmount, prices })
-  //     );
-  //   }
-  // }, [universalSwapStore.getAmount, accountOrai.bech32Address, prices]);
+  const updatePriceFeed = async () => {
+    await delay(5000);
+    appInitStore.updatePriceFeed(
+      accountOrai.bech32Address,
+      getTokenInfos({ tokens: universalSwapStore.getAmount, prices })
+    );
+  };
+
+  useEffect(() => {
+    if (Object.keys(universalSwapStore.getAmount).length > 0 && Object.keys(prices).length > 0) {
+      updatePriceFeed();
+    }
+  }, [universalSwapStore.getAmount, accountOrai.bech32Address, prices]);
 
   const renderAccountCard = (() => {
     if (appInitStore.getInitApp.isAllNetworks) {
@@ -235,6 +250,16 @@ export const HomeScreen: FunctionComponent = observer(props => {
     return <TokensCard refreshDate={refreshDate} />;
   };
 
+  const oldUI = false;
+
+  const renderNewTokenCard = () => {
+    return <TokensCardAll />;
+  };
+
+  const renderNewAccountCard = (() => {
+    return <AccountBoxAll />;
+  })();
+
   return (
     <PageWithScrollViewInBottomTabView
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -243,11 +268,13 @@ export const HomeScreen: FunctionComponent = observer(props => {
       ref={scrollViewRef}
     >
       <BIP44Selectable />
-      {renderAccountCard}
+      {oldUI ? renderAccountCard : renderNewAccountCard}
       <DashboardCard />
-      {renderTokenCard()}
-      {chainStore.current.networkType === 'cosmos' ? <UndelegationsCard /> : null}
-      {chainStore.current.networkType === 'cosmos' ? <EarningCard containerStyle={styles.containerEarnStyle} /> : null}
+      {chainStore.current.networkType === 'cosmos' && !appInitStore.getInitApp.isAllNetworks ? (
+        <EarningCardNew containerStyle={styles.containerEarnStyle} />
+      ) : null}
+      {oldUI ? renderTokenCard() : renderNewTokenCard()}
+      {/* {chainStore.current.networkType === 'cosmos' ? <UndelegationsCard /> : null} */}
     </PageWithScrollViewInBottomTabView>
   );
 });
