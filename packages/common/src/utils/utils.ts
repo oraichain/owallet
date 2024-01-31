@@ -133,7 +133,7 @@ export const isReactNative = (): boolean => {
   return false;
 };
 export function getNetworkTypeByBip44HDPath(path: BIP44HDPath): LedgerAppType {
-  switch (path.coinType) {
+  switch (Number(path.coinType)) {
     case 118:
       return 'cosmos';
     case 0:
@@ -148,7 +148,7 @@ export function getNetworkTypeByBip44HDPath(path: BIP44HDPath): LedgerAppType {
   }
 }
 export function getLedgerTypeByHdPath(path: BIP44HDPath): LedgerTypes {
-  switch (path.coinType) {
+  switch (Number(path.coinType)) {
     case 118:
       return 'cosmos';
     case 0:

@@ -21,6 +21,7 @@ export const LedgerGrantPage: FunctionComponent = observer(() => {
   useInteractionInfo();
 
   const { ledgerInitStore, chainStore } = useStore();
+  console.log('🚀 ~ constLedgerGrantPage:FunctionComponent=observer ~ ledgerInitStore:', ledgerInitStore);
 
   const intl = useIntl();
 
@@ -182,7 +183,7 @@ export const LedgerGrantPage: FunctionComponent = observer(() => {
           <Button
             color="primary"
             block
-            onClick={async e => {
+            onClick={async (e) => {
               e.preventDefault();
               await tryInit();
             }}
