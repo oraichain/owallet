@@ -253,10 +253,15 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
   };
 
   useEffect(() => {
-    if (accountEth.evmosHexAddress && accountTron.evmosHexAddress) {
+    if (accountEth.evmosHexAddress && accountTron.evmosHexAddress && accountKawaiiCosmos.bech32Address) {
       handleFetchAmounts();
     }
-  }, [accountOrai.bech32Address, accountEth.evmosHexAddress, accountTron.evmosHexAddress]);
+  }, [
+    accountOrai.bech32Address,
+    accountEth.evmosHexAddress,
+    accountTron.evmosHexAddress,
+    accountKawaiiCosmos.bech32Address
+  ]);
 
   useEffect(() => {
     const filteredToTokens = filterNonPoolEvmTokens(
