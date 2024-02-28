@@ -1,6 +1,6 @@
 {
   "version": "0.9.16",
-  "packages": ["packages/*"],
+  "packages": ["packages/*","apps/*"],
   "npmClient": "yarn",
   "nohoist": [
     "**/@react-native-*/**",
@@ -20,5 +20,11 @@
     "**/@bugsnag/**",
     "**/@gorhom/**"
   ],
-  "useNx": true
+  "useNx": true,
+  "command": {
+    "version": {
+      "allowBranch": "main",
+      "conventionalCommits": true
+    }
+  }
 }

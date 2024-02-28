@@ -41,7 +41,7 @@ jobs:
       - name: Install dependencies # install project deps with --frozen-lockfile to make sure we will have the same packages version ( very recommended  on running yarn install on ci)
         run: yarn install --frozen-lockfile
       - name: Install mobile packages
-        working-directory: packages/mobile
+        working-directory: apps/mobile
         run: yarn --silent
       - name: restore lerna
         uses: actions/cache@v3
@@ -51,7 +51,7 @@ jobs:
       - name: Build Libs
         run: yarn build:libs
       - name: Build provider
-        working-directory: packages/mobile
+        working-directory: apps/mobile
         run: yarn build:provider
         env:
           SENTRY_TOKEN: ${{ secrets.SENTRY_TOKEN }}
@@ -74,7 +74,7 @@ jobs:
           distribution: "temurin"
           cache: gradle
       - name: Grant execute permission for gradlew
-        working-directory: packages/mobile/android
+        working-directory: apps/mobile/android
         run: chmod +x gradlew
       - name: Decode Keystore File
         uses: timheuer/base64-to-file@v1
@@ -82,9 +82,9 @@ jobs:
         with:
           fileName: "OWalletKeystore"
           encodedString: ${{ secrets.KEYSTORE_FILE }}
-          fileDir: "packages/mobile/android/fastlane"
+          fileDir: "apps/mobile/android/fastlane"
       - name: Setup Fastlane android
-        working-directory: packages/mobile/android/fastlane
+        working-directory: apps/mobile/android/fastlane
         run: cd .. && bundle update && fastlane release
         env:
           JSON_KEY_DATA: ${{ secrets.GOOGLE_ACCOUNT_SERVICE }}
@@ -130,7 +130,7 @@ jobs:
       - name: Install dependencies # install project deps with --frozen-lockfile to make sure we will have the same packages version ( very recommended  on running yarn install on ci)
         run: yarn install --frozen-lockfile
       - name: Install mobile packages
-        working-directory: packages/mobile
+        working-directory: apps/mobile
         run: yarn --silent
       - name: restore lerna
         uses: actions/cache@v3
@@ -140,7 +140,7 @@ jobs:
       - name: Build Libs
         run: yarn build:libs
       - name: Build provider
-        working-directory: packages/mobile
+        working-directory: apps/mobile
         run: yarn build:provider
         env:
           SENTRY_TOKEN: ${{ secrets.SENTRY_TOKEN }}
@@ -157,10 +157,10 @@ jobs:
           ruby-version: 3.2
           bundler-cache: true
       - name: Pod install
-        working-directory: packages/mobile
+        working-directory: apps/mobile
         run: yarn pod:install
       - name: Setup Fastlane ios
-        working-directory: packages/mobile/ios/fastlane
+        working-directory: apps/mobile/ios/fastlane
         run: cd .. && bundle update && fastlane release
         env:
           DISCORD_HOOK_ID: ${{ secrets.DISCORD_MOBILE_WEBHOOK_ID }}

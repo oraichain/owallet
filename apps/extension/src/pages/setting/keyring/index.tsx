@@ -14,7 +14,7 @@ import { PageButton, PageButtonAccount } from "../page-button";
 import { MultiKeyStoreInfoWithSelectedElem } from "@owallet/background";
 import { FormattedMessage, useIntl } from "react-intl";
 import { ExportPage } from "../export";
-import { ChangeNamePage } from "../keyring/change";
+import { ChangeNamePage } from "./change";
 import { ClearPage } from "../clear";
 
 import { useEffect, useRef } from "react";

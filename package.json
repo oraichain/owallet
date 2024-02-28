@@ -4,7 +4,7 @@
   "private": true,
   "workspaces": {
     "packages": [
-      "packages/*"
+      "packages/*","apps/*"
     ],
     "nohoist": [
       "**/@react-native-*/**",
@@ -29,7 +29,6 @@
   "scripts": {
     "git:update": "git submodule update --recursive && git pull",
     "bootstrap": "lerna bootstrap",
-    "setup:mobile": "yarn && yarn build:libs && cd packages/mobile && yarn build:provider && yarn pod:install",
     "dev": "lerna run dev --parallel --ignore @owallet/extension --ignore @owallet/mobile --ignore @owallet/wc-client --ignore @owallet/wc-qrcode-modal",
     "clean:setup": "yarn clean:all && yarn setup:mobile",
     "clean": "lerna run clean --parallel && rimraf node_modules && yarn clean:watchman",
@@ -136,6 +135,9 @@
   },
   "browser": {
     "assert": false
+  },
+  "engines": {
+    "node": ">=18.12.1"
   },
   "version": "0.0.0",
   "lint-staged": {

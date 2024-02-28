@@ -9,7 +9,7 @@ import { SwapBox } from "./components/SwapBox";
 import { OWButton } from "@src/components/button";
 import OWButtonIcon from "@src/components/button/ow-button-icon";
 import { BalanceText } from "./components/BalanceText";
-import { SelectNetworkModal, SelectTokenModal, SlippageModal } from "./modals/";
+import { SelectNetworkModal, SelectTokenModal, SlippageModal } from "./modals";
 import { showToast, _keyExtract } from "@src/utils/helper";
 import {
   DEFAULT_SLIPPAGE,
@@ -48,7 +48,6 @@ import {
   UniversalSwapData,
   UniversalSwapHandler,
 } from "@oraichain/oraidex-universal-swap";
-// } from './handler/src';
 import { SwapCosmosWallet, SwapEvmWallet } from "./wallet";
 import { styling } from "./styles";
 import { BalanceType, MAX, balances } from "./types";
@@ -84,7 +83,7 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
   const accountOrai = accountStore.getAccount(ChainIdEnum.Oraichain);
   const accountEth = accountStore.getAccount(ChainIdEnum.Ethereum);
   const accountTron = accountStore.getAccount(ChainIdEnum.TRON);
-  const accountKawaiiCosmos = accountStore.getAccount(ChainIdEnum.KawaiiCosmos);
+  const accountInjective = accountStore.getAccount(ChainIdEnum.Injective);
 
   const [isSlippageModal, setIsSlippageModal] = useState(false);
   const [minimumReceive, setMininumReceive] = useState(0);
@@ -201,7 +200,6 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
     ? tokenMap[fromTokenDenom]
     : getTokenOnOraichain(tokenMap[fromTokenDenom].coinGeckoId) ??
       tokenMap[fromTokenDenom];
-
   const toToken = isEvmSwap
     ? tokenMap[toTokenDenom]
     : getTokenOnOraichain(tokenMap[toTokenDenom].coinGeckoId) ??
@@ -251,6 +249,12 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
       toToken.chainId,
       "from"
     );
+    getTokenFee(
+      originalToToken.prefix + originalToToken.contractAddress,
+      fromToken.chainId,
+      toToken.chainId,
+      "to"
+    );
   }, [originalToToken, fromToken, toToken, originalToToken, client]);
 
   const {
@@ -282,7 +286,7 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
         ...loadTokenParams,
         oraiAddress: accountOrai.bech32Address,
         metamaskAddress: accountEth.evmosHexAddress,
-        kwtAddress: accountKawaiiCosmos.bech32Address,
+        kwtAddress: getAddress(accountInjective.evmosHexAddress, "oraie"),
         tronAddress: getBase58Address(accountTron.evmosHexAddress),
         cwStargate,
       };
@@ -327,8 +331,6 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
       SwapDirection.From
     );
     setFilteredFromTokens(filteredFromTokens);
-
-    console.log("filteredFromTokens", filteredFromTokens);
 
     // TODO: need to automatically update from / to token to the correct swappable one when clicking the swap button
   }, [fromToken, toToken, toTokenDenom, fromTokenDenom]);

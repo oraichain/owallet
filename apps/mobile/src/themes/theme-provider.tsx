@@ -2,7 +2,7 @@ import { StatusBar, StyleSheet, Text, View } from "react-native";
 import React, { createContext, useContext } from "react";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../stores";
-import { colors, lightColors } from "../themes/colors";
+import { colors, lightColors } from "./colors";
 import { DarkModeImagesTheme, LightModeImagesTheme } from "./mode-images";
 
 const MyDarkTheme = {

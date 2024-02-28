@@ -85,7 +85,7 @@ export class InjectedOWallet implements IOWallet {
       const message: ProxyRequest = parseMessage
         ? parseMessage(e.data)
         : e.data;
-      //TO DO: this version got from packages/mobile/package.json
+      //TO DO: this version got from apps/mobile/package.json
       const isReactNative = owallet.version.includes("mobile");
       // TO DO: Check type proxy for duplicate popup sign with keplr wallet on extension
       const typeProxy: any = !isReactNative

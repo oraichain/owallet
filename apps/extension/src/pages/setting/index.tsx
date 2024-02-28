@@ -22,9 +22,9 @@ import {
   PopoverBody,
   PopoverHeader,
 } from "reactstrap";
-import { ExportToMobilePage } from "../setting/export-to-mobile";
-import { CreditPage } from "../setting/credit";
-import { SettingConnectionsPage } from "../setting/connections";
+import { ExportToMobilePage } from "./export-to-mobile";
+import { CreditPage } from "./credit";
+import { SettingConnectionsPage } from "./connections";
 
 export const PageButtonSetting: FunctionComponent<{
   paragraph?: string;

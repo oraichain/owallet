@@ -13,7 +13,7 @@ import { useStore } from "../../stores";
 import { TokensView } from "../main/token";
 import { TokensTronView } from "../main/tokenTron";
 import { IBCTransferView } from "../main/ibc-transfer";
-import { IBCTransferPage } from "../../pages/ibc-transfer";
+import { IBCTransferPage } from "../ibc-transfer";
 import { SendPage } from "../send";
 import { SelectChain } from "../../layouts/header";
 import { SendEvmPage } from "../send-evm";

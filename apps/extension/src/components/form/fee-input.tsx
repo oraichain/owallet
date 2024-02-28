@@ -7,7 +7,7 @@ import {
 } from "@owallet/hooks";
 import { observer } from "mobx-react-lite";
 import Big from "big.js";
-import { Input as InputEvm } from "../../components/form";
+import { Input as InputEvm } from ".";
 
 export interface GasInputProps {
   feeConfig: IFeeEthereumConfig;
