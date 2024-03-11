@@ -39,11 +39,7 @@ export class ObservableQueryGasEvmContractInner extends ObservableChainQuery<num
   protected async fetchResponse(): Promise<QueryResponse<number>> {
     try {
       const web3 = new Web3(this.chainGetter.getChain(this.chainId).rest);
-      const { from, to, contract_address, amount } = this.paramGas;
-      console.log(
-        "🚀 ~ ObservableQueryGasEvmContractInner ~ fetchResponse ~ this.paramGas:",
-        this.paramGas
-      );
+      let { from, to, contract_address, amount } = this.paramGas;
       if (!to || !from || !amount || !contract_address) return;
       const tokenInfo = new web3.eth.Contract(
         // @ts-ignore

@@ -12,7 +12,7 @@ import { MainPage } from "./pages/main";
 import { RegisterPage } from "./pages/register";
 import { ConfirmLedgerPage } from "./pages/register/ledger/confirm";
 import { SendPage } from "./pages/send";
-import { SendTronEvmPage } from "./pages/send-tron";
+import { SendTronPage } from "./pages/send-tron/send-tron";
 import { SetKeyRingPage } from "./pages/setting/keyring";
 
 import { Banner } from "./components/banner";
@@ -289,7 +289,7 @@ ReactDOM.render(
                   />
                   <Route exact path="/send" component={SendPage} />
                   <Route exact path="/send-evm" component={SendEvmPage} />
-                  <Route exact path="/send-tron" component={SendTronEvmPage} />
+                  <Route exact path="/send-tron" component={SendTronPage} />
                   <Route exact path="/send-btc" component={SendBtcPage} />
                   <Route
                     exact

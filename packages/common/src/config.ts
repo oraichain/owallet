@@ -1233,8 +1233,8 @@ export const EmbedChainInfos: AppChainInfo[] = [
   },
 
   {
-    rpc: "https://api.trongrid.io",
-    rest: "https://api.trongrid.io/jsonrpc",
+    rpc: "https://nile.trongrid.io",
+    rest: "https://nile.trongrid.io/jsonrpc",
     chainId: "0x2b6653dc",
     networkType: "evm",
     chainName: "Tron",
@@ -1246,9 +1246,9 @@ export const EmbedChainInfos: AppChainInfo[] = [
       coinImageUrl:
         "https://s2.coinmarketcap.com/static/img/coins/64x64/1958.png",
       gasPriceStep: {
-        low: 420,
-        average: 504,
-        high: 672,
+        low: 1,
+        average: 1.25,
+        high: 1.5,
       },
     },
     currencies: [
@@ -1270,6 +1270,17 @@ export const EmbedChainInfos: AppChainInfo[] = [
         coinImageUrl:
           "https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png",
         coinDecimals: 6,
+      },
+      {
+        contractAddress: "TLBaRhANQoJFTqre9Nf1mjuwNWjCJeYqUL",
+        coinDenom: "TestUSDJ",
+        coinMinimalDenom:
+          "erc20:0x70082243784dcdf3042034E7B044d6D342A91360:USDJ Token",
+        // coinMinimalDenom: "usdc",
+        coinGeckoId: "usd-coin",
+        coinImageUrl:
+          "https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png",
+        coinDecimals: 18,
       },
       {
         contractAddress: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",

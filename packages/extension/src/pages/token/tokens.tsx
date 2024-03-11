@@ -19,6 +19,7 @@ import { SendEvmPage } from "../send-evm/send-evm";
 import { TRON_ID } from "@owallet/common";
 import { TokensBtcView } from "../main/tokenBtc";
 import { SendBtcPage } from "../send-btc";
+import { SendTronPage } from "../send-tron/send-tron";
 
 export const TokenPage: FunctionComponent = observer(() => {
   const {
@@ -106,14 +107,9 @@ export const TokenPage: FunctionComponent = observer(() => {
   }, [chainStore.current]);
   const handleCheckSendPage = () => {
     if (networkType === "evm") {
-      // if (chainId === TRON_ID) {
-      //   return (
-      //     <SendTronEvmPage
-      //       coinMinimalDenom={coinMinimalDenom}
-      //       tokensTrc20Tron={tokensTron}
-      //     />
-      //   );
-      // }
+      if (chainId === TRON_ID) {
+        return <SendTronPage coinMinimalDenom={coinMinimalDenom} />;
+      }
       return <SendEvmPage coinMinimalDenom={coinMinimalDenom} />;
     } else if (networkType === "bitcoin") {
       return <SendBtcPage />;

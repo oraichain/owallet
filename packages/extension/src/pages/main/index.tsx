@@ -20,7 +20,7 @@ import { SelectChain } from "../../layouts/header";
 import { useStore } from "../../stores";
 import { SendPage } from "../send";
 import { SendEvmPage } from "../send-evm/send-evm";
-import { SendTronEvmPage } from "../send-tron";
+import { SendTronPage } from "../send-tron/send-tron";
 import { BIP44SelectModal } from "./bip44-select-modal";
 import { SendBtcPage } from "../send-btc";
 
@@ -94,7 +94,7 @@ export const MainPage: FunctionComponent = observer(() => {
   const handleCheckSendPage = () => {
     if (networkType === "evm") {
       if (chainId === TRON_ID) {
-        return <SendTronEvmPage />;
+        return <SendTronPage />;
       }
       return <SendEvmPage />;
     } else if (networkType === "bitcoin") {

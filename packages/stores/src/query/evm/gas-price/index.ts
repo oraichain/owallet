@@ -33,6 +33,10 @@ export class ObservableQueryGasPriceInner extends ObservableChainQuery<string> {
     try {
       const web3 = new Web3(this.chainGetter.getChain(this.chainId).rest);
       const gasPrice = await web3.eth.getGasPrice();
+      console.log(
+        "🚀 ~ ObservableQueryGasPriceInner ~ fetchResponse ~ gasPrice:",
+        gasPrice
+      );
       return {
         status: 1,
         staled: false,
