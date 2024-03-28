@@ -147,17 +147,6 @@ export const EmbedChainInfos: AppChainInfo[] = [
         },
         {
           type: "cw20",
-          coinDenom: "tBTC",
-          coinMinimalDenom:
-            "cw20:orai1d2hq8pzf0nswlqhhng95hkfnmgutpmz6g8hd8q7ec9q9pj6t3r2q7vc646:tBTC Token",
-          contractAddress:
-            "orai1d2hq8pzf0nswlqhhng95hkfnmgutpmz6g8hd8q7ec9q9pj6t3r2q7vc646",
-          coinDecimals: 6,
-          coinGeckoId: "bitcoin",
-          coinImageUrl: "https://i.ibb.co/NVP6CDZ/images-removebg-preview.png",
-        },
-        {
-          type: "cw20",
           coinDenom: "BTC",
           coinMinimalDenom:
             "cw20:orai10g6frpysmdgw5tdqke47als6f97aqmr8s3cljsvjce4n5enjftcqtamzsd:orai BTC Token",
@@ -263,7 +252,8 @@ export const EmbedChainInfos: AppChainInfo[] = [
       return [this.stakeCurrency];
     },
     features: ["stargate", "ibc-transfer", "cosmwasm", "no-legacy-stdTx"],
-    chainSymbolImageUrl: "https://orai.io/images/logos/logomark-dark.png",
+    chainSymbolImageUrl:
+      "https://s2.coinmarketcap.com/static/img/coins/64x64/7533.png",
     txExplorer: {
       name: "Oraiscan",
       txUrl: "https://scan.orai.io/txs/{txHash}",
@@ -1015,50 +1005,52 @@ export const EmbedChainInfos: AppChainInfo[] = [
       coinImageUrl:
         "https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png",
       gasPriceStep: {
-        low: 10000000000,
-        average: 25000000000,
-        high: 40000000000,
+        low: 1,
+        average: 1.25,
+        high: 1.5,
       },
     },
     bech32Config: Bech32Address.defaultBech32Config("evmos"),
     networkType: "evm",
-    currencies: [
-      {
-        coinDenom: "BNB",
-        coinMinimalDenom: "bnb",
-        coinDecimals: 18,
-        coinGeckoId: "binancecoin",
-        coinImageUrl:
-          "https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png",
-      },
-      {
-        coinDenom: "ORAI",
-        coinMinimalDenom:
-          "erc20:0x41E76b3b0Da96c14c4575d9aE96d73Acb6a0B903:Oraichain Token",
-        coinDecimals: 18,
-        coinGeckoId: "oraichain-token",
-        coinImageUrl:
-          "https://s2.coinmarketcap.com/static/img/coins/64x64/7533.png",
-      },
-      {
-        coinDenom: "AIRI",
-        coinMinimalDenom:
-          "erc20:0x7e2a35c746f2f7c240b664f1da4dd100141ae71f:aiRight Token",
-        coinDecimals: 18,
-        coinGeckoId: "airight",
-        coinImageUrl:
-          "https://s2.coinmarketcap.com/static/img/coins/64x64/11563.png",
-      },
-      {
-        coinDenom: "KWT",
-        coinMinimalDenom:
-          "erc20:0x9da6e8a2065d5f09b9994ebc330a962721069a68:Kawaii Islands",
-        coinDecimals: 18,
-        coinGeckoId: "kawaii-islands",
-        coinImageUrl:
-          "https://s2.coinmarketcap.com/static/img/coins/64x64/12313.png",
-      },
-    ],
+    get currencies() {
+      return [
+        {
+          coinDenom: "BNB",
+          coinMinimalDenom: "bnb",
+          coinDecimals: 18,
+          coinGeckoId: "binancecoin",
+          coinImageUrl:
+            "https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png",
+        },
+        {
+          coinDenom: "ORAI",
+          coinMinimalDenom:
+            "erc20:0x41E76b3b0Da96c14c4575d9aE96d73Acb6a0B903:Oraichain Token",
+          coinDecimals: 18,
+          coinGeckoId: "oraichain-token",
+          coinImageUrl:
+            "https://s2.coinmarketcap.com/static/img/coins/64x64/7533.png",
+        },
+        {
+          coinDenom: "AIRI",
+          coinMinimalDenom:
+            "erc20:0x7e2a35c746f2f7c240b664f1da4dd100141ae71f:aiRight Token",
+          coinDecimals: 18,
+          coinGeckoId: "airight",
+          coinImageUrl:
+            "https://s2.coinmarketcap.com/static/img/coins/64x64/11563.png",
+        },
+        {
+          coinDenom: "KWT",
+          coinMinimalDenom:
+            "erc20:0x9da6e8a2065d5f09b9994ebc330a962721069a68:Kawaii Islands",
+          coinDecimals: 18,
+          coinGeckoId: "kawaii-islands",
+          coinImageUrl:
+            "https://s2.coinmarketcap.com/static/img/coins/64x64/12313.png",
+        },
+      ];
+    },
     get feeCurrencies() {
       return [this.stakeCurrency];
     },
@@ -1085,9 +1077,9 @@ export const EmbedChainInfos: AppChainInfo[] = [
       coinImageUrl:
         "https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png",
       gasPriceStep: {
-        low: 10000000000,
-        average: 25000000000,
-        high: 40000000000,
+        low: 1,
+        average: 1.25,
+        high: 1.5,
       },
     },
     bech32Config: Bech32Address.defaultBech32Config("evmos"),
@@ -1158,68 +1150,70 @@ export const EmbedChainInfos: AppChainInfo[] = [
       coinImageUrl:
         "https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png",
       gasPriceStep: {
-        low: 10000000000,
-        average: 25000000000,
-        high: 40000000000,
+        low: 1,
+        average: 1.25,
+        high: 1.5,
       },
     },
     bech32Config: Bech32Address.defaultBech32Config("evmos"),
     networkType: "evm",
-    currencies: [
-      {
-        coinDenom: "BNB",
-        coinMinimalDenom: "bnb",
-        coinDecimals: 18,
-        coinGeckoId: "binancecoin",
-        coinImageUrl:
-          "https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png",
-      },
-      {
-        coinDenom: "ORAI",
-        coinMinimalDenom:
-          "erc20:0xA325Ad6D9c92B55A3Fc5aD7e412B1518F96441C0:Oraichain Token",
-        coinDecimals: 18,
-        coinGeckoId: "oraichain-token",
-        coinImageUrl:
-          "https://s2.coinmarketcap.com/static/img/coins/64x64/7533.png",
-      },
-      {
-        coinDenom: "AIRI",
-        coinMinimalDenom:
-          "erc20:0x7e2a35c746f2f7c240b664f1da4dd100141ae71f:aiRight Token",
-        coinDecimals: 18,
-        coinGeckoId: "airight",
-        coinImageUrl:
-          "https://s2.coinmarketcap.com/static/img/coins/64x64/11563.png",
-      },
-      {
-        coinDenom: "KWT",
-        coinMinimalDenom:
-          "erc20:0x257a8d1e03d17b8535a182301f15290f11674b53:Kawaii Islands",
-        coinDecimals: 18,
-        coinGeckoId: "kawaii-islands",
-        coinImageUrl:
-          "https://s2.coinmarketcap.com/static/img/coins/64x64/12313.png",
-      },
-      {
-        coinDenom: "USDT",
-        coinMinimalDenom:
-          "erc20:0x55d398326f99059fF775485246999027B3197955:Tether",
-        coinDecimals: 18,
-        coinGeckoId: "tether",
-        coinImageUrl:
-          "https://s2.coinmarketcap.com/static/img/coins/64x64/825.png",
-      },
-      {
-        coinDenom: "MILKY",
-        coinMinimalDenom:
-          "erc20:0x6fE3d0F096FC932A905accd1EB1783F6e4cEc717:Milky Token",
-        coinDecimals: 18,
-        coinGeckoId: "milky-token",
-        coinImageUrl:
-          "https://s2.coinmarketcap.com/static/img/coins/64x64/14418.png",
-      },
-    ],
+    get currencies() {
+      return [
+        {
+          coinDenom: "BNB",
+          coinMinimalDenom: "bnb",
+          coinDecimals: 18,
+          coinGeckoId: "binancecoin",
+          coinImageUrl:
+            "https://s2.coinmarketcap.com/static/img/coins/64x64/1839.png",
+        },
+        {
+          coinDenom: "ORAI",
+          coinMinimalDenom:
+            "erc20:0xA325Ad6D9c92B55A3Fc5aD7e412B1518F96441C0:Oraichain Token",
+          coinDecimals: 18,
+          coinGeckoId: "oraichain-token",
+          coinImageUrl:
+            "https://s2.coinmarketcap.com/static/img/coins/64x64/7533.png",
+        },
+        {
+          coinDenom: "AIRI",
+          coinMinimalDenom:
+            "erc20:0x7e2a35c746f2f7c240b664f1da4dd100141ae71f:aiRight Token",
+          coinDecimals: 18,
+          coinGeckoId: "airight",
+          coinImageUrl:
+            "https://s2.coinmarketcap.com/static/img/coins/64x64/11563.png",
+        },
+        {
+          coinDenom: "KWT",
+          coinMinimalDenom:
+            "erc20:0x257a8d1e03d17b8535a182301f15290f11674b53:Kawaii Islands",
+          coinDecimals: 18,
+          coinGeckoId: "kawaii-islands",
+          coinImageUrl:
+            "https://s2.coinmarketcap.com/static/img/coins/64x64/12313.png",
+        },
+        {
+          coinDenom: "USDT",
+          coinMinimalDenom:
+            "erc20:0x55d398326f99059fF775485246999027B3197955:Tether",
+          coinDecimals: 18,
+          coinGeckoId: "tether",
+          coinImageUrl:
+            "https://s2.coinmarketcap.com/static/img/coins/64x64/825.png",
+        },
+        {
+          coinDenom: "MILKY",
+          coinMinimalDenom:
+            "erc20:0x6fE3d0F096FC932A905accd1EB1783F6e4cEc717:Milky Token",
+          coinDecimals: 18,
+          coinGeckoId: "milky-token",
+          coinImageUrl:
+            "https://s2.coinmarketcap.com/static/img/coins/64x64/14418.png",
+        },
+      ];
+    },
     get feeCurrencies() {
       return [this.stakeCurrency];
     },
@@ -1241,7 +1235,7 @@ export const EmbedChainInfos: AppChainInfo[] = [
     stakeCurrency: {
       coinDenom: "TRX",
       coinMinimalDenom: "trx",
-      coinDecimals: 18,
+      coinDecimals: 6,
       coinGeckoId: "tron",
       coinImageUrl:
         "https://s2.coinmarketcap.com/static/img/coins/64x64/1958.png",
@@ -1255,7 +1249,7 @@ export const EmbedChainInfos: AppChainInfo[] = [
       {
         coinDenom: "TRX",
         coinMinimalDenom: "trx",
-        coinDecimals: 18,
+        coinDecimals: 6,
         coinGeckoId: "tron",
         coinImageUrl:
           "https://s2.coinmarketcap.com/static/img/coins/64x64/1958.png",
@@ -1263,7 +1257,9 @@ export const EmbedChainInfos: AppChainInfo[] = [
       {
         contractAddress: "TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8",
         coinDenom: "USDC",
-        coinMinimalDenom: "usdc",
+        coinMinimalDenom:
+          "erc20:0x3487b63D30B5B2C87fb7fFa8bcfADE38EAaC1abe:USDC Token",
+        // coinMinimalDenom: "usdc",
         coinGeckoId: "usd-coin",
         coinImageUrl:
           "https://s2.coinmarketcap.com/static/img/coins/64x64/3408.png",
@@ -1271,12 +1267,25 @@ export const EmbedChainInfos: AppChainInfo[] = [
       },
       {
         contractAddress: "TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t",
+        coinMinimalDenom:
+          "erc20:0xa614f803B6FD780986A42c78Ec9c7f77e6DeD13C:USDT Token",
         coinDenom: "USDT",
-        coinMinimalDenom: "usdt",
+        // coinMinimalDenom: "usdt",
         coinDecimals: 6,
         coinGeckoId: "tether",
         coinImageUrl:
           "https://s2.coinmarketcap.com/static/img/coins/64x64/825.png",
+      },
+      {
+        contractAddress: "TNUC9Qb1rRpS5CbWLmNMxXBjyFoydXjWFR",
+        coinMinimalDenom:
+          "erc20:0x891cdb91d149f23B1a45D9c5Ca78a88d0cB44C18:WTRX Token",
+        coinDenom: "WTRX",
+        // coinMinimalDenom: "usdt",
+        coinDecimals: 6,
+        coinGeckoId: "tron",
+        coinImageUrl:
+          "https://s2.coinmarketcap.com/static/img/coins/64x64/1958.png",
       },
     ],
     restConfig: {
@@ -1316,8 +1325,8 @@ export const EmbedChainInfos: AppChainInfo[] = [
         "https://s2.coinmarketcap.com/static/img/coins/64x64/7653.png",
       gasPriceStep: {
         low: 0,
-        average: 0.025,
-        high: 0.04,
+        average: 0,
+        high: 0,
       },
     },
     currencies: [
@@ -1365,7 +1374,7 @@ export const EmbedChainInfos: AppChainInfo[] = [
       coinImageUrl:
         "https://s2.coinmarketcap.com/static/img/coins/64x64/7653.png",
       gasPriceStep: {
-        low: 0,
+        low: 0.01,
         average: 0.025,
         high: 0.04,
       },
@@ -1411,7 +1420,7 @@ export const EmbedChainInfos: AppChainInfo[] = [
       coinImageUrl:
         "https://s2.coinmarketcap.com/static/img/coins/64x64/7653.png",
       gasPriceStep: {
-        low: 0,
+        low: 0.01,
         average: 0.025,
         high: 0.04,
       },

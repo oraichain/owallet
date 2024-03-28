@@ -1,9 +1,12 @@
 import images from "@src/assets/images";
+import { Platform } from "react-native";
 
 export const HEADER_KEY = {
   notShowHeader: "NOT_SHOW_HEADER",
   showNetworkHeader: "SHOW_NETWORK_HEADER",
 };
+export const isAndroid = Platform.OS === "android";
+export const isIos = Platform.OS === "ios";
 export const defaultAll = { label: "All", value: "All", image: images.crypto };
 export const SCREENS = {
   Home: "Home",
@@ -23,6 +26,7 @@ export const SCREENS = {
   Nfts: "Nfts",
   TokenDetail: "Tokens.Detail",
   NftsDetail: "Nfts.Detail",
+  HistoryDetail: "History.Detail",
   TransferTokensScreen: "TransferTokensScreen",
   UniversalSwapScreen: "UniversalSwapScreen",
   RegisterIntro: "Register.Intro",
@@ -35,11 +39,13 @@ export const SCREENS = {
   RegisterRecoverPhrase: "Register.RecoverPhrase",
   RegisterNewLedger: "Register.NewLedger",
   Send: "Send",
+  SendEvm: "SendEvm",
   SendOasis: "SendOasis",
   TransferNFT: "TransferNFT",
   Transactions: "Transactions",
   Dashboard: "Dashboard",
   Camera: "Camera",
+  QRScreen: "QRScreen",
   Governance: "Governance",
   GovernanceDetails: "Governance.Details",
   NetworkSelect: "Network.select",
@@ -54,6 +60,7 @@ export const SCREENS = {
   SettingViewPrivateData: "Setting.ViewPrivateData",
   SettingBackupMnemonic: "Setting.BackupMnemonic",
   SettingVersion: "Setting.Version",
+  DetailsBrowser: "Detail.Browser",
   AddressBook: "AddressBook",
   AddAddressBook: "AddAddressBook",
   Browser: "Browser",
@@ -62,6 +69,7 @@ export const SCREENS = {
   WebDApp: "Web.dApp",
   Invest: "Invest",
   Delegate: "Delegate",
+  NewSend: "NewSend",
   SendTron: "SendTron",
   SendBtc: "SendBtc",
   Notifications: "Notifications",
@@ -88,10 +96,10 @@ export const SCREENS = {
   },
 };
 export const ICONS_TITLE = {
-  [SCREENS.TABS.Invest]: "trending",
-  [SCREENS.TABS.Main]: "pie",
-  [SCREENS.TABS.Browser]: "internet",
-  [SCREENS.TABS.Settings]: "setting",
+  [SCREENS.TABS.Invest]: "tdesigntrending-up",
+  [SCREENS.TABS.Main]: "tdesignchart-pie",
+  [SCREENS.TABS.Browser]: "tdesigninternet",
+  [SCREENS.TABS.Settings]: "tdesignsetting-1",
   [SCREENS.TABS.SendNavigation]: "",
 };
 
@@ -103,7 +111,7 @@ export const SCREENS_OPTIONS: IScreenOption = {
     title: "Assets",
   },
   [SCREENS.TABS.Browser]: {
-    title: "Browser",
+    title: HEADER_KEY.showNetworkHeader,
   },
   [SCREENS.TABS.Settings]: {
     title: "Settings",
@@ -116,7 +124,7 @@ export const SCREENS_OPTIONS: IScreenOption = {
     showTabBar: true,
   },
   [SCREENS.TransactionDetail]: {
-    title: "Transaction Detail",
+    title: "Transaction Details",
   },
   [SCREENS.BackupMnemonic]: {
     showTabBar: false,
@@ -131,6 +139,9 @@ export const SCREENS_OPTIONS: IScreenOption = {
     title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.RegisterDone]: {
+    title: HEADER_KEY.notShowHeader,
+  },
+  [SCREENS.DetailsBrowser]: {
     title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.RegisterRecoverMnemonicMain]: {
@@ -198,6 +209,9 @@ export const SCREENS_OPTIONS: IScreenOption = {
   [SCREENS.Camera]: {
     title: HEADER_KEY.notShowHeader,
   },
+  [SCREENS.QRScreen]: {
+    title: HEADER_KEY.notShowHeader,
+  },
   [SCREENS.Governance]: {
     title: HEADER_KEY.showNetworkHeader,
   },
@@ -207,11 +221,16 @@ export const SCREENS_OPTIONS: IScreenOption = {
   [SCREENS.Dashboard]: {
     title: HEADER_KEY.showNetworkHeader,
   },
+  [SCREENS.NewSend]: {
+    title: HEADER_KEY.notShowHeader,
+  },
   [SCREENS.SendTron]: {
-    title: "Send",
+    // title: "Send",
+    title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.SendOasis]: {
-    title: "Send",
+    // title: "Send",
+    title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.Notifications]: {
     title: HEADER_KEY.showNetworkHeader,
@@ -223,7 +242,7 @@ export const SCREENS_OPTIONS: IScreenOption = {
     title: HEADER_KEY.showNetworkHeader,
   },
   [SCREENS.ValidatorDetails]: {
-    title: HEADER_KEY.showNetworkHeader,
+    title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.ValidatorList]: {
     title: HEADER_KEY.showNetworkHeader,
@@ -242,7 +261,7 @@ export const SCREENS_OPTIONS: IScreenOption = {
     showTabBar: true,
   },
   [SCREENS.SettingSelectAccount]: {
-    title: "Select Account",
+    title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.SettingViewPrivateData]: {
     title: "Mnemonic Seed",
@@ -254,19 +273,24 @@ export const SCREENS_OPTIONS: IScreenOption = {
     title: "Buy",
   },
   [SCREENS.SettingVersion]: {
-    title: "About",
+    title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.SendBtc]: {
-    title: "Send",
+    // title: "Send",
+    title: HEADER_KEY.notShowHeader,
+  },
+  [SCREENS.SendEvm]: {
+    title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.AddressBook]: {
-    title: HEADER_KEY.showNetworkHeader,
+    title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.AddAddressBook]: {
-    title: "Add new contract",
+    title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.Browser]: {
     title: "Browser",
+    showTabBar: true,
   },
   [SCREENS.BookMarks]: {
     title: "Bookmarks",
@@ -282,16 +306,19 @@ export const SCREENS_OPTIONS: IScreenOption = {
     showTabBar: true,
   },
   [SCREENS.Delegate]: {
-    title: HEADER_KEY.showNetworkHeader,
+    // title: HEADER_KEY.showNetworkHeader,
+    title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.DelegateDetail]: {
     title: HEADER_KEY.showNetworkHeader,
   },
   [SCREENS.Redelegate]: {
-    title: HEADER_KEY.showNetworkHeader,
+    // title: HEADER_KEY.showNetworkHeader,
+    title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.Undelegate]: {
-    title: HEADER_KEY.showNetworkHeader,
+    // title: HEADER_KEY.showNetworkHeader,
+    title: HEADER_KEY.notShowHeader,
   },
   [SCREENS.STACK.Unlock]: {
     title: "",

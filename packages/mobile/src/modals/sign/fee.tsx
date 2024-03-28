@@ -8,7 +8,7 @@ import { useStyle } from "../../styles";
 import { CoinPretty, Dec, DecUtils } from "@owallet/unit";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { OWalletSignOptions } from "@owallet/types";
-import { RightArrowIcon } from "../../components/icon";
+import { DownArrowIcon, RightArrowIcon } from "../../components/icon";
 import { registerModal } from "../base";
 import { CardModal } from "../card";
 import { FeeButtons, getFeeErrorText, TextInput } from "../../components/input";
@@ -17,6 +17,10 @@ import { typography } from "../../themes";
 import { Toggle } from "../../components/toggle";
 import { useTheme } from "@src/themes/theme-provider";
 import { BottomSheetProps } from "@gorhom/bottom-sheet";
+import ItemDetail from "@src/screens/transactions/components/item-details";
+import { capitalizedText } from "@src/utils/helper";
+import { CustomFee } from "@src/modals/fee";
+import WrapViewModal from "@src/modals/wrap/wrap-view-modal";
 
 const FeeButtonsModal: FunctionComponent<{
   isOpen: boolean;
@@ -26,10 +30,10 @@ const FeeButtonsModal: FunctionComponent<{
   gasConfig: IGasConfig;
 }> = registerModal(
   observer(({ close, feeConfig, gasConfig }) => {
-    const [customFee, setCustomFee] = useState(false);
+    const [customGas, setCustomGas] = useState(false);
     const { colors } = useTheme();
     return (
-      <CardModal title="Set Fee">
+      <WrapViewModal title="Set Fee" disabledScrollView={false}>
         <View
           style={{
             flexDirection: "row",
@@ -38,9 +42,9 @@ const FeeButtonsModal: FunctionComponent<{
           }}
         >
           <Toggle
-            on={customFee}
+            on={customGas}
             onChange={(value) => {
-              setCustomFee(value);
+              setCustomGas(value);
               if (!value) {
                 if (feeConfig.feeCurrency && !feeConfig.fee) {
                   feeConfig.setFeeType("average");
@@ -56,47 +60,26 @@ const FeeButtonsModal: FunctionComponent<{
               paddingHorizontal: 8,
             }}
           >
-            Custom Fee
+            Custom Gas
           </Text>
         </View>
-        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-          {customFee ? (
-            <TextInput
-              label="Fee"
-              placeholder="Type your Fee here"
-              keyboardType={"numeric"}
-              labelStyle={{
-                fontSize: 16,
-                fontWeight: "700",
-                lineHeight: 22,
-                color: colors["gray-900"],
-                marginBottom: 8,
-              }}
-              onChangeText={(text) => {
-                const fee = new Dec(Number(text.replace(/,/g, "."))).mul(
-                  DecUtils.getTenExponentNInPrecisionRange(6)
-                );
+        {/*<TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>*/}
+        {customGas && <CustomFee gasConfig={gasConfig} colors={colors} />}
 
-                feeConfig.setManualFee({
-                  amount: fee.roundUp().toString(),
-                  denom: feeConfig.feeCurrency.coinMinimalDenom,
-                });
-              }}
-            />
-          ) : (
-            <FeeButtons
-              label="Fee"
-              gasLabel="Gas"
-              feeConfig={feeConfig}
-              gasConfig={gasConfig}
-            />
-          )}
-        </TouchableWithoutFeedback>
+        <FeeButtons
+          label="Fee"
+          gasLabel="Gas"
+          feeConfig={feeConfig}
+          vertical
+          gasConfig={gasConfig}
+        />
+
+        {/*</TouchableWithoutFeedback>*/}
 
         <TouchableOpacity
           onPress={close}
           style={{
-            marginBottom: customFee ? 264 : 14,
+            marginBottom: 16,
             marginTop: 32,
             backgroundColor: colors["primary-surface-default"],
             borderRadius: 8,
@@ -114,7 +97,7 @@ const FeeButtonsModal: FunctionComponent<{
             Confirm
           </Text>
         </TouchableOpacity>
-      </CardModal>
+      </WrapViewModal>
     );
   }),
   {
@@ -172,18 +155,10 @@ export const FeeInSign: FunctionComponent<{
         feeConfig={feeConfig}
         gasConfig={gasConfig}
       />
-      <View style={style.flatten(["padding-bottom-28"])}>
-        <View
-          style={style.flatten(["flex-row", "items-center", "margin-bottom-4"])}
-        >
-          <Text style={style.flatten(["subtitle3"])}>Fee</Text>
-          <View style={style.get("flex-1")} />
-          <Text style={style.flatten(["body3"])}>
-            {feePrice ? feePrice.toString() : "-"}
-          </Text>
-        </View>
-        <View style={style.flatten(["flex-row"])}>
-          <View style={style.get("flex-1")} />
+
+      <ItemDetail
+        label={"Transaction fee"}
+        value={
           <TouchableOpacity
             style={style.flatten(["flex-row", "items-center"])}
             disabled={!canFeeEditable}
@@ -192,59 +167,42 @@ export const FeeInSign: FunctionComponent<{
             }}
           >
             <Text
-              style={{
-                ...typography["subtitle1"],
-                color: canFeeEditable
-                  ? colors["primary-surface-default"]
-                  : colors["primary-text"],
-              }}
+              weight={"600"}
+              color={colors["primary-text-action"]}
+              size={16}
             >
-              {fee.trim(true).toString()}
+              {feeConfig.feeType
+                ? `${capitalizedText(feeConfig.feeType)} :`
+                : ""}{" "}
+              {feePrice ? feePrice.toString() : "-"}
             </Text>
             {canFeeEditable ? (
               <View style={style.flatten(["margin-left-6"])}>
-                <RightArrowIcon
-                  color={style.get("color-primary").color}
-                  height={12}
+                <DownArrowIcon
+                  color={colors["primary-text-action"]}
+                  height={20}
                 />
               </View>
             ) : null}
           </TouchableOpacity>
+        }
+      />
+
+      {!isFeeLoading && errorText ? (
+        <View>
+          <Text
+            style={style.flatten([
+              "absolute",
+              "text-caption1",
+              "color-error",
+              "margin-top-2",
+              "margin-left-4",
+            ])}
+          >
+            {errorText}
+          </Text>
         </View>
-        {isFeeLoading ? (
-          <View>
-            <View
-              style={style.flatten([
-                "absolute",
-                "height-16",
-                "justify-center",
-                "margin-top-2",
-                "margin-left-4",
-              ])}
-            >
-              <LoadingSpinner
-                size={14}
-                color={style.get("color-loading-spinner").color}
-              />
-            </View>
-          </View>
-        ) : null}
-        {!isFeeLoading && errorText ? (
-          <View>
-            <Text
-              style={style.flatten([
-                "absolute",
-                "text-caption1",
-                "color-error",
-                "margin-top-2",
-                "margin-left-4",
-              ])}
-            >
-              {errorText}
-            </Text>
-          </View>
-        ) : null}
-      </View>
+      ) : null}
     </React.Fragment>
   );
 });

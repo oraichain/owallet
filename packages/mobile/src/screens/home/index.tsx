@@ -10,6 +10,7 @@ import { AccountCard } from "./account-card";
 import {
   AppState,
   AppStateStatus,
+  InteractionManager,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -29,9 +30,15 @@ import { UndelegationsCard } from "../stake/dashboard/undelegations-card";
 import { TronTokensCard } from "./tron-tokens-card";
 import { AccountCardBitcoin } from "./account-card-bitcoin";
 import { TokensBitcoinCard } from "./tokens-bitcoin-card";
+import { getAddress, getBase58Address, ChainIdEnum } from "@owallet/common";
+import { TokensCardAll } from "./tokens-card-all";
+import { AccountBoxAll } from "./account-box-new";
+import { oraichainNetwork } from "@oraichain/oraidex-common";
+import { useCoinGeckoPrices, useLoadTokens } from "@owallet/hooks";
+import { showToast } from "@src/utils/helper";
+import { EarningCardNew } from "./earning-card-new";
 import { TRON_ID } from "@owallet/common";
 import { InjectedProviderUrl } from "../web/config";
-import { InteractionManager } from "react-native";
 
 export const HomeScreen: FunctionComponent = observer((props) => {
   const [refreshing, setRefreshing] = React.useState(false);
@@ -39,8 +46,15 @@ export const HomeScreen: FunctionComponent = observer((props) => {
   const { colors } = useTheme();
 
   const styles = styling(colors);
-  const { chainStore, accountStore, queriesStore, priceStore, browserStore } =
-    useStore();
+  const {
+    chainStore,
+    accountStore,
+    queriesStore,
+    priceStore,
+    browserStore,
+    appInitStore,
+    universalSwapStore,
+  } = useStore();
 
   const scrollViewRef = useRef<ScrollView | null>(null);
 
@@ -109,17 +123,6 @@ export const HomeScreen: FunctionComponent = observer((props) => {
     ])
   );
 
-  useEffect(() => {
-    if (scrollViewRef.current) {
-      scrollViewRef.current.scrollTo({ y: 0 });
-    }
-  }, [chainStore.current.chainId]);
-
-  useEffect(() => {
-    onRefresh();
-    return () => {};
-  }, []);
-
   const onRefresh = React.useCallback(async () => {
     const queries = queriesStore.get(chainStore.current.chainId);
 
@@ -140,21 +143,130 @@ export const HomeScreen: FunctionComponent = observer((props) => {
           .balances.map((bal) => {
             return bal.waitFreshResponse();
           }),
-        queries.cosmos.queryRewards
-          .getQueryBech32Address(account.bech32Address)
-          .waitFreshResponse(),
-        queries.cosmos.queryDelegations
-          .getQueryBech32Address(account.bech32Address)
-          .waitFreshResponse(),
-        queries.cosmos.queryUnbondingDelegations
-          .getQueryBech32Address(account.bech32Address)
-          .waitFreshResponse(),
+        // queries.cosmos.queryRewards
+        //   .getQueryBech32Address(account.bech32Address)
+        //   .waitFreshResponse(),
+        // queries.cosmos.queryDelegations
+        //   .getQueryBech32Address(account.bech32Address)
+        //   .waitFreshResponse(),
+        // queries.cosmos.queryUnbondingDelegations
+        //   .getQueryBech32Address(account.bech32Address)
+        //   .waitFreshResponse(),
       ]);
     }
-
     setRefreshing(false);
     setRefreshDate(Date.now());
-  }, [account.bech32Address, chainStore.current.chainId]);
+    if (
+      accountOrai.bech32Address &&
+      accountEth.evmosHexAddress &&
+      accountTron.evmosHexAddress &&
+      accountKawaiiCosmos.bech32Address
+    ) {
+      const currentDate = Date.now();
+
+      const differenceInMilliseconds = Math.abs(currentDate - refreshDate);
+      const differenceInSeconds = differenceInMilliseconds / 1000;
+
+      if (differenceInSeconds > 15) {
+        setTimeout(() => {
+          universalSwapStore.setLoaded(false);
+
+          handleFetchAmounts(
+            accountOrai.bech32Address,
+            accountEth.evmosHexAddress,
+            accountTron.evmosHexAddress,
+            accountKawaiiCosmos.bech32Address,
+            universalSwapStore.getTokenReload
+          );
+        }, 1400);
+      } else {
+        console.log("The dates are 30 seconds or less apart.");
+      }
+    }
+  }, [
+    chainStore.current.chainId,
+    refreshDate,
+    universalSwapStore.getTokenReload,
+  ]);
+
+  // This section for getting all tokens of all chains
+
+  const accountOrai = accountStore.getAccount(ChainIdEnum.Oraichain);
+  const accountEth = accountStore.getAccount(ChainIdEnum.Ethereum);
+  const accountTron = accountStore.getAccount(ChainIdEnum.TRON);
+  const accountKawaiiCosmos = accountStore.getAccount(ChainIdEnum.KawaiiCosmos);
+
+  const loadTokenAmounts = useLoadTokens(universalSwapStore);
+  // handle fetch all tokens of all chains
+  const handleFetchAmounts = async (orai?, eth?, tron?, kwt?, tokenReload?) => {
+    let loadTokenParams = {};
+
+    try {
+      const cwStargate = {
+        account: accountOrai,
+        chainId: ChainIdEnum.Oraichain,
+        rpc: oraichainNetwork.rpc,
+      };
+      loadTokenParams = {
+        ...loadTokenParams,
+        oraiAddress: orai ?? accountOrai.bech32Address,
+        metamaskAddress: eth ?? accountEth.evmosHexAddress,
+        kwtAddress: kwt ?? accountKawaiiCosmos.bech32Address,
+        tronAddress: getBase58Address(tron ?? accountTron.evmosHexAddress),
+        cwStargate,
+        tokenReload: tokenReload.length > 0 ? tokenReload : null,
+      };
+
+      setTimeout(() => {
+        loadTokenAmounts(loadTokenParams);
+        universalSwapStore.clearTokenReload();
+      }, 1000);
+    } catch (error) {
+      console.log("error loadTokenAmounts", error);
+      showToast({
+        message: error?.message ?? error?.ex?.message,
+        type: "danger",
+      });
+    }
+  };
+
+  useEffect(() => {
+    universalSwapStore.setLoaded(false);
+  }, [accountOrai.bech32Address]);
+
+  useEffect(() => {
+    InteractionManager.runAfterInteractions(() => {
+      if (
+        accountOrai.bech32Address &&
+        accountEth.evmosHexAddress &&
+        accountTron.evmosHexAddress &&
+        accountKawaiiCosmos.bech32Address
+      ) {
+        setTimeout(() => {
+          handleFetchAmounts(
+            accountOrai.bech32Address,
+            accountEth.evmosHexAddress,
+            accountTron.evmosHexAddress,
+            accountKawaiiCosmos.bech32Address,
+            universalSwapStore.getTokenReload
+          );
+        }, 1400);
+      }
+    });
+  }, [
+    accountOrai.bech32Address,
+    accountEth.evmosHexAddress,
+    accountTron.evmosHexAddress,
+    accountKawaiiCosmos.bech32Address,
+    universalSwapStore.getTokenReload,
+  ]);
+
+  const { data: prices } = useCoinGeckoPrices();
+
+  useEffect(() => {
+    appInitStore.updatePrices(prices);
+  }, [prices]);
+
   const renderAccountCard = (() => {
     if (chainStore.current.networkType === "bitcoin") {
       return <AccountCardBitcoin containerStyle={styles.containerStyle} />;
@@ -163,14 +275,26 @@ export const HomeScreen: FunctionComponent = observer((props) => {
     }
     return <AccountCard containerStyle={styles.containerStyle} />;
   })();
-  const renderTokenCard = useMemo(() => {
-    if (chainStore.current.networkType === "bitcoin") {
-      return <TokensBitcoinCard refreshDate={refreshDate} />;
-    } else if (chainStore.current.chainId === TRON_ID) {
-      return <TronTokensCard />;
-    }
-    return <TokensCard refreshDate={refreshDate} />;
-  }, [chainStore.current.networkType, chainStore.current.chainId]);
+
+  // const renderTokenCard = useMemo(() => {
+  //   if (chainStore.current.networkType === 'bitcoin') {
+  //     return <TokensBitcoinCard refreshDate={refreshDate} />;
+  //   } else if (chainStore.current.chainId === ChainIdEnum.TRON) {
+  //     return <TronTokensCard />;
+  //   }
+  //   return <TokensCard refreshDate={refreshDate} />;
+  // }, []);
+
+  const oldUI = false;
+
+  const renderNewTokenCard = () => {
+    return <TokensCardAll />;
+  };
+
+  const renderNewAccountCard = (() => {
+    return <AccountBoxAll />;
+  })();
+
   return (
     <PageWithScrollViewInBottomTabView
       refreshControl={
@@ -181,15 +305,14 @@ export const HomeScreen: FunctionComponent = observer((props) => {
       ref={scrollViewRef}
     >
       <BIP44Selectable />
-      {renderAccountCard}
+      {oldUI ? renderAccountCard : renderNewAccountCard}
       <DashboardCard />
-      {renderTokenCard}
-      {chainStore.current.networkType === "cosmos" ? (
-        <UndelegationsCard />
+      {chainStore.current.networkType === "cosmos" &&
+      !appInitStore.getInitApp.isAllNetworks ? (
+        <EarningCardNew containerStyle={styles.containerEarnStyle} />
       ) : null}
-      {chainStore.current.networkType === "cosmos" ? (
-        <EarningCard containerStyle={styles.containerEarnStyle} />
-      ) : null}
+      {renderNewTokenCard()}
+      {/* {chainStore.current.networkType === 'cosmos' ? <UndelegationsCard /> : null} */}
     </PageWithScrollViewInBottomTabView>
   );
 });

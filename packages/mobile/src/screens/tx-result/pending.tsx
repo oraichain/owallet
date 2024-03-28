@@ -3,30 +3,45 @@ import { RouteProp, useIsFocused, useRoute } from "@react-navigation/native";
 import { observer } from "mobx-react-lite";
 import { useStore } from "../../stores";
 import {
-  PageWithScrollView,
-  PageWithScrollViewInBottomTabView,
-  PageWithView,
-} from "../../components/page";
-import { View, StyleSheet, Image } from "react-native";
+  View,
+  StyleSheet,
+  Image,
+  ScrollView,
+  InteractionManager,
+} from "react-native";
 import { Text } from "@src/components/text";
-import { Button } from "../../components/button";
 import { useSmartNavigation } from "../../navigation.provider";
-import { HomeOutlineIcon, RightArrowIcon } from "../../components/icon";
-import { TendermintTxTracer } from "@owallet/cosmos";
+import { Bech32Address, TendermintTxTracer } from "@owallet/cosmos";
 import { Buffer } from "buffer";
 import { metrics } from "../../themes";
-import { Card, CardBody, OWBox } from "../../components/card";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { CommonActions } from "@react-navigation/native";
 import { useTheme } from "@src/themes/theme-provider";
-import { SUCCESS } from "../../utils/helper";
+import {
+  capitalizedText,
+  formatContractAddress,
+  openLink,
+  SUCCESS,
+} from "../../utils/helper";
 import { ChainIdEnum } from "@owallet/common";
 import { API } from "@src/common/api";
 import { OwalletEvent, TxRestCosmosClient, TRON_ID } from "@owallet/common";
+import { PageWithBottom } from "@src/components/page/page-with-bottom";
+import { OWButton } from "@src/components/button";
+import { PageHeader } from "@src/components/header/header-new";
+import ItemReceivedToken from "@src/screens/transactions/components/item-received-token";
+import OWCard from "@src/components/card/ow-card";
+import image from "@src/assets/images";
+import { CoinPretty, Dec, Int } from "@owallet/unit";
+import { AppCurrency, StdFee } from "@owallet/types";
+import { CoinPrimitive } from "@owallet/stores";
+import _ from "lodash";
+
 export const TxPendingResultScreen: FunctionComponent = observer(() => {
-  const { chainStore } = useStore();
+  const { chainStore, txsStore, accountStore, keyRingStore, priceStore } =
+    useStore();
+
   const [retry, setRetry] = useState(3);
   const { colors, images } = useTheme();
+  const [data, setData] = useState<Partial<ResTxsInfo>>();
   const route = useRoute<
     RouteProp<
       Record<
@@ -36,37 +51,44 @@ export const TxPendingResultScreen: FunctionComponent = observer(() => {
           // Hex encoded bytes.
           txHash: string;
           tronWeb?: any;
+          title: string;
+          data?: {
+            memo: string;
+            fee: StdFee;
+            fromAddress: string;
+            toAddress: string;
+            amount: CoinPrimitive;
+            currency: AppCurrency;
+          };
         }
       >,
       string
     >
   >();
-  const chainId = route?.params?.chainId
-    ? route?.params?.chainId
-    : chainStore?.current?.chainId;
+
+  const { current } = chainStore;
+  const chainId = current.chainId;
+  const { params } = route;
+  const accountAddress = accountStore
+    .getAccount(chainId)
+    .getAddressDisplay(keyRingStore.keyRingLedgerAddresses, false);
+  const txHash = params?.txHash;
+  const chainInfo = chainStore.getChain(chainId);
 
   const smartNavigation = useSmartNavigation();
-
   const isFocused = useIsFocused();
-  const { bottom } = useSafeAreaInsets();
-  const restApi = chainStore.current?.rest;
-  const restConfig = chainStore.current?.restConfig;
-  const txRestCosmos = new TxRestCosmosClient(restApi, restConfig);
+
   const getTronTx = async (txHash) => {
     const transaction = await route.params.tronWeb?.trx.getTransactionInfo(
       txHash
     );
     setRetry(retry - 1);
-
     return transaction;
   };
 
   useEffect(() => {
-    const txHash = route?.params?.txHash;
-    const chainInfo = chainStore.getChain(chainId);
-    let txTracer: TendermintTxTracer | undefined;
-
-    if (isFocused) {
+    // let txTracer: TendermintTxTracer | undefined;
+    if (isFocused && chainId && chainInfo) {
       if (chainId === TRON_ID) {
         // It may take a while to confirm transaction in TRON, show we make retry few times until it is done
         if (retry >= 0) {
@@ -83,14 +105,14 @@ export const TxPendingResultScreen: FunctionComponent = observer(() => {
                   });
                 } else {
                   smartNavigation.pushSmart("TxFailedResult", {
-                    chainId: chainStore.current.chainId,
+                    chainId: current.chainId,
                     txHash: transaction.id,
                   });
                 }
               }
               if (retry === 0) {
                 smartNavigation.pushSmart("TxFailedResult", {
-                  chainId: chainStore.current.chainId,
+                  chainId: current.chainId,
                   txHash: txHash,
                 });
               }
@@ -98,11 +120,11 @@ export const TxPendingResultScreen: FunctionComponent = observer(() => {
           }, 33000);
         } else {
           smartNavigation.pushSmart("TxFailedResult", {
-            chainId: chainStore.current.chainId,
+            chainId: current.chainId,
             txHash: txHash,
           });
         }
-      } else if (chainId === ChainIdEnum.BitcoinTestnet) {
+      } else if (chainId === ChainIdEnum.Bitcoin) {
         API.checkStatusTxBitcoinTestNet(chainInfo.rest, txHash)
           .then((res: any) => {
             if (res?.confirmed) {
@@ -112,48 +134,63 @@ export const TxPendingResultScreen: FunctionComponent = observer(() => {
             }
           })
           .catch((err) => console.log(err, "err data"));
-      } else if (chainId.startsWith("injective")) {
+      } else if (
+        chainId.startsWith("injective") ||
+        chainStore.current.networkType === "evm"
+      ) {
+        const data = {
+          ...params?.data,
+        };
         OwalletEvent.txHashListener(txHash, (txInfo) => {
+          console.log(txHash, txInfo, "txInfo");
           if (txInfo?.code === 0) {
             smartNavigation.replaceSmart("TxSuccessResult", {
               chainId,
               txHash,
+              data,
             });
             return;
           } else {
             smartNavigation.replaceSmart("TxFailedResult", {
               chainId,
               txHash,
+              data,
             });
           }
         });
-      } else {
-        txTracer = new TendermintTxTracer(chainInfo.rpc, "/websocket");
-        txTracer
-          .traceTx(Buffer.from(txHash, "hex"))
-          .then((tx) => {
-            if (tx.code == null || tx.code === 0) {
-              smartNavigation.replaceSmart("TxSuccessResult", {
-                chainId,
-                txHash,
-              });
-            } else {
-              smartNavigation.replaceSmart("TxFailedResult", {
-                chainId,
-                txHash,
-              });
-            }
-          })
-          .catch((e) => {
-            console.log(`Failed to trace the tx (${txHash})`, e);
-          });
       }
+      // else {
+      //   txTracer = new TendermintTxTracer(chainInfo.rpc, "/websocket");
+      //   txTracer
+      //     .traceTx(Buffer.from(txHash, "hex"))
+      //     .then((tx) => {
+      //       const data = {
+      //         ...params?.data,
+      //       };
+      //       if (tx.code == null || tx.code === 0) {
+      //         smartNavigation.replaceSmart("TxSuccessResult", {
+      //           chainId,
+      //           txHash,
+      //           data,
+      //         });
+      //       } else {
+      //         smartNavigation.replaceSmart("TxFailedResult", {
+      //           chainId,
+      //           txHash,
+      //           data,
+      //         });
+      //       }
+      //     })
+      //     .catch((e) => {
+      //       console.log(`Failed to trace the tx (${txHash})`, e);
+      //     });
+      // }
     }
 
     return () => {
-      if (txTracer) {
-        txTracer.close();
-      }
+      // if (txTracer) {
+      //   txTracer.close();
+      // }
     };
   }, [
     chainId,
@@ -163,80 +200,185 @@ export const TxPendingResultScreen: FunctionComponent = observer(() => {
     smartNavigation,
     retry,
   ]);
+  const handleOnExplorer = async () => {
+    if (chainInfo.raw.txExplorer && txHash) {
+      await openLink(
+        chainInfo.raw.txExplorer.txUrl.replace(
+          "{txHash}",
+          chainInfo.chainId === TRON_ID || chainInfo.networkType === "bitcoin"
+            ? txHash
+            : txHash.toUpperCase()
+        )
+      );
+    }
+  };
+  const amount = new CoinPretty(
+    params?.data?.currency,
+    new Dec(params?.data?.amount?.amount)
+  );
+  const chainTxs =
+    chainStore.current.chainId === ChainIdEnum.KawaiiEvm
+      ? chainStore.getChain(ChainIdEnum.KawaiiCosmos)
+      : chainStore.current;
+  const txs = txsStore(chainTxs);
+  const getDetailByHash = async (txHash) => {
+    try {
+      const tx = await txs.getTxsByHash(txHash, accountAddress);
+      setData(tx);
+    } catch (error) {
+      console.log("error: ", error);
+    }
+  };
+  useEffect(() => {
+    if (txHash) {
+      InteractionManager.runAfterInteractions(() => {
+        if (chainInfo.networkType === "cosmos") {
+          const restApi = chainInfo?.rest;
+          const restConfig = chainInfo?.restConfig;
+          const txRestCosmos = new TxRestCosmosClient(restApi, restConfig);
+          txRestCosmos
+            .fetchTxPoll(txHash)
+            .then((tx) => {
+              const data = {
+                ...params?.data,
+              };
+              if (tx.code == null || tx.code === 0) {
+                smartNavigation.replaceSmart("TxSuccessResult", {
+                  chainId,
+                  txHash,
+                  data,
+                });
+              } else {
+                smartNavigation.replaceSmart("TxFailedResult", {
+                  chainId,
+                  txHash,
+                  data,
+                });
+              }
+            })
+            .catch((err) => console.log(err));
+        }
+        getDetailByHash(txHash);
+      });
+    }
+  }, [txHash]);
+  const fee = () => {
+    if (params?.data?.fee) {
+      return new CoinPretty(
+        chainInfo.stakeCurrency,
+        new Dec(params?.data?.fee.amount?.[0]?.amount)
+      );
+    } else {
+      if (data?.stdFee?.amount?.[0]?.amount) {
+        return new CoinPretty(
+          chainInfo.stakeCurrency,
+          new Dec(data?.stdFee?.amount?.[0]?.amount)
+        );
+      }
+      return new CoinPretty(chainInfo.stakeCurrency, new Dec(0));
+    }
+  };
+  const dataItem =
+    params?.data &&
+    _.pickBy(params?.data, function (value, key) {
+      return (
+        key !== "memo" &&
+        key !== "fee" &&
+        key !== "amount" &&
+        key !== "currency" &&
+        key !== "type"
+      );
+    });
 
   return (
-    <PageWithView>
-      <OWBox>
+    <PageWithBottom
+      bottomGroup={
         <View
           style={{
-            height: metrics.screenHeight - bottom - 74,
-            paddingTop: 80,
+            width: "100%",
+            paddingHorizontal: 16,
           }}
         >
+          <Text
+            style={{
+              textAlign: "center",
+              paddingVertical: 16,
+            }}
+          >
+            The transaction is still pending. {"\n"}
+            You can check the status on OraiScan
+          </Text>
+          <OWButton
+            label="View on Explorer"
+            onPress={handleOnExplorer}
+            style={[
+              {
+                borderRadius: 99,
+              },
+            ]}
+            textStyle={{
+              fontSize: 14,
+              fontWeight: "600",
+            }}
+          />
+        </View>
+      }
+    >
+      <View
+        style={{
+          flex: 1,
+        }}
+      >
+        <PageHeader
+          title={"Transaction details"}
+          colors={colors["neutral-text-title"]}
+        />
+        <ScrollView showsVerticalScrollIndicator={false}>
           <View
             style={{
-              display: "flex",
               flexDirection: "row",
               alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 8,
             }}
           >
             <Image
+              source={image.logo_owallet}
               style={{
-                width: 24,
-                height: 2,
+                width: 20,
+                height: 20,
               }}
-              fadeDuration={0}
-              resizeMode="stretch"
-              source={images.line_pending_short}
             />
-            <Image
-              style={{
-                width: 144,
-                height: 32,
-                marginLeft: 8,
-                marginRight: 9,
-              }}
-              fadeDuration={0}
-              resizeMode="stretch"
-              source={images.pending}
-            />
-            <Image
-              style={{
-                width: metrics.screenWidth - 185,
-                height: 2,
-              }}
-              fadeDuration={0}
-              resizeMode="stretch"
-              source={images.line_pending_long}
-            />
-          </View>
-          <View
-            style={{
-              paddingLeft: 32,
-              paddingRight: 72,
-            }}
-          >
             <Text
+              color={colors["neutral-text-title"]}
+              size={18}
+              weight={"600"}
               style={{
-                fontWeight: "700",
-                fontSize: 24,
-                lineHeight: 34,
-                paddingTop: 44,
-                paddingBottom: 16,
+                paddingLeft: 8,
               }}
-              color={colors["text-title-login"]}
             >
-              Transaction Processing...
+              OWallet
             </Text>
+          </View>
+          <OWCard
+            style={{
+              paddingVertical: 20,
+              borderRadius: 24,
+              alignItems: "center",
+              justifyContent: "center",
+              marginBottom: 2,
+            }}
+          >
             <Text
               style={{
-                fontWeight: "400",
-                fontSize: 14,
-                lineHeight: 20,
-                color: colors["primary-text"],
+                textAlign: "center",
+                paddingBottom: 8,
               }}
+              color={colors["neutral-text-title"]}
+              size={16}
+              weight={"500"}
             >
-              Hang on as the process might take some time to complete.
+              {capitalizedText(params?.data?.type) || "Send"}
             </Text>
             <Image
               style={{
@@ -247,38 +389,67 @@ export const TxPendingResultScreen: FunctionComponent = observer(() => {
               resizeMode="stretch"
               source={require("../../assets/image/transactions/process_pedding.gif")}
             />
-            <View
+            <Text
+              color={colors["neutral-text-title"]}
               style={{
-                paddingTop: 32,
-                display: "flex",
-                flexDirection: "row",
-                alignItems: "center",
+                textAlign: "center",
+                paddingTop: 16,
+              }}
+              size={28}
+              weight={"500"}
+            >
+              {`${params?.data?.type === "send" ? "-" : ""}${amount
+                ?.shrink(true)
+                ?.trim(true)
+                ?.toString()}`}
+            </Text>
+            <Text
+              color={colors["neutral-text-body"]}
+              style={{
+                textAlign: "center",
               }}
             >
-              <HomeOutlineIcon color={colors["background-btn-primary"]} />
-              <Text
-                style={{
-                  paddingLeft: 6,
-                  color: colors["background-btn-primary"],
-                  fontWeight: "400",
-                  fontSize: 16,
-                  lineHeight: 22,
-                }}
-                onPress={() => {
-                  smartNavigation.dispatch(
-                    CommonActions.reset({
-                      index: 1,
-                      routes: [{ name: "MainTab" }],
-                    })
-                  );
-                }}
-              >
-                Return to home screen
-              </Text>
-            </View>
+              {priceStore.calculatePrice(amount)?.toString()}
+            </Text>
+          </OWCard>
+          <View
+            style={{
+              padding: 16,
+              borderRadius: 24,
+              marginHorizontal: 16,
+              backgroundColor: colors["neutral-surface-card"],
+            }}
+          >
+            {dataItem &&
+              Object.keys(dataItem).map(function (key) {
+                return (
+                  <ItemReceivedToken
+                    label={capitalizedText(key)}
+                    valueDisplay={
+                      dataItem?.[key] &&
+                      formatContractAddress(dataItem?.[key], 20)
+                    }
+                    value={dataItem?.[key]}
+                  />
+                );
+              })}
+
+            <ItemReceivedToken
+              label={"Fee"}
+              valueDisplay={`${fee()
+                ?.shrink(true)
+                ?.trim(true)
+                ?.toString()} (${priceStore.calculatePrice(fee())})`}
+              btnCopy={false}
+            />
+            <ItemReceivedToken
+              label={"Memo"}
+              valueDisplay={params?.data?.memo || "-"}
+              btnCopy={false}
+            />
           </View>
-        </View>
-      </OWBox>
-    </PageWithView>
+        </ScrollView>
+      </View>
+    </PageWithBottom>
   );
 });

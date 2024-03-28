@@ -74,6 +74,6 @@ export default useHeaderOptions;
 
 const styles = StyleSheet.create({
   btnIcon: {
-    paddingRight: 20,
+    paddingRight: 35,
   },
 });

@@ -6,15 +6,31 @@ export class UniversalSwapStore {
   @persist("object")
   @observable
   protected amounts: { string: string } | {};
+  @persist("object")
+  @observable
+  protected tokenReload: Array<any>;
+  @observable
+  protected loadStatus: { isLoad: boolean; time: Date };
 
   constructor() {
     makeAutoObservable(this);
     this.amounts = {};
+    this.loadStatus = { isLoad: false, time: new Date() };
   }
 
   @computed
   get getAmount() {
     return this.amounts;
+  }
+
+  @computed
+  get getTokenReload() {
+    return this.tokenReload;
+  }
+
+  @computed
+  get getLoadStatus() {
+    return this.loadStatus;
   }
 
   @action
@@ -23,8 +39,23 @@ export class UniversalSwapStore {
   }
 
   @action
+  updateTokenReload(tokens) {
+    this.tokenReload = tokens;
+  }
+
+  @action
+  setLoaded(loaded: boolean) {
+    this.loadStatus = { ...this.loadStatus, isLoad: loaded, time: new Date() };
+  }
+
+  @action
   clearAmounts() {
     this.amounts = {};
+  }
+
+  @action
+  clearTokenReload() {
+    this.tokenReload = [];
   }
 }
 

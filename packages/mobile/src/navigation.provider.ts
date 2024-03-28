@@ -1,5 +1,5 @@
 import { ExportKeyRingData } from "@owallet/background";
-import { BIP44HDPath } from "@owallet/types";
+import { AppCurrency, BIP44HDPath, StdFee } from "@owallet/types";
 import { NewMnemonicConfig } from "./screens/register/mnemonic";
 import {
   AddressBookConfig,
@@ -10,6 +10,8 @@ import {
 } from "@owallet/hooks";
 
 import { createSmartNavigatorProvider, SmartNavigator } from "./hooks";
+import { CoinPretty } from "@owallet/unit";
+import { CoinPrimitive } from "@owallet/stores";
 
 const { SmartNavigatorProvider, useSmartNavigation } =
   createSmartNavigatorProvider(
@@ -60,6 +62,9 @@ const { SmartNavigatorProvider, useSmartNavigation } =
         upperScreenName: "Main",
       },
       Send: {
+        upperScreenName: "Others",
+      },
+      NewSend: {
         upperScreenName: "Others",
       },
       SendTron: {
@@ -220,6 +225,7 @@ const { SmartNavigatorProvider, useSmartNavigation } =
       };
       Send: {
         chainId?: string;
+        coinGeckoId?: string;
         currency?: string;
         recipient?: string;
         contractAddress?: string;
@@ -264,14 +270,42 @@ const { SmartNavigatorProvider, useSmartNavigation } =
         chainId?: string;
         txHash: string;
         tronWeb?: any;
+        data?: {
+          type: string;
+          memo: string;
+          fee: CoinPretty | StdFee;
+          fromAddress: string;
+          toAddress: string;
+          walletAddress: string;
+          validatorAddress: string;
+          amount: CoinPrimitive;
+          currency: AppCurrency;
+        };
       };
       TxSuccessResult: {
         chainId?: string;
         txHash?: string;
+        data?: {
+          type: string;
+          memo: string;
+          fee: CoinPretty | StdFee;
+          fromAddress: string;
+          toAddress: string;
+          amount: CoinPrimitive;
+          currency: AppCurrency;
+        };
       };
       TxFailedResult: {
         chainId?: string;
         txHash: string;
+        data?: {
+          memo: string;
+          fee: CoinPretty | StdFee;
+          fromAddress: string;
+          toAddress: string;
+          amount: CoinPrimitive;
+          currency: AppCurrency;
+        };
       };
     }>()
   );

@@ -3,14 +3,20 @@ import { PageWithScrollViewInBottomTabView } from "../../components/page";
 import { Text } from "@src/components/text";
 import { useTheme } from "@src/themes/theme-provider";
 import { observer } from "mobx-react-lite";
-import { RefreshControl, View } from "react-native";
+import { InteractionManager, RefreshControl, View } from "react-native";
 import { useStore } from "../../stores";
 import { SwapBox } from "./components/SwapBox";
 import { OWButton } from "@src/components/button";
 import OWButtonIcon from "@src/components/button/ow-button-icon";
 import { BalanceText } from "./components/BalanceText";
 import { SelectNetworkModal, SelectTokenModal, SlippageModal } from "./modals/";
-import { showToast, _keyExtract } from "@src/utils/helper";
+import {
+  getTokenInfos,
+  handleSaveHistory,
+  HISTORY_STATUS,
+  showToast,
+  _keyExtract,
+} from "@src/utils/helper";
 import {
   DEFAULT_SLIPPAGE,
   GAS_ESTIMATION_SWAP_DEFAULT,
@@ -62,7 +68,8 @@ import {
 import { getTransactionUrl, handleErrorSwap } from "./helpers";
 import { useQuery } from "@tanstack/react-query";
 import { Mixpanel } from "mixpanel-react-native";
-import { filterNonPoolEvmTokens } from "./handler/src";
+import { API } from "@src/common/api";
+import { filterNonPoolEvmTokens } from "./handler/src/helper";
 const mixpanel = globalThis.mixpanel as Mixpanel;
 
 const RELAYER_DECIMAL = 6; // TODO: hardcode decimal relayerFee
@@ -270,7 +277,7 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
 
   const loadTokenAmounts = useLoadTokens(universalSwapStore);
   // handle fetch all tokens of all chains
-  const handleFetchAmounts = async (orai?, eth?, tron?, kwt?) => {
+  const handleFetchAmounts = async (tokenReload?, orai?, eth?, tron?, kwt?) => {
     let loadTokenParams = {};
     try {
       const cwStargate = {
@@ -285,10 +292,12 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
         kwtAddress: kwt ?? accountKawaiiCosmos.bech32Address,
         tronAddress: getBase58Address(tron ?? accountTron.evmosHexAddress),
         cwStargate,
+        tokenReload: tokenReload.length > 0 ? tokenReload : null,
       };
 
       setTimeout(() => {
         loadTokenAmounts(loadTokenParams);
+        universalSwapStore.clearTokenReload();
       }, 1000);
     } catch (error) {
       console.log("error loadTokenAmounts", error);
@@ -300,22 +309,26 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
   };
 
   useEffect(() => {
-    if (
-      accountOrai.bech32Address &&
-      accountEth.evmosHexAddress &&
-      accountTron.evmosHexAddress &&
-      accountKawaiiCosmos.bech32Address
-    ) {
-      setTimeout(() => {
-        universalSwapStore.clearAmounts();
-        handleFetchAmounts(
-          accountOrai.bech32Address,
-          accountEth.evmosHexAddress,
-          accountTron.evmosHexAddress,
-          accountKawaiiCosmos.bech32Address
-        );
-      }, 1000);
-    }
+    InteractionManager.runAfterInteractions(() => {
+      if (
+        accountOrai.bech32Address &&
+        accountEth.evmosHexAddress &&
+        accountTron.evmosHexAddress &&
+        accountKawaiiCosmos.bech32Address
+      ) {
+        setTimeout(() => {
+          universalSwapStore.clearAmounts();
+          universalSwapStore.setLoaded(false);
+          handleFetchAmounts(
+            [],
+            accountOrai.bech32Address,
+            accountEth.evmosHexAddress,
+            accountTron.evmosHexAddress,
+            accountKawaiiCosmos.bech32Address
+          );
+        }, 1000);
+      }
+    });
   }, [
     accountOrai.bech32Address,
     accountEth.evmosHexAddress,
@@ -331,6 +344,7 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
       searchTokenName,
       SwapDirection.To
     );
+
     setFilteredToTokens(filteredToTokens);
 
     const filteredFromTokens = filterNonPoolEvmTokens(
@@ -489,19 +503,30 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
     setBalanceActive(item);
   };
 
+  const handleSaveTokenInfos = async (tokenInfos) => {
+    await API.saveTokenInfos(
+      {
+        address: accountOrai.bech32Address,
+        tokesInfos: tokenInfos,
+      },
+      {
+        baseURL: "https://staging.owallet.dev/",
+      }
+    );
+  };
+
   const handleSubmit = async () => {
+    setSwapLoading(true);
     if (fromAmountToken <= 0) {
       showToast({
         message: "From amount should be higher than 0!",
         type: "danger",
       });
+      setSwapLoading(false);
       return;
     }
 
-    setSwapLoading(true);
-    let defaultEvmAddress = accountStore.getAccount(
-      ChainIdEnum.Ethereum
-    ).evmosHexAddress;
+    let defaultEvmAddress = accountEth.evmosHexAddress;
     Object.keys(ChainIdEnum).map((key) => {
       let defaultCosmosAddress = accountStore.getAccount(
         ChainIdEnum[key]
@@ -558,9 +583,9 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
         originalFromToken: originalFromToken,
         originalToToken: originalToToken,
         simulateAmount: toAmountTokenString,
-        // @ts-ignore
         simulatePrice:
           ratio?.amount &&
+          // @ts-ignore
           Math.trunc(new BigDecimal(ratio.amount) / INIT_AMOUNT).toString(),
         userSlippage: userSlippage,
         fromAmount: fromAmountToken,
@@ -582,6 +607,39 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
 
       if (result) {
         const { transactionHash } = result;
+        try {
+          const historyInfos = {
+            fromAddress: accounts[originalFromToken.chainId],
+            toAddress: accounts[originalToToken.chainId],
+            hash: transactionHash,
+            memo: "",
+            fromAmount: fromAmountToken,
+            toAmount: toAmountToken,
+            value: toAmountToken,
+            fee: `${(toAmountToken - minimumReceive).toFixed(6)} ${
+              originalToToken.name
+            }`,
+            type: HISTORY_STATUS.SWAP,
+            fromToken: {
+              asset: originalFromToken.name,
+              chainId: originalFromToken.chainId,
+            },
+            toToken: {
+              asset: originalToToken.name,
+              chainId: originalToToken.chainId,
+            },
+            status: "SUCCESS",
+          };
+
+          const res = await handleSaveHistory(
+            accountOrai.bech32Address,
+            historyInfos
+          );
+
+          console.log("res handleSaveHistory", res);
+        } catch (err) {
+          console.log("err on handleSaveHistory", err);
+        }
 
         setSwapLoading(false);
         showToast({
@@ -595,7 +653,18 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
             }
           },
         });
-        await handleFetchAmounts();
+
+        await handleFetchAmounts([originalFromToken, originalToToken]);
+        const tokens = getTokenInfos({
+          tokens: universalSwapStore.getAmount,
+          prices: appInitStore.getInitApp.prices,
+          networkFilter: appInitStore.getInitApp.isAllNetworks
+            ? ""
+            : chainStore.current.chainId,
+        });
+        if (tokens.length > 0) {
+          handleSaveTokenInfos(tokens);
+        }
       }
     } catch (error) {
       setSwapLoading(false);
@@ -613,7 +682,7 @@ export const UniversalSwapScreen: FunctionComponent = observer(() => {
 
   const onRefresh = async () => {
     setLoadingRefresh(true);
-    await handleFetchAmounts();
+    await handleFetchAmounts([]);
     await estimateAverageRatio();
     setLoadingRefresh(false);
   };

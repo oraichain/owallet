@@ -9,7 +9,6 @@ import {
   TRON_ID,
   COINTYPE_NETWORK,
   getKeyDerivationFromAddressType,
-  ChainIdEnum,
 } from "@owallet/common";
 import { TouchableOpacity } from "react-native-gesture-handler";
 import { BottomSheetFlatList } from "@gorhom/bottom-sheet";
@@ -36,12 +35,21 @@ export const NetworkModal = () => {
 
   const account = accountStore.getAccount(chainStore.current.chainId);
   const styles = styling(colors);
-  // let totalUsd: number = 0;
-  // let todayAssets;
-  // if (Object.keys(appInitStore.getInitApp.prices).length > 0 && Object.keys(universalSwapStore.getAmount).length > 0) {
-  //   totalUsd = getTotalUsd(universalSwapStore.getAmount, appInitStore.getInitApp.prices);
-  //   todayAssets = getTokenInfos({ tokens: universalSwapStore.getAmount, prices: appInitStore.getInitApp.prices });
-  // }
+  let totalUsd: number = 0;
+  let todayAssets;
+  if (
+    Object.keys(appInitStore.getInitApp.prices).length > 0 &&
+    Object.keys(universalSwapStore.getAmount).length > 0
+  ) {
+    totalUsd = getTotalUsd(
+      universalSwapStore.getAmount,
+      appInitStore.getInitApp.prices
+    );
+    todayAssets = getTokenInfos({
+      tokens: universalSwapStore.getAmount,
+      prices: appInitStore.getInitApp.prices,
+    });
+  }
 
   const onConfirm = async (item: any) => {
     const { networkType } = chainStore.getChain(item?.chainId);
@@ -65,19 +73,19 @@ export const NetworkModal = () => {
       item?.chainId
     );
   };
-  // const groupedData = todayAssets?.reduce((result, element) => {
-  //   const key = element.chainId;
+  const groupedData = todayAssets?.reduce((result, element) => {
+    const key = element.chainId;
 
-  //   if (!result[key]) {
-  //     result[key] = {
-  //       sum: 0
-  //     };
-  //   }
+    if (!result[key]) {
+      result[key] = {
+        sum: 0,
+      };
+    }
 
-  //   result[key].sum += element.value;
+    result[key].sum += element.value;
 
-  //   return result;
-  // }, {});
+    return result;
+  }, {});
 
   const handleSwitchNetwork = useCallback(async (item) => {
     try {
@@ -107,6 +115,7 @@ export const NetworkModal = () => {
         });
         return;
       } else {
+        modalStore.close();
         if (!item.isAll) {
           chainStore.selectChain(item?.chainId);
           await chainStore.saveLastViewChainId();
@@ -196,14 +205,17 @@ export const NetworkModal = () => {
             >
               {item.chainName}
             </Text>
-            {/* <Text
+            <Text
               style={{
-                color: colors['neutral-text-body']
+                color: colors["neutral-text-body"],
               }}
               numberOfLines={1}
             >
-              ${!item.chainId ? totalUsd?.toFixed(6) : Number(groupedData?.[item.chainId]?.sum ?? 0).toFixed(6)}
-            </Text> */}
+              $
+              {!item.chainId
+                ? totalUsd?.toFixed(6)
+                : Number(groupedData?.[item.chainId]?.sum ?? 0).toFixed(6)}
+            </Text>
           </View>
         </View>
 
@@ -285,7 +297,9 @@ export const NetworkModal = () => {
           height: metrics.screenHeight / 2,
         }}
       >
-        {/* {account.isNanoLedger ? null : _renderItem({ item: { chainName: 'All networks', isAll: true } })} */}
+        {account.isNanoLedger
+          ? null
+          : _renderItem({ item: { chainName: "All networks", isAll: true } })}
         <BottomSheetFlatList
           data={chainStore.chainInfosInUI}
           renderItem={_renderItem}

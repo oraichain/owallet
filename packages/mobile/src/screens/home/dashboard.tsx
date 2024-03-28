@@ -135,14 +135,10 @@ export const DashboardCard: FunctionComponent<{
   });
 
   useEffect(() => {
-    console.log("refetch", chainStore.current.stakeCurrency.coinGeckoId, res);
-
     refetch();
   }, [chainStore.current.stakeCurrency.coinGeckoId]);
 
   useEffect(() => {
-    console.log("res", res);
-
     if (res?.status === 200 && typeof res?.data === "object") {
       setNetworkError(false);
       setData(formatData(transformData(res.data?.prices)));
@@ -167,7 +163,7 @@ export const DashboardCard: FunctionComponent<{
   }, [chainStore.current.chainId, data]);
 
   return (
-    <OWBox>
+    <OWBox style={{ marginHorizontal: 16, width: metrics.screenWidth - 32 }}>
       <Text
         style={{
           alignSelf: "center",
@@ -229,7 +225,7 @@ export const DashboardCard: FunctionComponent<{
         <OWEmpty
           style={styles.emptyChart}
           type="crash"
-          label={`Something went wrong with the chart.\nPlease pull to refresh.`}
+          label={`Empty data.\nPlease pull to refresh.`}
         />
       ) : null}
       {!isNetworkError && active === "price" ? (
@@ -239,7 +235,7 @@ export const DashboardCard: FunctionComponent<{
           withInnerLines={false}
           yAxisLabel={"$"}
           yAxisSuffix={chartSuffix}
-          width={metrics.screenWidth - 48}
+          width={metrics.screenWidth - 60}
           height={256}
           chartConfig={chartConfig}
           bezier
@@ -247,7 +243,7 @@ export const DashboardCard: FunctionComponent<{
       ) : !isNetworkError ? (
         <BarChart
           data={dataVolumes}
-          width={metrics.screenWidth - 48}
+          width={metrics.screenWidth - 60}
           height={256}
           yAxisLabel="$"
           yAxisSuffix={chartSuffix}

@@ -2,7 +2,6 @@ import { navigate } from "../../router/root";
 import isValidDomain from "is-valid-domain";
 import { find } from "lodash";
 import moment from "moment";
-import { tokensIcon } from "@owallet/common";
 import { AppCurrency } from "@owallet/types";
 import get from "lodash/get";
 import { TxsHelper } from "@src/stores/txs/helpers/txs-helper";
@@ -15,11 +14,10 @@ import {
   toAmount,
   toDisplay,
   toSumDisplay,
+  tokensIcon,
 } from "@oraichain/oraidex-common";
-import {
-  formatBaseUnitsAsRose,
-  formatWeiAsWrose,
-} from "@owallet/background/build/utils/oasis-helper";
+import { API } from "@src/common/api";
+
 const SCHEME_IOS = "owallet://open_url?url=";
 const SCHEME_ANDROID = "app.owallet.oauth://google/open_url?url=";
 export const ORAICHAIN_ID = "Oraichain";
@@ -155,6 +153,29 @@ export const formatContractAddress = (address: string, limitFirst = 10) => {
 
   return `${fristLetter}...${lastLetter}`;
 };
+export const convertArrToObject = (arr, label = `Validator`) => {
+  if (!arr?.length) return;
+  var rv = {};
+  for (var i = 0; i < arr.length; ++i) rv[`${label}${i + 1}`] = arr[i];
+  return rv;
+};
+export const removeDataInParentheses = (inputString: string): string => {
+  if (!inputString) return;
+  return inputString.replace(/\([^)]*\)/g, "");
+};
+export const extractDataInParentheses = (
+  inputString: string
+): string | null => {
+  if (!inputString) return;
+  const startIndex = inputString.indexOf("(");
+  const endIndex = inputString.indexOf(")");
+  if (startIndex !== -1 && endIndex !== -1) {
+    return inputString.substring(startIndex + 1, endIndex);
+  } else {
+    return null;
+  }
+};
+
 export function limitString(str, limit) {
   if (str && str.length > limit) {
     return str.slice(0, limit) + "...";
@@ -162,8 +183,10 @@ export function limitString(str, limit) {
     return str;
   }
 }
+
 // capital first letter of string
 export const capitalizedText = (text: string) => {
+  if (!text) return;
   return text.slice(0, 1).toUpperCase() + text.slice(1, text.length);
 };
 
@@ -272,6 +295,7 @@ export const openLink = async (url) => {
     // Alert.alert(error.message);
   }
 };
+
 export function parseObjectToQueryString(obj) {
   let params = new URLSearchParams();
   for (let key in obj) {
@@ -285,6 +309,7 @@ export function parseObjectToQueryString(obj) {
   }
   return "?" + params.toString();
 }
+
 export function removeEmptyElements(array) {
   return array.filter((element) => !!element);
 }
@@ -295,9 +320,11 @@ function convertVarToWord(str) {
     words && words.map((word) => word.charAt(0).toUpperCase() + word.slice(1));
   return capitalizedWords && capitalizedWords.join(" ");
 }
+
 export function removeSpecialChars(str) {
   return str.replace(/[^\w\s]/gi, "");
 }
+
 function addSpacesToString(str) {
   return str.replace(/([a-z])([A-Z])/g, "$1 $2");
 }
@@ -444,6 +471,7 @@ export const getDomainFromUrl = (url) => {
 export const parseIbcMsgRecvPacket = (denom) => {
   return denom?.slice(0, 1) === "u" ? denom?.slice(1, denom?.length) : denom;
 };
+
 export function addTimeProperty(array1, array2) {
   // Create a new object with heightId as the key and time as the value
   const timeMap = {};
@@ -458,6 +486,7 @@ export function addTimeProperty(array1, array2) {
 
   return array2;
 }
+
 export const getTxTypeNew = (type, rawLog = "[]", result = "") => {
   if (type) {
     const typeArr = type.split(".");
@@ -543,6 +572,7 @@ export function nFormatter(num, digits: 1) {
       }
     : { value: 0, symbol: "" };
 }
+
 export const getAddressFromLedgerWhenChangeNetwork = (
   address,
   ledgerAddress
@@ -648,6 +678,7 @@ export const getCurrencyByMinimalDenom = (
     coinMinimalDenom: minimalDenom,
   };
 };
+
 export function numberWithCommas(x) {
   return x ? x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") : "";
 }
@@ -656,15 +687,29 @@ export function createTxsHelper() {
   return new TxsHelper();
 }
 
-export const LRRedactProps = (redactionTag = "lr-hide") =>
-  Platform.OS === "ios"
-    ? {
-        testID: redactionTag,
-        accessible: false,
-      }
-    : { testID: redactionTag };
-
 export { get };
+
+export const handleSaveHistory = async (address, infos) => {
+  try {
+    const res = await API.saveHistory(
+      { address: address, infos },
+      {
+        baseURL: "https://staging.owallet.dev/",
+      }
+    );
+    return res;
+  } catch (err) {
+    console.log("err handleSaveHistory ", err);
+  }
+};
+
+export enum HISTORY_STATUS {
+  SWAP = "SWAP",
+  SEND = "SEND",
+  STAKE = "STAKE",
+  CLAIM = "CLAIM",
+  UNSTAKE = "UN_STAKE",
+}
 
 export function isPrivateKey(str: string): boolean {
   if (str?.startsWith("0x") || str?.startsWith("zs")) {

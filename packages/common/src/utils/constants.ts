@@ -24,9 +24,13 @@ export enum ChainIdEnum {
   BNBChainTestNet = "0x61",
   TRON = "0x2b6653dc",
   Oasis = "native-0x5afe",
+  OasisSapphire = "0x5afe",
+  OasisEmerald = "0xa516",
   BitcoinTestnet = "bitcoinTestnet",
   Bitcoin = "bitcoin",
   Injective = "injective-1",
+  Neutaro = "Neutaro-1",
+  Noble = "noble-1",
 }
 
 export enum KADOChainNameEnum {
@@ -48,15 +52,22 @@ export enum ChainNameEnum {
   Oraichain = "Oraichain",
   OraichainTestnet = "Oraichain-testnet",
   OraiBridge = "Orai Bride",
-  KawaiiCosmos = "Kawaii Cosmos",
-  KawaiiEvm = "Kawaii EVM",
+  KawaiiCosmos = "Kawaiiverse",
+  KawaiiEvm = "Kawaiiverse EVM",
   Ethereum = "Ethereum",
   CosmosHub = "Cosmos Hub",
   Osmosis = "Osmosis",
   Juno = "Juno",
   BNBChain = "BNB Chain",
   TRON = "Tron Network",
+  BitcoinLegacy = "Bitcoin(Legacy)",
+  BitcoinSegWit = "Bitcoin SegWit(BECH32)",
   Injective = "Injective",
+  Oasis = "Oasis",
+  OasisSapphire = "Oasis Sapphire",
+  OasisEmerald = "Oasis Emerald",
+  Neutaro = "Neutaro",
+  Noble = "Noble",
 }
 
 export const restBtc = {

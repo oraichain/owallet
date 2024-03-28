@@ -4,6 +4,7 @@ import { createStackNavigator } from "@react-navigation/stack";
 import useHeaderOptions from "@src/hooks/use-header";
 import { SCREENS, SCREENS_OPTIONS } from "@src/common/constants";
 import { SendScreen } from "@src/screens/send";
+import { SendEvmScreen } from "@src/screens/send/send-evm";
 import { TransferNFTScreen } from "@src/screens/transfer-nft";
 import { DashBoardScreen } from "@src/screens/dashboard";
 import { CameraScreen } from "@src/screens/camera";
@@ -30,6 +31,8 @@ import { SendBtcScreen } from "@src/screens/send/send-btc";
 import BtcFaucet from "@src/screens/home/btc-faucet";
 import BuyFiat from "@src/screens/home/buy-fiat";
 import { SendOasisScreen } from "@src/screens/send/send-oasis";
+import { NewSendScreen } from "@src/screens/send/send";
+import { AddressQRScreen } from "@src/screens/qr";
 const Stack = createStackNavigator();
 export const OtherNavigation: FC = () => {
   const handleScreenOptions = ({ route, navigation }) => {
@@ -42,6 +45,9 @@ export const OtherNavigation: FC = () => {
   return (
     <Stack.Navigator screenOptions={handleScreenOptions}>
       <Stack.Screen name={SCREENS.Send} component={SendScreen} />
+      {/*<Stack.Screen name={SCREENS.NewSend} component={NewSendScreen} />*/}
+      <Stack.Screen name={SCREENS.NewSend} component={NewSendScreen} />
+      <Stack.Screen name={SCREENS.SendEvm} component={SendEvmScreen} />
       <Stack.Screen name={SCREENS.SendOasis} component={SendOasisScreen} />
       <Stack.Screen name={SCREENS.TransferNFT} component={TransferNFTScreen} />
       <Stack.Screen
@@ -59,6 +65,14 @@ export const OtherNavigation: FC = () => {
         }}
         name={SCREENS.Camera}
         component={CameraScreen}
+      />
+
+      <Stack.Screen
+        options={{
+          headerShown: false,
+        }}
+        name={SCREENS.QRScreen}
+        component={AddressQRScreen}
       />
 
       <Stack.Screen name={SCREENS.Governance} component={GovernanceScreen} />

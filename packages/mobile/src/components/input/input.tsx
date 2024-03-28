@@ -46,12 +46,7 @@ export const TextInput = React.forwardRef<
     ? BottomSheetTextInput
     : NativeTextInput;
   return (
-    <View
-      style={StyleSheet.flatten([
-        style.flatten(["padding-bottom-28"]),
-        props.containerStyle,
-      ])}
-    >
+    <View style={[{ paddingBottom: 12 }, props.containerStyle]}>
       <View
         style={{
           flexDirection: "row",
@@ -78,9 +73,8 @@ export const TextInput = React.forwardRef<
           style.flatten(
             [
               "background-color-white",
-              "padding-x-11",
               "padding-y-12",
-              "border-radius-4",
+              // "border-radius-4",
               "border-width-1",
               "border-color-border-white",
             ],
@@ -92,6 +86,7 @@ export const TextInput = React.forwardRef<
           {
             backgroundColor: "transparent",
             borderColor: colors["border-input-login"],
+            paddingHorizontal: 12,
           },
           props.inputStyle,
           props.inputContainerStyle,
@@ -101,15 +96,9 @@ export const TextInput = React.forwardRef<
         <View style={style.flatten(["flex-row", "items-center"])}>
           {props.inputLeft}
           <ElementTextInput
-            multiline={props.multiline}
+            multiline={props.multiline ?? false}
             style={[
               StyleSheet.flatten([
-                style.flatten([
-                  "padding-0",
-                  "body2-in-text-input",
-                  "color-text-black-medium",
-                  "flex-1",
-                ]),
                 { fontFamily: "SpaceGrotesk-Regular" },
                 Platform.select({
                   ios: {},
@@ -121,7 +110,7 @@ export const TextInput = React.forwardRef<
                 }),
                 propsStyle,
               ]),
-              { color: colors["sub-primary-text"] },
+              { color: colors["sub-primary-text"], flex: 1 },
             ]}
             {...restProps}
             placeholderTextColor={

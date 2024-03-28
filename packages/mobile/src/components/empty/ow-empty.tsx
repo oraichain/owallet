@@ -1,15 +1,15 @@
 import { View, StyleSheet, ViewProps } from "react-native";
 import React from "react";
 import FastImage from "react-native-fast-image";
-import images from "@src/assets/images";
 import { Text } from "../text";
 import { useTheme } from "@src/themes/theme-provider";
 interface IOWEmpty extends ViewProps {
   style?: ViewProps["style"];
-  type?: "list" | "crash";
+  type?: "list" | "crash" | "cash";
   label?: string;
   sizeImage?: number;
 }
+
 const OWEmpty = ({
   style,
   sizeImage = 142,
@@ -19,10 +19,16 @@ const OWEmpty = ({
   const { label = type == "list" ? "No result found" : "Not found data" } =
     props;
   const { colors, images } = useTheme();
+  const imgList = {
+    list: images.list_empty,
+    crash: images.crash_empty,
+    cash: images.money_empty,
+  };
+
   return (
     <View style={[styles.container, style]} {...props}>
       <FastImage
-        source={type === "crash" ? images.crash_empty : images.list_empty}
+        source={imgList[type]}
         style={{
           width: sizeImage,
           height: sizeImage,
@@ -30,12 +36,12 @@ const OWEmpty = ({
         resizeMode={"contain"}
       />
       <Text
-        color={colors["blue-300"]}
+        color={colors["neutral-text-title"]}
         style={styles.textStyle}
-        variant="body1"
-        typo="regular"
+        size={16}
+        weight="700"
       >
-        {label}
+        {label.toUpperCase()}
       </Text>
     </View>
   );

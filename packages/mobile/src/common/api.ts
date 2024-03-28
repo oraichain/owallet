@@ -358,6 +358,36 @@ export const API = {
     let url = `api/v1/topics`;
     return API.put(url, { topic, subcriber }, config);
   },
+  saveTokenInfos: ({ tokesInfos, address }, config: AxiosRequestConfig) => {
+    let url = `account/${address}`;
+    return API.post(url, { tokens: tokesInfos }, config);
+  },
+  saveHistory: ({ infos, address }, config: AxiosRequestConfig) => {
+    let url = `history/${address}`;
+    return API.post(url, { ...infos }, config);
+  },
+  getYesterdayAssets: ({ address, time }, config: AxiosRequestConfig) => {
+    let url = `account/${address}?time=${time}`;
+    return API.get(url, config);
+  },
+  getWalletHistory: (
+    { address, offset, limit },
+    config: AxiosRequestConfig
+  ) => {
+    let url = `query-history/${address}?offset=${offset}&limit=${limit}`;
+    return API.get(url, config);
+  },
+  getGroupHistory: (
+    { address, offset, limit = 1 },
+    config: AxiosRequestConfig
+  ) => {
+    let url = `history/${address}?offset=${offset}&limit=${limit}`;
+    return API.get(url, config);
+  },
+  getHistoryDetail: ({ id }, config: AxiosRequestConfig) => {
+    let url = `history-detail/${id}?`;
+    return API.get(url, config);
+  },
 };
 const retryWrapper = (axios, options) => {
   const max_time = 1;
