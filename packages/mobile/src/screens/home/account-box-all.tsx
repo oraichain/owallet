@@ -12,6 +12,7 @@ import { spacing } from "@src/themes";
 import MyWalletModal from "./components/my-wallet-modal/my-wallet-modal";
 import { ChainIdEnum, ChainNameEnum, getBase58Address } from "@owallet/common";
 import { OWButton } from "@src/components/button";
+import { Dec, PricePretty } from "@owallet/unit";
 
 export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
   const { colors } = useTheme();
@@ -21,37 +22,72 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
     modalStore,
     chainStore,
     appInitStore,
+    priceStore,
+    queriesStore,
+    keyRingStore,
   } = useStore();
   const styles = styling(colors);
-  let totalUsd: number;
-  if (appInitStore.getInitApp.prices) {
-    totalUsd = getTotalUsd(
-      universalSwapStore.getAmount,
-      appInitStore.getInitApp.prices
-    );
-  }
+  // let totalUsd: number;
+  // if (appInitStore.getInitApp.prices) {
+  //   totalUsd = getTotalUsd(
+  //     universalSwapStore.getAmount,
+  //     appInitStore.getInitApp.prices
+  //   );
+  // }
   const account = accountStore.getAccount(chainStore.current.chainId);
   const [more, setMore] = useState(true);
 
-  let accounts = {};
+  // let accounts = {};
+  //
+  // Object.keys(ChainIdEnum).map((key) => {
+  //   let defaultAddress = accountStore.getAccount(
+  //     ChainIdEnum[key]
+  //   ).bech32Address;
+  //   if (ChainIdEnum[key] === ChainIdEnum.TRON) {
+  //     accounts[ChainNameEnum[key]] = getBase58Address(
+  //       accountStore.getAccount(ChainIdEnum[key]).evmosHexAddress
+  //     );
+  //   } else if (defaultAddress.startsWith("evmos")) {
+  //     accounts[ChainNameEnum[key]] = accountStore.getAccount(
+  //       ChainIdEnum[key]
+  //     ).evmosHexAddress;
+  //   } else {
+  //     accounts[ChainNameEnum[key]] = defaultAddress;
+  //   }
+  // });
+  const fiat = priceStore.defaultVsCurrency;
 
-  Object.keys(ChainIdEnum).map((key) => {
-    let defaultAddress = accountStore.getAccount(
-      ChainIdEnum[key]
-    ).bech32Address;
-    if (ChainIdEnum[key] === ChainIdEnum.TRON) {
-      accounts[ChainNameEnum[key]] = getBase58Address(
-        accountStore.getAccount(ChainIdEnum[key]).evmosHexAddress
-      );
-    } else if (defaultAddress.startsWith("evmos")) {
-      accounts[ChainNameEnum[key]] = accountStore.getAccount(
-        ChainIdEnum[key]
-      ).evmosHexAddress;
-    } else {
-      accounts[ChainNameEnum[key]] = defaultAddress;
+  const allChain = chainStore.chainInfos;
+  const fiatCurrency = priceStore.getFiatCurrency(fiat);
+  if (!fiatCurrency) {
+    return undefined;
+  }
+  console.log(fiatCurrency, "allChain");
+  let totalBalance: PricePretty = new PricePretty(fiatCurrency, new Dec("0"));
+  for (let i = 0; i < allChain.length; i++) {
+    const chainId = allChain[i].chainId;
+    const addressByChainId = accountStore
+      .getAccount(chainId)
+      .getAddressDisplay(keyRingStore.keyRingLedgerAddresses, false);
+    const queriesBalances = queriesStore
+      .get(chainId)
+      .queryBalances.getQueryBech32Address(addressByChainId);
+    const stakeBalance = queriesBalances.stakable.balance;
+    const tokens = queriesBalances.positiveNativeUnstakables.concat(
+      queriesBalances.nonNativeBalances
+    );
+
+    if (stakeBalance.isReady) {
+      let stakeRes = priceStore.calculatePrice(stakeBalance, fiat);
+      for (const token of tokens) {
+        const price = priceStore.calculatePrice(token.balance, fiat);
+        if (price) {
+          stakeRes = stakeRes.add(price);
+        }
+      }
+      totalBalance = totalBalance.add(stakeRes);
     }
-  });
-
+  }
   const _onPressMyWallet = () => {
     modalStore.setOptions({
       bottomSheetModalConfig: {
@@ -72,7 +108,7 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
         <View style={styles.overview}>
           <Text style={styles.titleTotalBalance}>Total Balance</Text>
           <Text style={styles.labelTotalAmount}>
-            ${totalUsd?.toFixed(2) ?? 0}
+            ${totalBalance?.toString()}
           </Text>
         </View>
       </OWBox>
@@ -88,30 +124,30 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
             <Text style={styles.labelName}>{account?.name || ".."}</Text>
             <DownArrowIcon height={15} color={colors["primary-text"]} />
           </TouchableOpacity>
-          <View style={styles.addressBox}>
-            {Object.keys(accounts).map((k, index) => {
-              if (accounts[k]) {
-                if (more) {
-                  if (index < 3)
-                    return (
-                      <AddressCopyable
-                        chain={k}
-                        address={accounts[k]}
-                        maxCharacters={22}
-                      />
-                    );
-                } else {
-                  return (
-                    <AddressCopyable
-                      chain={k}
-                      address={accounts[k]}
-                      maxCharacters={22}
-                    />
-                  );
-                }
-              }
-            })}
-          </View>
+          {/*<View style={styles.addressBox}>*/}
+          {/*  {Object.keys(accounts).map((k, index) => {*/}
+          {/*    if (accounts[k]) {*/}
+          {/*      if (more) {*/}
+          {/*        if (index < 3)*/}
+          {/*          return (*/}
+          {/*            <AddressCopyable*/}
+          {/*              chain={k}*/}
+          {/*              address={accounts[k]}*/}
+          {/*              maxCharacters={22}*/}
+          {/*            />*/}
+          {/*          );*/}
+          {/*      } else {*/}
+          {/*        return (*/}
+          {/*          <AddressCopyable*/}
+          {/*            chain={k}*/}
+          {/*            address={accounts[k]}*/}
+          {/*            maxCharacters={22}*/}
+          {/*          />*/}
+          {/*        );*/}
+          {/*      }*/}
+          {/*    }*/}
+          {/*  })}*/}
+          {/*</View>*/}
           <OWButton
             label={more ? "View all" : "Hide"}
             size="medium"

@@ -19,6 +19,7 @@ import { SCREENS } from "@src/common/constants";
 import { navigate } from "@src/router/root";
 import { LoadingSpinner } from "@src/components/spinner";
 import OWText from "@src/components/text/ow-text";
+import { CoinPretty, Dec, PricePretty } from "@owallet/unit";
 
 export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
   const { colors } = useTheme();
@@ -30,6 +31,7 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
     appInitStore,
     queriesStore,
     keyRingStore,
+    priceStore,
   } = useStore();
   const [profit, setProfit] = useState(0);
   const [isOpen, setModalOpen] = useState(false);
@@ -38,11 +40,11 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
 
   const accountOrai = accountStore.getAccount(ChainIdEnum.Oraichain);
 
-  const chainAssets = getTokenInfos({
-    tokens: universalSwapStore.getAmount,
-    prices: appInitStore.getInitApp.prices,
-    networkFilter: chainStore.current.chainId,
-  });
+  // const chainAssets = getTokenInfos({
+  //   tokens: universalSwapStore.getAmount,
+  //   prices: appInitStore.getInitApp.prices,
+  //   networkFilter: chainStore.current.chainId,
+  // });
   const queries = queriesStore.get(chainStore.current.chainId);
   const styles = styling(colors);
   let totalUsd: number = 0;
@@ -65,6 +67,75 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
     modalStore.setChildren(MyWalletModal());
   };
 
+  const address = account.getAddressDisplay(
+    keyRingStore.keyRingLedgerAddresses
+  );
+  const accountTronInfo =
+    chainStore.current.chainId === ChainIdEnum.TRON
+      ? queries.tron.queryAccount.getQueryWalletAddress(address)
+      : null;
+
+  const fiat = priceStore.defaultVsCurrency;
+
+  const allChain = chainStore.chainInfos;
+  const fiatCurrency = priceStore.getFiatCurrency(fiat);
+  if (!fiatCurrency) {
+    return undefined;
+  }
+  let chainBalance: PricePretty = new PricePretty(fiatCurrency, new Dec("0"));
+  let totalBalance: PricePretty = new PricePretty(fiatCurrency, new Dec("0"));
+  const getBalanceByChainId = (chainId, networkType, stakeCurrency) => {
+    const addressByChainId = accountStore
+      .getAccount(chainId)
+      .getAddressDisplay(keyRingStore.keyRingLedgerAddresses, false);
+    const queriesBalances = queriesStore
+      .get(chainId)
+      .queryBalances.getQueryBech32Address(addressByChainId);
+    const stakable = queriesBalances.stakable.balance;
+    const tokens = queriesBalances.positiveNativeUnstakables.concat(
+      queriesBalances.nonNativeBalances
+    );
+    let stakedSum: CoinPretty = new CoinPretty(stakeCurrency, new Dec("0"));
+    if (networkType === "cosmos") {
+      const queryDelegated =
+        queries.cosmos.queryDelegations.getQueryBech32Address(addressByChainId);
+      const delegated = queryDelegated.total;
+      const queryUnbonding =
+        queries.cosmos.queryUnbondingDelegations.getQueryBech32Address(
+          addressByChainId
+        );
+      const unbonding = queryUnbonding.total;
+
+      stakedSum = delegated.add(unbonding);
+    }
+
+    const totalStake = stakable.add(stakedSum);
+    if (totalStake.isReady) {
+      let stakeRes = priceStore.calculatePrice(totalStake, fiat);
+      for (const token of tokens) {
+        const tokenBalance = priceStore.calculatePrice(token.balance, fiat);
+        if (tokenBalance) {
+          stakeRes = stakeRes.add(tokenBalance);
+        }
+      }
+      if (
+        !appInitStore.getInitApp.isAllNetworks &&
+        chainId === chainStore.current.chainId
+      ) {
+        chainBalance = chainBalance.add(stakeRes);
+      }
+      totalBalance = totalBalance.add(stakeRes);
+    }
+  };
+
+  console.log(fiatCurrency, "allChain");
+
+  for (let i = 0; i < allChain.length; i++) {
+    const chainId = allChain[i].chainId;
+    const networkType = allChain[i].networkType;
+    const stakeCurrency = allChain[i].stakeCurrency;
+    getBalanceByChainId(chainId, networkType, stakeCurrency);
+  }
   useEffect(() => {
     let yesterdayBalance = 0;
     const yesterdayAssets = appInitStore.getInitApp.yesterdayPriceFeed;
@@ -74,40 +145,45 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
         yesterdayBalance += y.value ?? 0;
       });
 
-      setProfit(Number(Number(totalUsd - yesterdayBalance).toFixed(2)));
+      setProfit(
+        Number(
+          Number(
+            Number(totalBalance.toDec().roundUp().toString()) - yesterdayBalance
+          ).toFixed(2)
+        )
+      );
     } else {
       setProfit(0);
     }
-  }, [totalUsd, accountOrai.bech32Address, appInitStore]);
-  const address = account.getAddressDisplay(
-    keyRingStore.keyRingLedgerAddresses
-  );
-  const accountTronInfo =
-    chainStore.current.chainId === ChainIdEnum.TRON
-      ? queries.tron.queryAccount.getQueryWalletAddress(address)
-      : null;
-  const renderTotalBalance = () => {
-    const chainIcon = chainIcons.find(
-      (c) => c.chainId === chainStore.current.chainId
-    );
-    let chainBalance = 0;
+  }, [totalBalance, accountOrai.bech32Address, appInitStore]);
 
-    chainAssets?.map((a) => {
-      chainBalance += a.value;
-    });
+  const renderTotalBalance = () => {
+    // const chainIcon = chainIcons.find(
+    //   (c) => c.chainId === chainStore.current.chainId
+    // );
+    // let chainBalance = 0;
+    //
+    // chainAssets?.map((a) => {
+    //   chainBalance += a.value;
+    // });
 
     return (
       <>
         <Text variant="bigText" style={styles.labelTotalAmount}>
-          ${totalUsd.toFixed(2)}
+          {totalBalance.toString()}
         </Text>
         <Text
           style={styles.profit}
           color={colors[profit < 0 ? "error-text-body" : "success-text-body"]}
         >
           {profit < 0 ? "" : "+"}
-          {profit && totalUsd && totalUsd > 0
-            ? Number((profit / totalUsd) * 100 ?? 0).toFixed(2)
+          {profit &&
+          Number(totalBalance.toDec().roundUp().toString()) &&
+          Number(totalBalance.toDec().roundUp().toString()) > 0
+            ? Number(
+                (profit / Number(totalBalance.toDec().roundUp().toString())) *
+                  100 ?? 0
+              ).toFixed(2)
             : 0}
           % ($
           {profit?.toFixed(2) ?? 0}) Today
@@ -137,11 +213,11 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
                     borderRadius: 16,
                   }}
                 >
-                  <OWIcon
-                    type="images"
-                    source={{ uri: chainIcon?.Icon }}
-                    size={16}
-                  />
+                  {/*<OWIcon*/}
+                  {/*  type="images"*/}
+                  {/*  source={{ uri: chainIcon?.Icon }}*/}
+                  {/*  size={16}*/}
+                  {/*/>*/}
                 </View>
                 <Text
                   style={{
@@ -156,7 +232,7 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
               </View>
 
               <Text size={16} weight="600" color={colors["neutral-text-title"]}>
-                ${chainBalance.toFixed(2)}
+                {chainBalance.toString()}
               </Text>
             </View>
             {chainStore.current.chainId === ChainIdEnum.TRON && (
@@ -208,7 +284,6 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
       </>
     );
   };
-
   return (
     <View>
       <CopyAddressModal
@@ -221,11 +296,11 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
       />
       <OWBox style={styles.containerOWBox}>
         <View style={styles.containerInfoAccount}>
-          {!universalSwapStore.getLoadStatus.isLoad && (
-            <View style={styles.containerLoading}>
-              <LoadingSpinner color={colors["gray-150"]} size={22} />
-            </View>
-          )}
+          {/*{!universalSwapStore.getLoadStatus.isLoad && (*/}
+          {/*  <View style={styles.containerLoading}>*/}
+          {/*    <LoadingSpinner color={colors["gray-150"]} size={22} />*/}
+          {/*  </View>*/}
+          {/*)}*/}
           <TouchableOpacity onPress={_onPressMyWallet} style={styles.btnAcc}>
             <Image
               style={styles.infoIcon}

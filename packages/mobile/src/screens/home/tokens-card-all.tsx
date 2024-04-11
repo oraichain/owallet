@@ -32,6 +32,7 @@ import OWFlatList from "@src/components/page/ow-flat-list";
 import { metrics } from "@src/themes";
 import FastImage from "react-native-fast-image";
 import OWText from "@src/components/text/ow-text";
+import { ObservableQueryBalanceInner } from "@owallet/stores";
 
 export const TokensCardAll: FunctionComponent<{
   containerStyle?: ViewStyle;
@@ -51,22 +52,21 @@ export const TokensCardAll: FunctionComponent<{
   const [more, setMore] = useState(true);
   const [activeTab, setActiveTab] = useState("tokens");
   const [yesterdayAssets, setYesterdayAssets] = useState([]);
-  const [queryBalances, setQueryBalances] = useState({});
+  // const [queryBalances, setQueryBalances] = useState({});
 
-  const account = accountStore.getAccount(chainStore.current.chainId);
   const accountOrai = accountStore.getAccount(ChainIdEnum.Oraichain);
   const accountTron = accountStore.getAccount(ChainIdEnum.TRON);
 
-  useEffect(() => {
-    InteractionManager.runAfterInteractions(() => {
-      const queries = queriesStore.get(chainStore.current.chainId);
-      const address = account.getAddressDisplay(
-        keyRingStore.keyRingLedgerAddresses
-      );
-      const balances = queries.queryBalances.getQueryBech32Address(address);
-      setQueryBalances(balances);
-    });
-  }, [chainStore.current.chainId]);
+  // useEffect(() => {
+  //   InteractionManager.runAfterInteractions(() => {
+  //     const queries = queriesStore.get(chainStore.current.chainId);
+  //     const address = account.getAddressDisplay(
+  //       keyRingStore.keyRingLedgerAddresses
+  //     );
+  //     const balances = queries.queryBalances.getQueryBech32Address(address);
+  //     setQueryBalances(balances);
+  //   });
+  // }, [chainStore.current.chainId]);
 
   const [tronTokens, setTronTokens] = useState([]);
 
@@ -120,11 +120,35 @@ export const TokensCardAll: FunctionComponent<{
     );
   };
 
-  const tokens = getTokenInfos({
-    tokens: universalSwapStore.getAmount,
-    prices: appInitStore.getInitApp.prices,
-    networkFilter: "",
-  });
+  // const tokens = getTokenInfos({
+  //   tokens: universalSwapStore.getAmount,
+  //   prices: appInitStore.getInitApp.prices,
+  //   networkFilter: "",
+  // });
+  // const queryBalance = queriesStore
+  //   .get(chainStore.current.chainId)
+  //   .queryBalances.getQueryBech32Address(address);
+
+  let tokens: ObservableQueryBalanceInner<unknown, unknown> = [];
+  const allChain = chainStore.chainInfos;
+  for (let i = 0; i < allChain.length; i++) {
+    const chainId = allChain[i].chainId;
+
+    const account = accountStore.getAccount(chainId);
+    const queries = queriesStore.get(chainId);
+    const address = account.getAddressDisplay(
+      keyRingStore.keyRingLedgerAddresses
+    );
+    const balances = queries.queryBalances.getQueryBech32Address(address);
+    if (
+      !appInitStore.getInitApp.isAllNetworks &&
+      chainId === chainStore.current.chainId
+    ) {
+      tokens = balances.balances;
+    } else {
+      tokens = [...tokens, ...balances.balances];
+    }
+  }
 
   useEffect(() => {
     InteractionManager.runAfterInteractions(() => {
@@ -138,43 +162,68 @@ export const TokensCardAll: FunctionComponent<{
     universalSwapStore.getLoadStatus.isLoad,
   ]);
 
-  useEffect(() => {
-    InteractionManager.runAfterInteractions(() => {
-      (async function get() {
-        try {
-          if (accountTron.evmosHexAddress) {
-            const res = await API.getTronAccountInfo(
-              {
-                address: getBase58Address(accountTron.evmosHexAddress),
-              },
-              {
-                baseURL: chainStore.current.rpc,
-              }
-            );
-
-            if (res.data?.data.length > 0) {
-              if (res.data?.data[0].trc20) {
-                const tokenArr = [];
-                TRC20_LIST.map((tk) => {
-                  let token = res.data?.data[0].trc20.find(
-                    (t) => tk.contractAddress in t
-                  );
-                  if (token) {
-                    tokenArr.push({ ...tk, amount: token[tk.contractAddress] });
-                  }
-                });
-
-                setTronTokens(tokenArr);
-              }
-            }
-          }
-        } catch (error) {}
-      })();
-    });
-  }, [accountTron.evmosHexAddress]);
+  // useEffect(() => {
+  //   InteractionManager.runAfterInteractions(() => {
+  //     (async function get() {
+  //       try {
+  //         if (accountTron.evmosHexAddress) {
+  //           const res = await API.getTronAccountInfo(
+  //             {
+  //               address: getBase58Address(accountTron.evmosHexAddress)
+  //             },
+  //             {
+  //               baseURL: chainStore.current.rpc
+  //             }
+  //           );
+  //
+  //           if (res.data?.data.length > 0) {
+  //             if (res.data?.data[0].trc20) {
+  //               const tokenArr = [];
+  //               TRC20_LIST.map((tk) => {
+  //                 let token = res.data?.data[0].trc20.find(
+  //                   (t) => tk.contractAddress in t
+  //                 );
+  //                 if (token) {
+  //                   tokenArr.push({ ...tk, amount: token[tk.contractAddress] });
+  //                 }
+  //               });
+  //
+  //               setTronTokens(tokenArr);
+  //             }
+  //           }
+  //         }
+  //       } catch (error) {
+  //       }
+  //     })();
+  //   });
+  // }, [accountTron.evmosHexAddress]);
 
   const styles = styling(colors);
+  const displayTokens =
+    tokens?.length > 0 &&
+    tokens
+      .filter((v, i, obj) => {
+        return (
+          v?.balance &&
+          obj.findIndex(
+            (v2) =>
+              v2.balance.currency?.coinDenom === v.balance.currency?.coinDenom
+          ) === i
+        );
+      })
+      .sort((a, b) => {
+        const aDecIsZero = a.balance?.toDec()?.isZero();
+        const bDecIsZero = b.balance?.toDec()?.isZero();
 
+        if (aDecIsZero && !bDecIsZero) {
+          return 1;
+        }
+        if (!aDecIsZero && bDecIsZero) {
+          return -1;
+        }
+
+        return a.currency.coinDenom < b.currency.coinDenom ? -1 : 1;
+      });
   const onPressToken = async (item) => {
     navigate(SCREENS.TokenDetails, {
       item,
@@ -207,25 +256,31 @@ export const TokensCardAll: FunctionComponent<{
   };
 
   const renderTokenItem = useCallback(
-    ({ item, index }) => {
+    ({
+      item,
+      index,
+    }: {
+      item: ObservableQueryBalanceInner<unknown, unknown>;
+      index: number;
+    }) => {
       if (more && index > 3) return null;
 
       if (item) {
-        let profit = 0;
-        let percent = "0";
-
-        if (yesterdayAssets && yesterdayAssets.length > 0) {
-          const yesterday = yesterdayAssets.find(
-            (obj) => obj["denom"] === item.denom
-          );
-          if (yesterday && yesterday.value) {
-            profit = Number(
-              Number(item.value - (yesterday.value ?? 0))?.toFixed(2) ?? 0
-            );
-            percent = Number((profit / yesterday.value) * 100 ?? 0).toFixed(2);
-          }
-        }
-        const chainIcon = chainIcons.find((c) => c.chainId === item.chainId);
+        // let profit = 0;
+        // let percent = "0";
+        //
+        // if (yesterdayAssets && yesterdayAssets.length > 0) {
+        //   const yesterday = yesterdayAssets.find(
+        //     (obj) => obj["denom"] === item.denom
+        //   );
+        //   if (yesterday && yesterday.value) {
+        //     profit = Number(
+        //       Number(item.value - (yesterday.value ?? 0))?.toFixed(2) ?? 0
+        //     );
+        //     percent = Number((profit / yesterday.value) * 100 ?? 0).toFixed(2);
+        //   }
+        // }
+        // const chainIcon = chainIcons.find((c) => c.chainId === item.chainId);
 
         return (
           <TouchableOpacity
@@ -237,12 +292,19 @@ export const TokensCardAll: FunctionComponent<{
             <View style={[styles.wraperItem]}>
               <View style={styles.leftBoxItem}>
                 <View style={styles.iconWrap}>
-                  <OWIcon type="images" source={{ uri: item.icon }} size={28} />
+                  <OWIcon
+                    type="images"
+                    source={{ uri: item?.currency?.coinImageUrl }}
+                    size={28}
+                  />
                 </View>
                 <View style={styles.chainWrap}>
                   <OWIcon
                     type="images"
-                    source={{ uri: chainIcon?.Icon }}
+                    source={{
+                      uri: chainStore.getChain(item.chainId).raw
+                        .chainSymbolImageUrl,
+                    }}
                     size={16}
                   />
                 </View>
@@ -256,10 +318,12 @@ export const TokensCardAll: FunctionComponent<{
                     color={colors["neutral-text-heading"]}
                     weight="600"
                   >
-                    {item.asset}
+                    {/*{item.asset}*/}
+                    {item.currency?.coinDenom}
                   </Text>
                   <Text weight="400" color={colors["neutral-text-body"]}>
-                    {item.chain}
+                    {/*{item.chain}*/}
+                    {chainStore.getChain(item.chainId).chainName}
                   </Text>
                 </View>
               </View>
@@ -272,27 +336,33 @@ export const TokensCardAll: FunctionComponent<{
                       weight="500"
                       color={colors["neutral-text-heading"]}
                     >
-                      {Number(item.balance.toFixed(4))} {item.asset}
+                      {item.balance
+                        .trim(true)
+                        .shrink(true)
+                        .maxDecimals(6)
+                        .hideDenom(true)
+                        .toString()}
+                      {/*{Number(item.balance.toFixed(4))} {item.asset}*/}
                     </Text>
                     <Text
                       size={14}
                       style={{ lineHeight: 24 }}
                       color={colors["neutral-text-body"]}
                     >
-                      ${item.value.toFixed(2)}
+                      {/*${item.value.toFixed(2)}*/}
                     </Text>
-                    <Text
-                      size={14}
-                      style={styles.profit}
-                      color={
-                        colors[
-                          profit < 0 ? "error-text-body" : "success-text-body"
-                        ]
-                      }
-                    >
-                      {profit < 0 ? "" : "+"}
-                      {percent}% (${profit ?? 0})
-                    </Text>
+                    {/*<Text*/}
+                    {/*  size={14}*/}
+                    {/*  style={styles.profit}*/}
+                    {/*  color={*/}
+                    {/*    colors[*/}
+                    {/*      profit < 0 ? "error-text-body" : "success-text-body"*/}
+                    {/*    ]*/}
+                    {/*  }*/}
+                    {/*>*/}
+                    {/*  {profit < 0 ? "" : "+"}*/}
+                    {/*  {percent}% (${profit ?? 0})*/}
+                    {/*</Text>*/}
                   </View>
                   {/* <View
                   style={{
@@ -336,8 +406,8 @@ export const TokensCardAll: FunctionComponent<{
             renderItem={renderTokenItem}
             ListEmptyComponent={<OWEmpty type="cash" />}
           /> */}
-          {tokens.length > 0
-            ? tokens
+          {displayTokens.length > 0
+            ? displayTokens
                 .filter((t) => {
                   if (appInitStore.getInitApp.isAllNetworks) {
                     return true;
@@ -354,7 +424,7 @@ export const TokensCardAll: FunctionComponent<{
                 })
             : null}
           {/* Section for empty token  */}
-          {tokens.filter((t) => {
+          {displayTokens.filter((t) => {
             if (appInitStore.getInitApp.isAllNetworks) {
               return true;
             }
@@ -378,7 +448,7 @@ export const TokensCardAll: FunctionComponent<{
               </OWText>
             </View>
           ) : null}
-          {tokens?.filter((t) => {
+          {displayTokens?.filter((t) => {
             if (appInitStore.getInitApp.isAllNetworks) {
               return true;
             }
