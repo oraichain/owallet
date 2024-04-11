@@ -213,11 +213,11 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
                     borderRadius: 16,
                   }}
                 >
-                  {/*<OWIcon*/}
-                  {/*  type="images"*/}
-                  {/*  source={{ uri: chainIcon?.Icon }}*/}
-                  {/*  size={16}*/}
-                  {/*/>*/}
+                  <OWIcon
+                    type="images"
+                    source={{ uri: chainStore.current.raw.chainSymbolImageUrl }}
+                    size={16}
+                  />
                 </View>
                 <Text
                   style={{

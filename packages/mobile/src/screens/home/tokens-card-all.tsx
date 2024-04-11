@@ -150,17 +150,17 @@ export const TokensCardAll: FunctionComponent<{
     }
   }
 
-  useEffect(() => {
-    InteractionManager.runAfterInteractions(() => {
-      if (universalSwapStore.getLoadStatus.isLoad) {
-        handleSaveTokenInfos(tokens);
-      }
-    });
-  }, [
-    accountOrai.bech32Address,
-    tokens,
-    universalSwapStore.getLoadStatus.isLoad,
-  ]);
+  // useEffect(() => {
+  //   InteractionManager.runAfterInteractions(() => {
+  //     if (universalSwapStore.getLoadStatus.isLoad) {
+  //       handleSaveTokenInfos(tokens);
+  //     }
+  //   });
+  // }, [
+  //   accountOrai.bech32Address,
+  //   tokens,
+  //   universalSwapStore.getLoadStatus.isLoad,
+  // ]);
 
   // useEffect(() => {
   //   InteractionManager.runAfterInteractions(() => {
@@ -225,34 +225,10 @@ export const TokensCardAll: FunctionComponent<{
         return a.currency.coinDenom < b.currency.coinDenom ? -1 : 1;
       });
   const onPressToken = async (item) => {
-    navigate(SCREENS.TokenDetails, {
-      item,
-    });
+    // navigate(SCREENS.TokenDetails, {
+    //   item,
+    // });
     return;
-  };
-
-  const renderTokensFromQueryBalances = () => {
-    //@ts-ignore
-    const tokens = queryBalances?.positiveBalances;
-    if (tokens?.length > 0) {
-      return tokens.map((token, index) => {
-        const priceBalance = priceStore.calculatePrice(token.balance);
-        return (
-          <TokenItem
-            key={index?.toString()}
-            chainInfo={{
-              stakeCurrency: chainStore.current.stakeCurrency,
-              networkType: chainStore.current.networkType,
-              chainId: chainStore.current.chainId,
-            }}
-            balance={token.balance}
-            priceBalance={priceBalance}
-          />
-        );
-      });
-    } else {
-      return <OWEmpty />;
-    }
   };
 
   const renderTokenItem = useCallback(
@@ -266,21 +242,23 @@ export const TokensCardAll: FunctionComponent<{
       if (more && index > 3) return null;
 
       if (item) {
-        // let profit = 0;
-        // let percent = "0";
-        //
-        // if (yesterdayAssets && yesterdayAssets.length > 0) {
-        //   const yesterday = yesterdayAssets.find(
-        //     (obj) => obj["denom"] === item.denom
-        //   );
-        //   if (yesterday && yesterday.value) {
-        //     profit = Number(
-        //       Number(item.value - (yesterday.value ?? 0))?.toFixed(2) ?? 0
-        //     );
-        //     percent = Number((profit / yesterday.value) * 100 ?? 0).toFixed(2);
-        //   }
-        // }
-        // const chainIcon = chainIcons.find((c) => c.chainId === item.chainId);
+        let profit = 0;
+        let percent = "0";
+
+        if (yesterdayAssets && yesterdayAssets.length > 0) {
+          const yesterday = yesterdayAssets.find(
+            (obj) => obj["denom"] === item.currency.coinMinimalDenom
+          );
+          if (yesterday && yesterday.value) {
+            profit = Number(
+              Number(
+                Number(item.balance.toDec().roundUp().toString()) -
+                  (yesterday.value ?? 0)
+              )?.toFixed(2) ?? 0
+            );
+            percent = Number((profit / yesterday.value) * 100 ?? 0).toFixed(2);
+          }
+        }
 
         return (
           <TouchableOpacity
@@ -310,19 +288,14 @@ export const TokensCardAll: FunctionComponent<{
                 </View>
 
                 <View style={styles.pl12}>
-                  {/* <Text size={16} color={colors["neutral-text-heading"]} weight="600">
-                  {item.balance.toFixed(4)} {item.asset}
-                </Text> */}
                   <Text
                     size={16}
                     color={colors["neutral-text-heading"]}
                     weight="600"
                   >
-                    {/*{item.asset}*/}
-                    {item.currency?.coinDenom}
+                    {item.currency?.coinDenom?.replace(/\(.*?\)/g, "")}
                   </Text>
                   <Text weight="400" color={colors["neutral-text-body"]}>
-                    {/*{item.chain}*/}
                     {chainStore.getChain(item.chainId).chainName}
                   </Text>
                 </View>
@@ -342,40 +315,27 @@ export const TokensCardAll: FunctionComponent<{
                         .maxDecimals(6)
                         .hideDenom(true)
                         .toString()}
-                      {/*{Number(item.balance.toFixed(4))} {item.asset}*/}
                     </Text>
                     <Text
                       size={14}
                       style={{ lineHeight: 24 }}
                       color={colors["neutral-text-body"]}
                     >
-                      {/*${item.value.toFixed(2)}*/}
+                      {priceStore.calculatePrice(item.balance)?.toString()}
                     </Text>
-                    {/*<Text*/}
-                    {/*  size={14}*/}
-                    {/*  style={styles.profit}*/}
-                    {/*  color={*/}
-                    {/*    colors[*/}
-                    {/*      profit < 0 ? "error-text-body" : "success-text-body"*/}
-                    {/*    ]*/}
-                    {/*  }*/}
-                    {/*>*/}
-                    {/*  {profit < 0 ? "" : "+"}*/}
-                    {/*  {percent}% (${profit ?? 0})*/}
-                    {/*</Text>*/}
+                    <Text
+                      size={14}
+                      style={styles.profit}
+                      color={
+                        colors[
+                          profit < 0 ? "error-text-body" : "success-text-body"
+                        ]
+                      }
+                    >
+                      {profit < 0 ? "" : "+"}
+                      {percent}% (${profit ?? 0})
+                    </Text>
                   </View>
-                  {/* <View
-                  style={{
-                    flex: 0.5,
-                    justifyContent: "center",
-                    paddingLeft: 20,
-                  }}
-                >
-                  <RightArrowIcon
-                    height={12}
-                    color={colors["neutral-text-heading"]}
-                  />
-                </View> */}
                 </View>
               </View>
             </View>
