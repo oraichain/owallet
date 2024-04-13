@@ -35,7 +35,6 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
   } = useStore();
   const [profit, setProfit] = useState(0);
   const [isOpen, setModalOpen] = useState(false);
-
   const smartNavigation = useSmartNavigation();
 
   const accountOrai = accountStore.getAccount(ChainIdEnum.Oraichain);
@@ -47,13 +46,13 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
   // });
   const queries = queriesStore.get(chainStore.current.chainId);
   const styles = styling(colors);
-  let totalUsd: number = 0;
-  if (appInitStore.getInitApp.prices) {
-    totalUsd = getTotalUsd(
-      universalSwapStore.getAmount,
-      appInitStore.getInitApp.prices
-    );
-  }
+  // let totalUsd: number = 0;
+  // if (appInitStore.getInitApp.prices) {
+  //   totalUsd = getTotalUsd(
+  //     universalSwapStore.getAmount,
+  //     appInitStore.getInitApp.prices
+  //   );
+  // }
 
   const account = accountStore.getAccount(chainStore.current.chainId);
 
@@ -76,7 +75,7 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
       : null;
 
   const fiat = priceStore.defaultVsCurrency;
-
+  //
   const allChain = chainStore.chainInfos;
   const fiatCurrency = priceStore.getFiatCurrency(fiat);
   if (!fiatCurrency) {
@@ -91,7 +90,8 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
     const queriesBalances = queriesStore
       .get(chainId)
       .queryBalances.getQueryBech32Address(addressByChainId);
-    const stakable = queriesBalances.stakable.balance;
+    const stakableQueries = queriesBalances.stakable;
+    const stakable = stakableQueries.balance;
     const tokens = queriesBalances.positiveNativeUnstakables.concat(
       queriesBalances.nonNativeBalances
     );
@@ -158,15 +158,6 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
   }, [totalBalance, accountOrai.bech32Address, appInitStore]);
 
   const renderTotalBalance = () => {
-    // const chainIcon = chainIcons.find(
-    //   (c) => c.chainId === chainStore.current.chainId
-    // );
-    // let chainBalance = 0;
-    //
-    // chainAssets?.map((a) => {
-    //   chainBalance += a.value;
-    // });
-
     return (
       <>
         <Text variant="bigText" style={styles.labelTotalAmount}>
@@ -296,7 +287,7 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
       />
       <OWBox style={styles.containerOWBox}>
         <View style={styles.containerInfoAccount}>
-          {/*{!universalSwapStore.getLoadStatus.isLoad && (*/}
+          {/*{ (*/}
           {/*  <View style={styles.containerLoading}>*/}
           {/*    <LoadingSpinner color={colors["gray-150"]} size={22} />*/}
           {/*  </View>*/}

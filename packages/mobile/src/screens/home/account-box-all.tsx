@@ -95,7 +95,7 @@ export const AccountBoxAll: FunctionComponent<{}> = observer(({}) => {
         enableOverDrag: false,
       },
     });
-    modalStore.setChildren(MyWalletModal());
+    modalStore.setChildren(<MyWalletModal />);
   };
 
   return (

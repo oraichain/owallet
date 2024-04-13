@@ -171,7 +171,7 @@ export const HomeScreen: FunctionComponent = observer((props) => {
       await Promise.all([priceStore.waitFreshResponse()]);
     }
 
-    onInitAllChain();
+    // onInitAllChain();
     setRefreshing(false);
     setRefreshDate(Date.now());
     // if (
@@ -206,7 +206,7 @@ export const HomeScreen: FunctionComponent = observer((props) => {
           browserStore.update_inject(res);
         })
         .catch((err) => console.log(err));
-      onRefresh();
+      // onRefresh();
     });
   }, []);
   // This section for getting all tokens of all chains
@@ -331,10 +331,6 @@ export const HomeScreen: FunctionComponent = observer((props) => {
   //   return <TokensCard refreshDate={refreshDate} />;
   // }, []);
 
-  const renderNewTokenCard = useCallback(() => {
-    return <TokensCardAll />;
-  }, []);
-
   return (
     <PageWithScrollViewInBottomTabView
       refreshControl={
@@ -347,11 +343,11 @@ export const HomeScreen: FunctionComponent = observer((props) => {
       <CommonPageHeader title="Assets" />
 
       <AccountBoxAll />
-      {chainStore.current.networkType === "cosmos" &&
-      !appInitStore.getInitApp.isAllNetworks ? (
-        <EarningCardNew containerStyle={styles.containerEarnStyle} />
-      ) : null}
-      {renderNewTokenCard()}
+      {/*{chainStore.current.networkType === "cosmos" &&*/}
+      {/*!appInitStore.getInitApp.isAllNetworks ? (*/}
+      {/*  <EarningCardNew containerStyle={styles.containerEarnStyle} />*/}
+      {/*) : null}*/}
+      <TokensCardAll />
       {/* {chainStore.current.networkType === 'cosmos' ? <UndelegationsCard /> : null} */}
     </PageWithScrollViewInBottomTabView>
   );

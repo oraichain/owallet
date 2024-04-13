@@ -61,7 +61,7 @@ export const AccountBox: FunctionComponent<{
       false
     );
     const queries = queriesStore.get(chainStore.current.chainId);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState<boolean>(true);
     const bip44Option = useBIP44Option();
     const queryStakable =
       queries.queryBalances.getQueryBech32Address(addressToFetch).stakable;
@@ -73,7 +73,7 @@ export const AccountBox: FunctionComponent<{
           enableOverDrag: false,
         },
       });
-      modalStore.setChildren(MyWalletModal());
+      modalStore.setChildren(<MyWalletModal />);
     };
 
     const waitToLoad = async () => {

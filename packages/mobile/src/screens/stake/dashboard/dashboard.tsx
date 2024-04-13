@@ -65,7 +65,7 @@ export const StakingDashboardScreen: FunctionComponent = observer(() => {
         enableOverDrag: false,
       },
     });
-    modalStore.setChildren(<NetworkModal />);
+    modalStore.setChildren(<NetworkModal stakeable={true} />);
   };
 
   return (
@@ -177,10 +177,10 @@ export const StakingDashboardScreen: FunctionComponent = observer(() => {
                   textAlign: "center",
                   paddingTop: 4,
                 }}
-              >{`Please try switching networks${
+              >{`${
                 appInitStore.getInitApp.isAllNetworks
-                  ? "."
-                  : "or exploring other functions."
+                  ? "Please choose a networks."
+                  : "Please try switching networks or exploring other functions."
               }`}</OWText>
             </View>
 

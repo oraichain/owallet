@@ -55,7 +55,7 @@ export const TokensCardAll: FunctionComponent<{
   // const [queryBalances, setQueryBalances] = useState({});
 
   const accountOrai = accountStore.getAccount(ChainIdEnum.Oraichain);
-  const accountTron = accountStore.getAccount(ChainIdEnum.TRON);
+  // const accountTron = accountStore.getAccount(ChainIdEnum.TRON);
 
   // useEffect(() => {
   //   InteractionManager.runAfterInteractions(() => {
@@ -104,21 +104,21 @@ export const TokensCardAll: FunctionComponent<{
 
   useEffect(() => {
     InteractionManager.runAfterInteractions(() => {
-      getYesterdayAssets();
+      // getYesterdayAssets();
     });
   }, [accountOrai.bech32Address]);
 
-  const handleSaveTokenInfos = async (tokenInfos) => {
-    await API.saveTokenInfos(
-      {
-        address: accountOrai.bech32Address,
-        tokesInfos: tokenInfos,
-      },
-      {
-        baseURL: "https://staging.owallet.dev/",
-      }
-    );
-  };
+  // const handleSaveTokenInfos = async (tokenInfos) => {
+  //   await API.saveTokenInfos(
+  //     {
+  //       address: accountOrai.bech32Address,
+  //       tokesInfos: tokenInfos,
+  //     },
+  //     {
+  //       baseURL: "https://staging.owallet.dev/",
+  //     }
+  //   );
+  // };
 
   // const tokens = getTokenInfos({
   //   tokens: universalSwapStore.getAmount,
@@ -430,13 +430,15 @@ export const TokensCardAll: FunctionComponent<{
           ) : null}
         </>
       );
-    } else {
-      return (
-        <>
-          <HistoryCard />
-        </>
-      );
     }
+
+    // else {
+    //   return (
+    //     <>
+    //       <HistoryCard />
+    //     </>
+    //   );
+    // }
   };
 
   return (
