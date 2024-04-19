@@ -4,12 +4,13 @@ import {
   ObservableChainQuery,
   ObservableChainQueryMap,
 } from "../../chain-query";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import { computed, makeObservable } from "mobx";
 import { CoinPretty, Dec, Int } from "@owallet/unit";
 import { Currency } from "@owallet/types";
 import { StoreUtils } from "../../../common";
 import { computedFn } from "mobx-utils";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryRewardsInner extends ObservableChainQuery<Rewards> {
   protected bech32Address: string;

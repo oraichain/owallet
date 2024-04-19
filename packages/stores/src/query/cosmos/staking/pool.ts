@@ -1,7 +1,8 @@
 import { ObservableChainQuery } from "../../chain-query";
 import { StakingPool } from "./types";
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryStakingPool extends ObservableChainQuery<StakingPool> {
   constructor(

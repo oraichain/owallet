@@ -1,7 +1,8 @@
 import { ObservableChainQuery } from "../../chain-query";
 import { GovParamsDeposit, GovParamsTally, GovParamsVoting } from "./types";
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryGovParamTally extends ObservableChainQuery<GovParamsTally> {
   constructor(

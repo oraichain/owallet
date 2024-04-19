@@ -4,9 +4,10 @@ import {
 } from "../../chain-query";
 import { UnbondingDelegation, UnbondingDelegations } from "./types";
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import { CoinPretty, Int } from "@owallet/unit";
 import { computed, makeObservable } from "mobx";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryUnbondingDelegationsInner extends ObservableChainQuery<UnbondingDelegations> {
   protected bech32Address: string;

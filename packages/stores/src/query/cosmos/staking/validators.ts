@@ -4,7 +4,7 @@ import {
 } from "../../chain-query";
 import { BondStatus, Validators, Validator } from "./types";
 import { KVStore, fetchAdapter } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import {
   autorun,
   computed,
@@ -17,6 +17,7 @@ import Axios, { CancelToken } from "axios";
 import PQueue from "p-queue";
 import { CoinPretty, Dec } from "@owallet/unit";
 import { computedFn } from "mobx-utils";
+import { ChainGetter } from "../../../chain";
 
 interface KeybaseResult {
   status: {

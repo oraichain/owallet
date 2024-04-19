@@ -7,12 +7,13 @@ import {
   ObservableQueryGovParamVoting,
 } from "./params";
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import { StakingPool } from "../staking/types";
 import { DeepReadonly } from "utility-types";
 import { Dec, DecUtils, Int, IntPretty } from "@owallet/unit";
 import { computedFn } from "mobx-utils";
 import { ObservableQueryProposal } from "./proposal";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryGovernance extends ObservableChainQuery<GovProposals> {
   @observable.ref

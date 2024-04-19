@@ -1,7 +1,8 @@
 import { ObservableChainQuery } from "../chain-query";
-import { ChainGetter, QuerySharedContext } from "../../common";
+import { QuerySharedContext } from "../../common";
 
 import { Buffer } from "buffer";
+import { ChainGetter } from "../../chain";
 
 export class ObservableCosmwasmContractChainQuery<
   T

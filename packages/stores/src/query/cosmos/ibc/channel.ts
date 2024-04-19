@@ -3,9 +3,10 @@ import {
   ObservableChainQuery,
   ObservableChainQueryMap,
 } from "../../chain-query";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import { ChannelResponse } from "./types";
 import { autorun } from "mobx";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableChainQueryIBCChannel extends ObservableChainQuery<ChannelResponse> {
   constructor(

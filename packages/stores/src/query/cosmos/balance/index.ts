@@ -1,11 +1,7 @@
 import { DenomHelper, KVStore } from "@owallet/common";
-import {
-  ChainGetter,
-  QueryError,
-  QueryResponse,
-  QuerySharedContext,
-} from "../../../common";
+import { QueryError, QueryResponse, QuerySharedContext } from "../../../common";
 import { computed, makeObservable, override } from "mobx";
+
 import { CoinPretty, Int } from "@owallet/unit";
 import { StoreUtils } from "../../../common";
 
@@ -13,6 +9,7 @@ import { BalanceRegistry, IObservableQueryBalanceImpl } from "../../balances";
 import { ObservableChainQuery } from "../../chain-query";
 import { Balances } from "./types";
 import { AppCurrency } from "@owallet/types";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryCosmosBalancesImplParent extends ObservableChainQuery<Balances> {
   // XXX: See comments below.

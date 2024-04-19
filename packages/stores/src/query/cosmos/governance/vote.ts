@@ -4,7 +4,8 @@ import {
 } from "../../chain-query";
 import { ProposalVoter, ProposalVoterStargate } from "./types";
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryProposalVoteInner extends ObservableChainQuery<
   ProposalVoter | ProposalVoterStargate

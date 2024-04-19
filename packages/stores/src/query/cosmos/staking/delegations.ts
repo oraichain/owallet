@@ -4,10 +4,11 @@ import {
 } from "../../chain-query";
 import { Delegation, Delegations, DelegationsStargate } from "./types";
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import { CoinPretty, Int } from "@owallet/unit";
 import { computed, makeObservable } from "mobx";
 import { computedFn } from "mobx-utils";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryDelegationsInner extends ObservableChainQuery<
   Delegations | DelegationsStargate

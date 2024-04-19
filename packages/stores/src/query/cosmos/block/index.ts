@@ -4,9 +4,10 @@ import {
 } from "../../chain-query";
 import { Block } from "@cosmjs/tendermint-rpc";
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import { computed, makeObservable } from "mobx";
 import { Int } from "@owallet/unit";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryBlockInner extends ObservableChainQuery<{
   block: Block;

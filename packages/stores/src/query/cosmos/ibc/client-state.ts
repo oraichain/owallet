@@ -3,9 +3,10 @@ import {
   ObservableChainQuery,
   ObservableChainQueryMap,
 } from "../../chain-query";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import { ClientStateResponse } from "./types";
 import { autorun, computed } from "mobx";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableChainQueryClientState extends ObservableChainQuery<ClientStateResponse> {
   constructor(

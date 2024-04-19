@@ -6,11 +6,12 @@ import {
   ProposalTally,
 } from "./types";
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import { computed, makeObservable } from "mobx";
 import { DeepReadonly } from "utility-types";
 import { CoinPretty, Dec, DecUtils, Int, IntPretty } from "@owallet/unit";
 import { ObservableQueryGovernance } from "./proposals";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryProposal extends ObservableChainQuery<ProposalTally> {
   constructor(
