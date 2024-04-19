@@ -1,5 +1,5 @@
 import { DenomHelper } from "@owallet/common";
-import { ChainGetter } from "../common";
+import { ChainGetter } from "../chain";
 import { computed, makeObservable, observable, runInAction } from "mobx";
 import { CoinPretty, Dec, Int } from "@owallet/unit";
 import { AppCurrency } from "@owallet/types";

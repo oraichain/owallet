@@ -1,6 +1,6 @@
 {
   "name": "owallet",
-  "description": "OWallet: Cosmos x EVM in one Wallet",
+  "description": "OWallet: Cosmos x EVM x Bitcoin in one Wallet",
   "private": true,
   "workspaces": {
     "packages": [

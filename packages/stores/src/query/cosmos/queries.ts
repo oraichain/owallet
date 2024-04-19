@@ -1,6 +1,6 @@
 import { QueriesSetBase } from "../queries";
 import { KVStore } from "@owallet/common";
-import { ChainGetter } from "../../common";
+import { ChainGetter } from "../../chain";
 import { ObservableQueryBlock } from "./block";
 import { ObservableQueryAccount } from "./account";
 import {

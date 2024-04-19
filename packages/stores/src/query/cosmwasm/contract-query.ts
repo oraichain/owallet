@@ -1,16 +1,14 @@
 import { ObservableChainQuery } from "../chain-query";
-import { KVStore } from "@owallet/common";
-import { ChainGetter } from "../../common";
-import { CancelToken } from "axios";
-import { QueryResponse } from "../../common";
+import { ChainGetter, QuerySharedContext } from "../../common";
 
 import { Buffer } from "buffer";
 
 export class ObservableCosmwasmContractChainQuery<
   T
 > extends ObservableChainQuery<T> {
+  protected disposer?: () => void;
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     protected readonly contractAddress: string,
@@ -18,7 +16,7 @@ export class ObservableCosmwasmContractChainQuery<
     protected obj: object
   ) {
     super(
-      kvStore,
+      sharedContext,
       chainId,
       chainGetter,
       ObservableCosmwasmContractChainQuery.getUrlFromObj(
@@ -29,9 +27,9 @@ export class ObservableCosmwasmContractChainQuery<
     );
   }
 
-  // eslint-disable-next-line @typescript-eslint/ban-types
   protected static getUrlFromObj(
     contractAddress: string,
+    // eslint-disable-next-line @typescript-eslint/ban-types
     obj: object,
     beta?: boolean
   ): string {
@@ -43,29 +41,16 @@ export class ObservableCosmwasmContractChainQuery<
     }/contract/${contractAddress}/smart/${query}`;
   }
 
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  protected setObj(obj: object) {
-    this.obj = obj;
-
-    this.setUrl(
-      ObservableCosmwasmContractChainQuery.getUrlFromObj(
-        this.contractAddress,
-        this.obj,
-        this.beta
-      )
-    );
-  }
-
   protected canFetch(): boolean {
     return this.contractAddress.length !== 0;
   }
 
-  protected async fetchResponse(
-    cancelToken: CancelToken
-  ): Promise<QueryResponse<T>> {
-    const response = await super.fetchResponse(cancelToken);
+  protected override async fetchResponse(
+    abortController: AbortController
+  ): Promise<{ headers: any; data: T }> {
+    const { data, headers } = await super.fetchResponse(abortController);
 
-    const wasmResult = response.data as unknown as
+    const wasmResult = data as unknown as
       | {
           data: any;
         }
@@ -76,10 +61,8 @@ export class ObservableCosmwasmContractChainQuery<
     }
 
     return {
+      headers,
       data: wasmResult.data as T,
-      status: response.status,
-      staled: false,
-      timestamp: Date.now(),
     };
   }
 }
