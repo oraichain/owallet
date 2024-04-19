@@ -4,7 +4,7 @@ import {
 } from "../../chain-query";
 import { UnbondingDelegation, UnbondingDelegations } from "./types";
 import { KVStore } from "@owallet/common";
-import { ChainGetter } from "../../../common";
+import { ChainGetter, QuerySharedContext } from "../../../common";
 import { CoinPretty, Int } from "@owallet/unit";
 import { computed, makeObservable } from "mobx";
 
@@ -12,13 +12,13 @@ export class ObservableQueryUnbondingDelegationsInner extends ObservableChainQue
   protected bech32Address: string;
 
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     bech32Address: string
   ) {
     super(
-      kvStore,
+      sharedContext,
       chainId,
       chainGetter,
       `/cosmos/staking/v1beta1/delegators/${bech32Address}/unbonding_delegations?pagination.limit=1000`
@@ -96,13 +96,13 @@ export class ObservableQueryUnbondingDelegationsInner extends ObservableChainQue
 
 export class ObservableQueryUnbondingDelegations extends ObservableChainQueryMap<UnbondingDelegations> {
   constructor(
-    protected readonly kvStore: KVStore,
+    protected readonly sharedContext: QuerySharedContext,
     protected readonly chainId: string,
     protected readonly chainGetter: ChainGetter
   ) {
-    super(kvStore, chainId, chainGetter, (bech32Address: string) => {
+    super(sharedContext, chainId, chainGetter, (bech32Address: string) => {
       return new ObservableQueryUnbondingDelegationsInner(
-        this.kvStore,
+        this.sharedContext,
         this.chainId,
         this.chainGetter,
         bech32Address

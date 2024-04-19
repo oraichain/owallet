@@ -9,7 +9,9 @@ export interface KVStoreProvider {
   get(): Promise<{ [key: string]: any }>;
   set(items: { [key: string]: any }): Promise<void>;
 }
-
+export interface MultiGet {
+  multiGet(keys: string[]): Promise<{ [key: string]: any }>;
+}
 export enum KVStoreType {
   extension = "extension",
   mobile = "mobile",

@@ -4,7 +4,7 @@ import {
   ObservableChainQuery,
   ObservableChainQueryMap,
 } from "../../chain-query";
-import { ChainGetter } from "../../../common";
+import { ChainGetter, QuerySharedContext } from "../../../common";
 import { computed, makeObservable } from "mobx";
 import { CoinPretty, Dec, Int } from "@owallet/unit";
 import { Currency } from "@owallet/types";
@@ -15,13 +15,13 @@ export class ObservableQueryRewardsInner extends ObservableChainQuery<Rewards> {
   protected bech32Address: string;
 
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     bech32Address: string
   ) {
     super(
-      kvStore,
+      sharedContext,
       chainId,
       chainGetter,
       `/cosmos/distribution/v1beta1/delegators/${bech32Address}/rewards`
@@ -259,13 +259,13 @@ export class ObservableQueryRewardsInner extends ObservableChainQuery<Rewards> {
 
 export class ObservableQueryRewards extends ObservableChainQueryMap<Rewards> {
   constructor(
-    protected readonly kvStore: KVStore,
+    protected readonly sharedContext: QuerySharedContext,
     protected readonly chainId: string,
     protected readonly chainGetter: ChainGetter
   ) {
-    super(kvStore, chainId, chainGetter, (bech32Address: string) => {
+    super(sharedContext, chainId, chainGetter, (bech32Address: string) => {
       return new ObservableQueryRewardsInner(
-        this.kvStore,
+        this.sharedContext,
         this.chainId,
         this.chainGetter,
         bech32Address

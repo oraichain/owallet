@@ -6,7 +6,7 @@ import {
   ProposalTally,
 } from "./types";
 import { KVStore } from "@owallet/common";
-import { ChainGetter } from "../../../common";
+import { ChainGetter, QuerySharedContext } from "../../../common";
 import { computed, makeObservable } from "mobx";
 import { DeepReadonly } from "utility-types";
 import { CoinPretty, Dec, DecUtils, Int, IntPretty } from "@owallet/unit";
@@ -14,13 +14,18 @@ import { ObservableQueryGovernance } from "./proposals";
 
 export class ObservableQueryProposal extends ObservableChainQuery<ProposalTally> {
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     protected readonly _raw: Proposal | ProposalStargate,
     protected readonly governance: ObservableQueryGovernance
   ) {
-    super(kvStore, chainId, chainGetter, `/gov/proposals/${_raw.id}/tally`);
+    super(
+      sharedContext,
+      chainId,
+      chainGetter,
+      `/gov/proposals/${_raw.id}/tally`
+    );
     makeObservable(this);
   }
 

@@ -3,19 +3,19 @@ import {
   ObservableChainQuery,
   ObservableChainQueryMap,
 } from "../../chain-query";
-import { ChainGetter } from "../../../common";
+import { ChainGetter, QuerySharedContext } from "../../../common";
 import { DenomTraceResponse } from "./types";
 import { autorun, computed } from "mobx";
 
 export class ObservableChainQueryDenomTrace extends ObservableChainQuery<DenomTraceResponse> {
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     protected readonly hash: string
   ) {
     super(
-      kvStore,
+      sharedContext,
       chainId,
       chainGetter,
       `/ibc/apps/transfer/v1/denom_traces/${hash}`
@@ -88,13 +88,13 @@ export class ObservableChainQueryDenomTrace extends ObservableChainQuery<DenomTr
 
 export class ObservableQueryDenomTrace extends ObservableChainQueryMap<DenomTraceResponse> {
   constructor(
-    protected readonly kvStore: KVStore,
+    protected readonly sharedContext: QuerySharedContext,
     protected readonly chainId: string,
     protected readonly chainGetter: ChainGetter
   ) {
-    super(kvStore, chainId, chainGetter, (hash: string) => {
+    super(sharedContext, chainId, chainGetter, (hash: string) => {
       return new ObservableChainQueryDenomTrace(
-        this.kvStore,
+        this.sharedContext,
         this.chainId,
         this.chainGetter,
         hash

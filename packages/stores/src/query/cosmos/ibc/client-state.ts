@@ -3,20 +3,20 @@ import {
   ObservableChainQuery,
   ObservableChainQueryMap,
 } from "../../chain-query";
-import { ChainGetter } from "../../../common";
+import { ChainGetter, QuerySharedContext } from "../../../common";
 import { ClientStateResponse } from "./types";
 import { autorun, computed } from "mobx";
 
 export class ObservableChainQueryClientState extends ObservableChainQuery<ClientStateResponse> {
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     portId: string,
     channelId: string
   ) {
     super(
-      kvStore,
+      sharedContext,
       chainId,
       chainGetter,
       `/ibc/core/channel/v1/channels/${channelId}/ports/${portId}/client_state`
@@ -49,15 +49,15 @@ export class ObservableChainQueryClientState extends ObservableChainQuery<Client
 
 export class ObservableQueryIBCClientState extends ObservableChainQueryMap<ClientStateResponse> {
   constructor(
-    protected readonly kvStore: KVStore,
+    protected readonly sharedContext: QuerySharedContext,
     protected readonly chainId: string,
     protected readonly chainGetter: ChainGetter
   ) {
-    super(kvStore, chainId, chainGetter, (key: string) => {
+    super(sharedContext, chainId, chainGetter, (key: string) => {
       const params = JSON.parse(key);
 
       return new ObservableChainQueryClientState(
-        this.kvStore,
+        this.sharedContext,
         this.chainId,
         this.chainGetter,
         params.portId,

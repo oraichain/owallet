@@ -7,7 +7,7 @@ import {
   ObservableQueryGovParamVoting,
 } from "./params";
 import { KVStore } from "@owallet/common";
-import { ChainGetter } from "../../../common";
+import { ChainGetter, QuerySharedContext } from "../../../common";
 import { StakingPool } from "../staking/types";
 import { DeepReadonly } from "utility-types";
 import { Dec, DecUtils, Int, IntPretty } from "@owallet/unit";
@@ -23,12 +23,12 @@ export class ObservableQueryGovernance extends ObservableChainQuery<GovProposals
   protected paramTally?: ObservableQueryGovParamTally = undefined;
 
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     protected readonly _queryPool: ObservableChainQuery<StakingPool>
   ) {
-    super(kvStore, chainId, chainGetter, "/gov/proposals?limit=1000");
+    super(sharedContext, chainId, chainGetter, "/gov/proposals?limit=1000");
     makeObservable(this);
   }
 
@@ -40,7 +40,7 @@ export class ObservableQueryGovernance extends ObservableChainQuery<GovProposals
     if (!this.paramDeposit) {
       runInAction(() => {
         this.paramDeposit = new ObservableQueryGovParamDeposit(
-          this.kvStore,
+          this.sharedContext,
           this.chainId,
           this.chainGetter
         );
@@ -55,7 +55,7 @@ export class ObservableQueryGovernance extends ObservableChainQuery<GovProposals
     if (!this.paramVoting) {
       runInAction(() => {
         this.paramVoting = new ObservableQueryGovParamVoting(
-          this.kvStore,
+          this.sharedContext,
           this.chainId,
           this.chainGetter
         );
@@ -70,7 +70,7 @@ export class ObservableQueryGovernance extends ObservableChainQuery<GovProposals
     if (!this.paramTally) {
       runInAction(() => {
         this.paramTally = new ObservableQueryGovParamTally(
-          this.kvStore,
+          this.sharedContext,
           this.chainId,
           this.chainGetter
         );
@@ -106,7 +106,7 @@ export class ObservableQueryGovernance extends ObservableChainQuery<GovProposals
     for (const raw of this.response.data.result) {
       result.push(
         new ObservableQueryProposal(
-          this.kvStore,
+          this.sharedContext,
           this.chainId,
           this.chainGetter,
           raw,

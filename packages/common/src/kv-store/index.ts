@@ -3,4 +3,5 @@ export * from "./extension";
 export * from "./base";
 export * from "./memory";
 export * from "./local";
+export * from "./multi-get";
 export * from "./indexed-db";

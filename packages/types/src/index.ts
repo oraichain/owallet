@@ -7,3 +7,4 @@ export * from "./window";
 export * from "./tron";
 export * from "./cosmjs";
 export * from "./address";
+export * from "./settled";

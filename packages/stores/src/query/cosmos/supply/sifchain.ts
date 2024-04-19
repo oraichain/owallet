@@ -1,4 +1,4 @@
-import { ObservableQuery } from "../../../common";
+import { ObservableQuery, QuerySharedContext } from "../../../common";
 import { KVStore } from "@owallet/common";
 import { fetchAdapter } from "@owallet/common";
 import Axios from "axios";
@@ -9,13 +9,12 @@ export type SifchainLiquidityAPYResult = { rate: number };
 export class ObservableQuerySifchainLiquidityAPY extends ObservableQuery<SifchainLiquidityAPYResult> {
   protected readonly chainId: string;
 
-  constructor(kvStore: KVStore, chainId: string) {
-    const instance = Axios.create({
-      baseURL: "https://data.sifchain.finance/",
-      adapter: fetchAdapter,
-    });
-
-    super(kvStore, instance, `beta/validator/stakingRewards`);
+  constructor(sharedContext: QuerySharedContext, chainId: string) {
+    super(
+      sharedContext,
+      "https://data.sifchain.finance/",
+      `beta/validator/stakingRewards`
+    );
 
     this.chainId = chainId;
     makeObservable(this);
