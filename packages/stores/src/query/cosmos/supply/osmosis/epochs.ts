@@ -1,8 +1,9 @@
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../../common";
+import { QuerySharedContext } from "../../../../common";
 import { ObservableChainQuery } from "../../../chain-query";
 import { Epochs } from "./types";
 import { computed, observable } from "mobx";
+import { ChainGetter } from "../../../../chain";
 
 export class ObservableQueryOsmosisEpochsInner {
   constructor(

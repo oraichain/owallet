@@ -5,6 +5,7 @@ import {
   ChainInfo,
   Currency,
   FeeCurrency,
+  NetworkType,
 } from "@owallet/types";
 
 export type CurrencyRegistrar = (
@@ -28,7 +29,7 @@ export interface IChainStore<C extends ChainInfo = ChainInfo>
 }
 
 export interface IChainInfoImpl<C extends ChainInfo = ChainInfo> {
-  addUnknownDenoms(...coinMinimalDenoms: string[]): void;
+  addUnknownCurrencies(...coinMinimalDenoms: string[]): void;
   findCurrency(
     coinMinimalDenom:
       | string
@@ -57,4 +58,5 @@ export interface IChainInfoImpl<C extends ChainInfo = ChainInfo> {
   readonly walletUrl: string | undefined;
   readonly walletUrlForStaking: string | undefined;
   readonly chainSymbolImageUrl: string | undefined;
+  readonly networkType?: NetworkType;
 }

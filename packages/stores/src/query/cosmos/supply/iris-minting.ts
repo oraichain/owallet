@@ -1,6 +1,7 @@
 import { ObservableChainQuery } from "../../chain-query";
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryIrisMintingInfation extends ObservableChainQuery<{
   height: string;

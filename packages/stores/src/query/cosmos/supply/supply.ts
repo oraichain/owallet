@@ -4,8 +4,9 @@ import {
   ObservableChainQuery,
   ObservableChainQueryMap,
 } from "../../chain-query";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import { autorun } from "mobx";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableChainQuerySupplyTotal extends ObservableChainQuery<
   SupplyTotal | SupplyTotalStargate

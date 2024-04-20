@@ -11,6 +11,8 @@ export interface ChainInfo {
   readonly rpcConfig?: AxiosRequestConfig;
   readonly rest: string;
   readonly restConfig?: AxiosRequestConfig;
+  readonly walletUrl?: string;
+  readonly walletUrlForStaking?: string;
   readonly chainId: string;
   readonly chainName: string;
   readonly networkType?: NetworkType;

@@ -1,9 +1,10 @@
-import { ChainGetter, QuerySharedContext } from "../../../../common";
+import { QuerySharedContext } from "../../../../common";
 import { ObservableChainQuery } from "../../../chain-query";
 import { MintParmas } from "./types";
 import { KVStore } from "@owallet/common";
 import { computed, makeObservable } from "mobx";
 import { Dec } from "@owallet/unit";
+import { ChainGetter } from "../../../../chain";
 
 export class ObservableQueryOsmosisMintParmas extends ObservableChainQuery<MintParmas> {
   constructor(

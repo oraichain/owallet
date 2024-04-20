@@ -1,8 +1,9 @@
 import { ObservableChainQuery } from "../../chain-query";
 import { MintingInflation } from "./types";
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QuerySharedContext } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import { autorun } from "mobx";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryMintingInfation extends ObservableChainQuery<MintingInflation> {
   constructor(

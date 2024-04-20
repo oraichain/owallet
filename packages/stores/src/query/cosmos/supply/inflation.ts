@@ -4,7 +4,6 @@ import { ObservableQuerySupplyTotal } from "./supply";
 import { MintingInflation } from "./types";
 import { StakingPool } from "../staking/types";
 import { ObservableChainQuery } from "../../chain-query";
-import { ChainGetter } from "../../../common";
 import { ObservableQueryIrisMintingInfation } from "./iris-minting";
 import { ObservableQuerySifchainLiquidityAPY } from "./sifchain";
 import {
@@ -12,6 +11,7 @@ import {
   ObservableQueryOsmosisEpochs,
   ObservableQueryOsmosisMintParmas,
 } from "./osmosis";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryInflation {
   constructor(
