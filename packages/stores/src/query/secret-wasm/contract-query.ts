@@ -39,7 +39,7 @@ export class ObservableSecretContractChainQuery<
     super.onStart();
 
     if (!this.owallet) {
-      await this.initKeplr();
+      await this.initOWallet();
     }
 
     if (!this.owallet) {
@@ -75,7 +75,7 @@ export class ObservableSecretContractChainQuery<
   }
 
   @flow
-  protected *initKeplr() {
+  protected *initOWallet() {
     this.owallet = yield* toGenerator(this.apiGetter());
   }
 

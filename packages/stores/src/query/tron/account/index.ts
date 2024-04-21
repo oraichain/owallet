@@ -3,21 +3,22 @@ import {
   ObservableChainQueryMap,
 } from "../../chain-query";
 import { KVStore } from "@owallet/common";
-import { ChainGetter } from "../../../common";
+import { QuerySharedContext } from "../../../common";
 import { AuthAccountTron } from "./types";
 import { computed, makeObservable } from "mobx";
 import { BaseAccount } from "@owallet/cosmos";
 import { Int } from "@owallet/unit";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryAccountTronInner extends ObservableChainQuery<AuthAccountTron> {
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     protected readonly walletAddress: string
   ) {
     super(
-      kvStore,
+      sharedContext,
       chainId,
       chainGetter,
       `/api/accountv2?address=${walletAddress}`
@@ -86,13 +87,13 @@ export class ObservableQueryAccountTronInner extends ObservableChainQuery<AuthAc
 
 export class ObservableQueryAccountTron extends ObservableChainQueryMap<AuthAccountTron> {
   constructor(
-    protected readonly kvStore: KVStore,
+    protected readonly sharedContext: QuerySharedContext,
     protected readonly chainId: string,
     protected readonly chainGetter: ChainGetter
   ) {
-    super(kvStore, chainId, chainGetter, (walletAddress) => {
+    super(sharedContext, chainId, chainGetter, (walletAddress) => {
       return new ObservableQueryAccountTronInner(
-        this.kvStore,
+        this.sharedContext,
         this.chainId,
         this.chainGetter,
         walletAddress
