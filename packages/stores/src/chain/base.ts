@@ -134,6 +134,83 @@ export class ChainInfoImpl<C extends ChainInfo = ChainInfo>
       });
     }
   }
+  addUnknownCurrencies(...coinMinimalDenoms: string[]) {
+    for (const coinMinimalDenom of coinMinimalDenoms) {
+      if (this.unknownDenomMap.get(coinMinimalDenom)) {
+        continue;
+      }
+
+      if (this.currencyMap.has(coinMinimalDenom)) {
+        continue;
+      }
+
+      runInAction(() => {
+        this.unknownDenoms.push(coinMinimalDenom);
+        this.registrationInProgressCurrencyMap.set(coinMinimalDenom, true);
+      });
+
+      let i = 0;
+      const disposer = autorun(() => {
+        i++;
+        const dispose = () => {
+          if (i === 1) {
+            setTimeout(() => {
+              if (disposer) {
+                disposer();
+              }
+            }, 1);
+          } else {
+            if (disposer) {
+              disposer();
+            }
+          }
+        };
+
+        const generator = this.currencyRegistry.getCurrencyRegistrar(
+          this.chainId,
+          coinMinimalDenom
+        );
+        if (generator) {
+          const currency = generator.value;
+          runInAction(() => {
+            if (!generator.done) {
+              this.registrationInProgressCurrencyMap.set(
+                coinMinimalDenom,
+                true
+              );
+            }
+
+            if (currency) {
+              const index = this.unknownDenoms.findIndex(
+                (denom) => denom === currency.coinMinimalDenom
+              );
+              if (index >= 0) {
+                this.unknownDenoms.splice(index, 1);
+              }
+
+              this.addOrReplaceCurrency(currency);
+            }
+
+            if (generator.done) {
+              this.registrationInProgressCurrencyMap.delete(coinMinimalDenom);
+            }
+          });
+
+          if (generator.done) {
+            dispose();
+          }
+        } else {
+          if (this.registrationInProgressCurrencyMap.get(coinMinimalDenom)) {
+            runInAction(() => {
+              this.registrationInProgressCurrencyMap.delete(coinMinimalDenom);
+            });
+          }
+
+          dispose();
+        }
+      });
+    }
+  }
 
   get embedded(): C {
     return this._embedded;

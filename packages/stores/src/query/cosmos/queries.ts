@@ -29,6 +29,7 @@ import { ObservableQuerySifchainLiquidityAPY } from "./supply/sifchain";
 import { ObservableQueryCosmosBalanceRegistry } from "./balance";
 import { ObservableQueryIrisMintingInfation } from "./supply/iris-minting";
 import { DeepReadonly } from "utility-types";
+import { ObservableQueryAuthZGranter } from "./authz";
 import {
   ObservableQueryOsmosisEpochProvisions,
   ObservableQueryOsmosisEpochs,
@@ -97,7 +98,7 @@ export class CosmosQueriesImpl {
   public readonly queryIBCDenomTrace: DeepReadonly<ObservableQueryDenomTrace>;
 
   public readonly querySifchainAPY: DeepReadonly<ObservableQuerySifchainLiquidityAPY>;
-
+  public readonly queryAuthZGranter: DeepReadonly<ObservableQueryAuthZGranter>;
   constructor(
     base: QueriesSetBase,
     sharedContext: QuerySharedContext,
@@ -214,6 +215,11 @@ export class CosmosQueriesImpl {
       chainGetter
     );
     this.queryIBCDenomTrace = new ObservableQueryDenomTrace(
+      sharedContext,
+      chainId,
+      chainGetter
+    );
+    this.queryAuthZGranter = new ObservableQueryAuthZGranter(
       sharedContext,
       chainId,
       chainGetter

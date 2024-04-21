@@ -30,6 +30,7 @@ export interface IChainStore<C extends ChainInfo = ChainInfo>
 
 export interface IChainInfoImpl<C extends ChainInfo = ChainInfo> {
   addUnknownCurrencies(...coinMinimalDenoms: string[]): void;
+  addUnknownDenoms(...coinMinimalDenoms: string[]): void;
   findCurrency(
     coinMinimalDenom:
       | string

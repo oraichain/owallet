@@ -1,5 +1,5 @@
 import { Int } from "@owallet/unit";
-import { AxiosInstance } from "axios";
+import { simpleFetch } from "@owallet/simple-fetch";
 
 export interface Account {
   getType(): string;
@@ -10,14 +10,21 @@ export interface Account {
 
 export class BaseAccount implements Account {
   public static async fetchFromRest(
-    instance: AxiosInstance,
+    rest: string,
     address: string,
     // If the account doesn't exist, the result from `auth/accounts` would not have the address.
     // In this case, if `defaultBech32Address` param is provided, this will use it instead of the result from rest.
     defaultBech32Address: boolean = false
   ): Promise<BaseAccount> {
-    const result = await instance.get(
-      `/cosmos/auth/v1beta1/accounts/${address}`
+    const result = await simpleFetch<any>(
+      rest,
+      `/cosmos/auth/v1beta1/accounts/${address}`,
+      {
+        validateStatus: function (status) {
+          // Permit 404 not found to handle the case of account not exists
+          return (status >= 200 && status < 300) || status === 404;
+        },
+      }
     );
 
     return BaseAccount.fromProtoJSON(

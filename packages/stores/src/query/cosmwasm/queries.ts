@@ -4,7 +4,7 @@ import { KVStore } from "@owallet/common";
 import { ObservableQueryCw20ContractInfo } from "./cw20-contract-info";
 import { DeepReadonly } from "utility-types";
 import { ObservableQueryCw20BalanceRegistry } from "./cw20-balance";
-import { QueriesWrappedSecret } from "../secret-wasm";
+// import { QueriesWrappedSecret } from "../secret-wasm";
 import { OWallet } from "@owallet/types";
 
 // export interface HasCosmwasmQueries {
