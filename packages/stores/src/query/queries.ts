@@ -3,7 +3,6 @@ import { KVStore, MultiGet } from "@owallet/common";
 import { DeepReadonly, UnionToIntersection } from "utility-types";
 import { ObservableQueryBalances } from "./balances";
 import {
-  ChainGetter,
   QuerySharedContext,
   IObject,
   ChainedFunctionifyTuple,
@@ -11,6 +10,7 @@ import {
 } from "../common";
 import { OWallet } from "@owallet/types";
 import { ObservableSimpleQuery } from "./simple";
+import { ChainGetter } from "../chain";
 
 export interface QueriesSetBase {
   readonly queryBalances: DeepReadonly<ObservableQueryBalances>;
