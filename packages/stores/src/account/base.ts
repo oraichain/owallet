@@ -194,7 +194,7 @@ export class AccountSetBase {
 
   public broadcastMode: "sync" | "async" | "block" = "sync";
 
-  protected pubKey: Uint8Array;
+  protected _pubKey: Uint8Array;
 
   protected hasInited = false;
 
@@ -227,7 +227,7 @@ export class AccountSetBase {
   // ) {
   //   makeObservable(this);
   //
-  //   this.pubKey = new Uint8Array();
+  //   this._pubKey = new Uint8Array();
   //
   //   if (opts.autoInit) {
   //     this.init();
@@ -250,7 +250,7 @@ export class AccountSetBase {
   ) {
     makeObservable(this);
 
-    this.pubKey = new Uint8Array();
+    this._pubKey = new Uint8Array();
 
     if (opts.autoInit) {
       this.init();
@@ -271,7 +271,9 @@ export class AccountSetBase {
   getTronWeb(): Promise<TronWeb | undefined> {
     return this.sharedContext.getTronWeb();
   }
-
+  get pubKey(): Uint8Array {
+    return this._pubKey.slice();
+  }
   // get msgOpts(): MsgOpts {
   //   return this.opts.msgOpts;
   // }
@@ -321,15 +323,20 @@ export class AccountSetBase {
     owallet: OWallet,
     chainInfo: ReturnType<ChainGetter["getChain"]>
   ): Promise<void> {
-    await owallet.experimentalSuggestChain(chainInfo.raw);
+    await this.sharedContext.suggestChain(async () => {
+      if (owallet) {
+        await owallet.experimentalSuggestChain(chainInfo.embedded);
+      }
+    });
+    // await owallet.experimentalSuggestChain(chainInfo.raw);
   }
 
-  protected async evmSuggestChain(
-    ethereum: Ethereum,
-    chainInfo: ReturnType<ChainGetter["getChain"]>
-  ): Promise<void> {
-    await ethereum.experimentalSuggestChain(chainInfo.raw);
-  }
+  // protected async evmSuggestChain(
+  //   ethereum: Ethereum,
+  //   chainInfo: ReturnType<ChainGetter["getChain"]>
+  // ): Promise<void> {
+  //   await ethereum.experimentalSuggestChain(chainInfo.raw);
+  // }
 
   private readonly handleInit = () => this.init();
 
@@ -376,7 +383,7 @@ export class AccountSetBase {
     this._address = key.address;
     this._isNanoLedger = key.isNanoLedger;
     this._name = key.name;
-    this.pubKey = key.pubKey;
+    this._pubKey = key.pubKey;
     this._legacyAddress = key.legacyAddress;
     // Set the wallet status as loaded after getting all necessary infos.
     this._walletStatus = WalletStatus.Loaded;
@@ -395,7 +402,7 @@ export class AccountSetBase {
     this._legacyAddress = "";
     this._addressType = AddressBtcType.Bech32;
     this._address = null;
-    this.pubKey = new Uint8Array(0);
+    this._pubKey = new Uint8Array(0);
   }
 
   @action
