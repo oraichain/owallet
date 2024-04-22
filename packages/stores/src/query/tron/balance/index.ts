@@ -46,15 +46,6 @@ export class ObservableQueryTronBalancesImplParent extends ObservableChainQuery<
     return this.walletAddress.length > 0;
   }
 
-  // protected override onReceiveResponse(
-  //   response: Readonly<QueryResponse<Balances>>
-  // ) {
-  //   super.onReceiveResponse(response);
-  //
-  //   const chainInfo = this.chainGetter.getChain(this.chainId);
-  //   const denoms = response.data.balances.map((coin) => coin.denom);
-  //   chainInfo.addUnknownCurrencies(...denoms);
-  // }
   protected override async fetchResponse(
     abortController: AbortController
   ): Promise<{ headers: any; data: Balances }> {

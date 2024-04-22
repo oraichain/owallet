@@ -4,15 +4,20 @@ import {
 } from "../../chain-query";
 import { Block } from "@cosmjs/tendermint-rpc";
 import { KVStore } from "@owallet/common";
-import { ChainGetter, QueryResponse } from "../../../common";
+import { QueryResponse, QuerySharedContext } from "../../../common";
 import { computed, makeObservable } from "mobx";
 import { Int } from "@owallet/unit";
 import { CancelToken } from "axios";
 import Web3 from "web3";
+import { ChainGetter } from "../../../chain";
 
 export class ObservableQueryGasPriceInner extends ObservableChainQuery<string> {
-  constructor(kvStore: KVStore, chainId: string, chainGetter: ChainGetter) {
-    super(kvStore, chainId, chainGetter, ``);
+  constructor(
+    sharedContext: QuerySharedContext,
+    chainId: string,
+    chainGetter: ChainGetter
+  ) {
+    super(sharedContext, chainId, chainGetter, ``);
 
     makeObservable(this);
   }
@@ -29,15 +34,16 @@ export class ObservableQueryGasPriceInner extends ObservableChainQuery<string> {
 
     return new Int(this.response.data);
   }
-  protected async fetchResponse(): Promise<QueryResponse<string>> {
+  protected override async fetchResponse(): Promise<{
+    headers: any;
+    data: string;
+  }> {
     try {
       const web3 = new Web3(this.chainGetter.getChain(this.chainId).rpc);
       const gasPrice = await web3.eth.getGasPrice();
       return {
-        status: 1,
-        staled: false,
         data: gasPrice,
-        timestamp: Date.now(),
+        headers: null,
       };
     } catch (error) {
       console.log(
@@ -52,13 +58,13 @@ export class ObservableQueryGasPriceInner extends ObservableChainQuery<string> {
 
 export class ObservableQueryGasPrice extends ObservableChainQueryMap<string> {
   constructor(
-    protected readonly kvStore: KVStore,
+    protected readonly sharedContext: QuerySharedContext,
     protected readonly chainId: string,
     protected readonly chainGetter: ChainGetter
   ) {
-    super(kvStore, chainId, chainGetter, () => {
+    super(sharedContext, chainId, chainGetter, () => {
       return new ObservableQueryGasPriceInner(
-        this.kvStore,
+        this.sharedContext,
         this.chainId,
         this.chainGetter
       );

@@ -94,6 +94,5 @@ export class TronQueriesImpl {
         chainId,
         chainGetter
       );
-    // this.queryGas = new ObservableQueryGas(kvStore, chainId, chainGetter);
   }
 }
