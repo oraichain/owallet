@@ -1,19 +1,20 @@
 import { Erc20ContractTokenInfo } from "./types";
 import { getRpcByChainId, KVStore } from "@owallet/common";
 import { ObservableChainQuery, ObservableChainQueryMap } from "../chain-query";
-import { ChainGetter, QueryResponse } from "../../common";
+import { QueryResponse, QuerySharedContext } from "../../common";
 import { computed } from "mobx";
 import Web3 from "web3";
 import ERC20_ABI from "human-standard-token-abi";
+import { ChainGetter } from "../../chain";
 
 export class ObservableQueryErc20ContactInfoInner extends ObservableChainQuery<Erc20ContractTokenInfo> {
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     protected readonly contractAddress: string
   ) {
-    super(kvStore, chainId, chainGetter, contractAddress);
+    super(sharedContext, chainId, chainGetter, contractAddress);
   }
 
   @computed
@@ -24,9 +25,10 @@ export class ObservableQueryErc20ContactInfoInner extends ObservableChainQuery<E
 
     return this.response?.data?.token_info_response ?? this.response?.data;
   }
-  protected async fetchResponse(): Promise<
-    QueryResponse<Erc20ContractTokenInfo>
-  > {
+  protected override async fetchResponse(): Promise<{
+    headers: any;
+    data: Erc20ContractTokenInfo;
+  }> {
     const web3 = new Web3(
       getRpcByChainId(this.chainGetter.getChain(this.chainId), this.chainId)
     );
@@ -52,22 +54,20 @@ export class ObservableQueryErc20ContactInfoInner extends ObservableChainQuery<E
 
     return {
       data: tokenInfoData,
-      status: 1,
-      staled: false,
-      timestamp: Date.now(),
+      headers: null,
     };
   }
 }
 
 export class ObservableQueryErc20ContractInfo extends ObservableChainQueryMap<Erc20ContractTokenInfo> {
   constructor(
-    protected readonly kvStore: KVStore,
+    protected readonly sharedContext: QuerySharedContext,
     protected readonly chainId: string,
     protected readonly chainGetter: ChainGetter
   ) {
-    super(kvStore, chainId, chainGetter, (contractAddress: string) => {
+    super(sharedContext, chainId, chainGetter, (contractAddress: string) => {
       return new ObservableQueryErc20ContactInfoInner(
-        this.kvStore,
+        this.sharedContext,
         this.chainId,
         this.chainGetter,
         contractAddress

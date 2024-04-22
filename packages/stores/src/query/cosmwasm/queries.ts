@@ -1,11 +1,12 @@
 import { QueriesSetBase } from "../queries";
-import { ChainGetter, QuerySharedContext } from "../../common";
+import { QuerySharedContext } from "../../common";
 import { KVStore } from "@owallet/common";
 import { ObservableQueryCw20ContractInfo } from "./cw20-contract-info";
 import { DeepReadonly } from "utility-types";
 import { ObservableQueryCw20BalanceRegistry } from "./cw20-balance";
 // import { QueriesWrappedSecret } from "../secret-wasm";
 import { OWallet } from "@owallet/types";
+import { ChainGetter } from "../../chain";
 
 // export interface HasCosmwasmQueries {
 //   cosmwasm: CosmwasmQueries;
