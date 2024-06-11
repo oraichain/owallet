@@ -13,7 +13,7 @@ import {
   getRpcByChainId,
   parseRpcBalance,
 } from "@owallet/common";
-import { CoinPretty, Dec, PricePretty } from "@owallet/unit";
+import { CoinPretty, Dec, DecUtils, PricePretty } from "@owallet/unit";
 import Web3 from "web3";
 import { MulticallQueryClient } from "@oraichain/common-contracts-sdk";
 import { fromBinary, toBinary } from "@cosmjs/cosmwasm-stargate";
@@ -62,7 +62,8 @@ export const useMultipleAssets = (
   isAllNetwork: boolean,
   appInit: AppInit,
   isRefreshing: boolean,
-  bech32Address
+  bech32Address,
+  totalChain
 ): IMultipleAsset => {
   const fiatCurrency = priceStore.getFiatCurrency(priceStore.defaultVsCurrency);
   const [isLoading, setIsLoading] = useState(false);
@@ -79,12 +80,12 @@ export const useMultipleAssets = (
   let overallTotalBalance = "0";
   let allTokens: ViewRawToken[] = [];
   useEffect(() => {
-    if (allChainMap.size < 21) return;
+    if (allChainMap.size < totalChain) return;
     init();
   }, [bech32Address, priceStore.defaultVsCurrency, allChainMap.size]);
   useEffect(() => {
     if (!isRefreshing) return;
-    if (allChainMap.size < 21) return;
+    if (allChainMap.size < totalChain) return;
     init();
   }, [isRefreshing, allChainMap.size]);
   const pushTokenQueue = async (
@@ -165,13 +166,13 @@ export const useMultipleAssets = (
     setIsLoading(true);
     try {
       const allChain = Array.from(allChainMap.values());
-      const chainIdsEvm = [
-        ChainIdEnum.Ethereum,
-        ChainIdEnum.BNBChain,
-        ChainIdEnum.TRON,
-      ];
+      // const chainIdsEvm = [
+      //   ChainIdEnum.Ethereum,
+      //   ChainIdEnum.BNBChain,
+      //   ChainIdEnum.TRON,
+      // ];
       // console.log(allChain,"allChain")
-      await fetchAllBalancesEvm(chainIdsEvm);
+      // await fetchAllBalancesEvm(chainIdsEvm);
       const allBalancePromises = allChain.map(
         async ({ address, chainInfo }) => {
           if (!address) return;
@@ -189,6 +190,7 @@ export const useMultipleAssets = (
                 : Promise.all([
                     getBalanceNativeEvm(address, chainInfo),
                     getBalanceErc20(address, chainInfo),
+                    fetchAllBalancesEvm([chainInfo.chainId]),
                   ]);
             case "bitcoin":
               const btcAddress = accountStore.getAccount(
@@ -271,6 +273,10 @@ export const useMultipleAssets = (
         network: MapChainIdToNetwork[chainInfo.chainId],
       });
       if (((res && res.result) || []).length <= 0) return;
+      const balanceObj = res.result.reduce((obj, item) => {
+        obj[item.tokenAddress] = item.balance;
+        return obj;
+      }, {});
       const tokenAddresses = res.result
         .map((item, index) => {
           return `${MapChainIdToNetwork[chainInfo.chainId]}%2B${
@@ -295,6 +301,10 @@ export const useMultipleAssets = (
               contractAddress: tokeninfo.contractAddress,
             },
           ];
+          const amount = new Dec(balanceObj[tokeninfo.contractAddress]).mul(
+            DecUtils.getTenExponentN(tokeninfo.decimal)
+          );
+          pushTokenQueue(infoToken[0], amount.roundUp().toString(), chainInfo);
           chainInfo.addCurrencies(...infoToken);
         }
       });
@@ -309,6 +319,12 @@ export const useMultipleAssets = (
         network: MapChainIdToNetwork[chainInfo.chainId],
       });
       if (!res?.trc20) return;
+      const result = res?.trc20.reduce((acc, curr) => {
+        const key = Object.keys(curr)[0];
+        acc[key] = curr[key];
+        return acc;
+      }, {});
+      console.log(result, "result");
       const tokenAddresses = res?.trc20
         .map((item, index) => {
           return `${MapChainIdToNetwork[chainInfo.chainId]}%2B${
@@ -335,6 +351,11 @@ export const useMultipleAssets = (
               contractAddress: tokeninfo.contractAddress,
             },
           ];
+          pushTokenQueue(
+            infoToken[0],
+            result[tokeninfo.contractAddress],
+            chainInfo
+          );
           chainInfo.addCurrencies(...infoToken);
         }
       });

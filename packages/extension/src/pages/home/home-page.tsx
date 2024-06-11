@@ -38,10 +38,8 @@ export const HomePage = observer(() => {
       chainInfo: item,
     });
   });
-  console.log(
-    appInitStore.getInitApp.isAllNetworks,
-    "appInitStore.getInitApp.isAllNetworks"
-  );
+  console.log(allChainMap.values(), "ka");
+
   const accountOrai = accountStore.getAccount(ChainIdEnum.Oraichain);
   const { totalPriceBalance, dataTokens, dataTokensByChain, isLoading } =
     useMultipleAssets(
@@ -52,7 +50,8 @@ export const HomePage = observer(() => {
       true,
       appInitStore,
       refreshing,
-      accountOrai.bech32Address
+      accountOrai.bech32Address,
+      chainStore.chainInfos.length
     );
   console.log(totalPriceBalance, "totalPriceBalance");
   console.log(dataTokens, "dataTokens");
