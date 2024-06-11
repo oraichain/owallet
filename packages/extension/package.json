@@ -26,6 +26,7 @@
     "@owallet/background": "^0.9.16",
     "@owallet/common": "^0.9.10",
     "@owallet/cosmos": "^0.9.16",
+    "@tatumio/tatum": "^4.2.32",
     "xhr2": "0.2.1",
     "@owallet/crypto": "^0.9.10",
     "@owallet/ens": "^0.9.0",

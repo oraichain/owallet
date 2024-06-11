@@ -39,6 +39,8 @@ import { FeeType } from "@owallet/hooks";
 import { AnalyticsStore, NoopAnalyticsClient } from "@owallet/analytics";
 import Amplitude from "amplitude-js";
 import { ChainIdHelper } from "@owallet/cosmos";
+import { appInit, AppInit } from "./init";
+import { HugeQueriesStore } from "./huge-queries";
 
 export class RootStore {
   public readonly uiConfigStore: UIConfigStore;
@@ -55,6 +57,8 @@ export class RootStore {
 
   public readonly queriesStore: QueriesStore<QueriesWrappedTron>;
   public readonly accountStore: AccountStore<AccountWithAll>;
+  public readonly appInitStore: AppInit;
+  public readonly hugeQueriesStore: HugeQueriesStore;
   // public readonly accountEvmStore: AccountEvmStore<AccountWithAll>;
   public readonly priceStore: CoinGeckoPriceStore;
   public readonly tokensStore: TokensStore<ChainInfoWithEmbed>;
@@ -279,7 +283,14 @@ export class RootStore {
       this.queriesStore,
       this.queriesStore
     );
-
+    this.appInitStore = appInit;
+    this.hugeQueriesStore = new HugeQueriesStore(
+      this.chainStore,
+      this.queriesStore,
+      this.accountStore,
+      this.priceStore,
+      this.keyRingStore
+    );
     this.analyticsStore = new AnalyticsStore(
       (() => {
         if (!AmplitudeApiKey) {
