@@ -56,12 +56,15 @@ export const AccountBox: FunctionComponent<{
     const smartNavigation = useSmartNavigation();
     const { networkType, coinType, chainId, bip44 } = chainStore.current;
     const account = accountStore.getAccount(chainStore.current.chainId);
+    const addressToFetch = account.getAddressDisplay(
+      keyRingStore.keyRingLedgerAddresses,
+      false
+    );
     const queries = queriesStore.get(chainStore.current.chainId);
     const [loading, setLoading] = useState(true);
     const bip44Option = useBIP44Option();
-    const queryStakable = queries.queryBalances.getQueryBech32Address(
-      account.bech32Address
-    ).stakable;
+    const queryStakable =
+      queries.queryBalances.getQueryBech32Address(addressToFetch).stakable;
 
     const _onPressMyWallet = () => {
       modalStore.setOptions({
@@ -70,7 +73,7 @@ export const AccountBox: FunctionComponent<{
           enableOverDrag: false,
         },
       });
-      modalStore.setChildren(MyWalletModal());
+      modalStore.setChildren(<MyWalletModal />);
     };
 
     const waitToLoad = async () => {
@@ -286,7 +289,7 @@ const styling = (colors) =>
       borderTopLeftRadius: 0,
       paddingVertical: 18,
       borderTopRightRadius: 0,
-      backgroundColor: colors["background-box"],
+      backgroundColor: colors["neutral-surface-bg2"],
     },
     labelName: {
       paddingLeft: spacing["6"],

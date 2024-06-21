@@ -4,17 +4,16 @@ import { useTheme } from "@src/themes/theme-provider";
 import { observer } from "mobx-react-lite";
 import moment from "moment";
 import React, { FunctionComponent, useEffect, useState } from "react";
-import { StyleSheet, TouchableOpacity, View, ViewStyle } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { BarChart, LineChart } from "react-native-chart-kit";
 import { API } from "../../common/api";
-import { OWBox } from "../../components/card";
 import { useSmartNavigation } from "../../navigation.provider";
 import { useStore } from "../../stores";
 import { metrics, spacing } from "../../themes";
 import { nFormatter } from "../../utils/helper";
 import { colorsCode } from "@src/themes/mode-colors";
 import { useQuery } from "@tanstack/react-query";
-import { CoinGeckoAPIEndPoint } from "@owallet/common";
+import { MarketAPIEndPoint } from "@owallet/common";
 
 const DATA_COUNT_DENOM = 4;
 const transformData = (data) => {
@@ -74,15 +73,16 @@ const formatData = (data) => {
 };
 
 export const DashboardCard: FunctionComponent<{
-  containerStyle?: ViewStyle;
   canView?: boolean;
-}> = observer(({ canView = true }) => {
+  coinGeckoId?: string;
+  label?: string;
+}> = observer(({ canView = true, coinGeckoId, label }) => {
   const { colors } = useTheme();
   const styles = styling(colors);
   const chartConfig = {
-    backgroundColor: colors["background-box"],
-    backgroundGradientFrom: colors["background-box"],
-    backgroundGradientTo: colors["background-box"],
+    backgroundColor: colors["neutral-surface-card"],
+    backgroundGradientFrom: colors["neutral-surface-card"],
+    backgroundGradientTo: colors["neutral-surface-card"],
     color: (opacity = 1) => `rgba(148, 94, 248, ${opacity})`,
     labelColor: (opacity = 1) => colors["text-title-login"],
     strokeWidth: 3,
@@ -121,13 +121,16 @@ export const DashboardCard: FunctionComponent<{
   const smartNavigation = useSmartNavigation();
 
   const { data: res, refetch } = useQuery({
-    queryKey: ["chart-range", chainStore.current.stakeCurrency.coinGeckoId],
+    queryKey: [
+      "chart-range",
+      coinGeckoId ?? chainStore.current.stakeCurrency.coinGeckoId,
+    ],
     queryFn: () =>
       API.getMarketChartRange(
         {
-          id: chainStore.current.stakeCurrency.coinGeckoId,
+          id: coinGeckoId ?? chainStore.current.stakeCurrency.coinGeckoId,
         },
-        { baseURL: CoinGeckoAPIEndPoint }
+        { baseURL: MarketAPIEndPoint + "/api/v3" }
       ),
     ...{
       initialData: null,
@@ -135,14 +138,10 @@ export const DashboardCard: FunctionComponent<{
   });
 
   useEffect(() => {
-    console.log("refetch", chainStore.current.stakeCurrency.coinGeckoId, res);
-
     refetch();
-  }, [chainStore.current.stakeCurrency.coinGeckoId]);
+  }, [chainStore.current.stakeCurrency.coinGeckoId, coinGeckoId]);
 
   useEffect(() => {
-    console.log("res", res);
-
     if (res?.status === 200 && typeof res?.data === "object") {
       setNetworkError(false);
       setData(formatData(transformData(res.data?.prices)));
@@ -167,7 +166,16 @@ export const DashboardCard: FunctionComponent<{
   }, [chainStore.current.chainId, data]);
 
   return (
-    <OWBox>
+    <View
+      style={{
+        marginHorizontal: 16,
+        width: metrics.screenWidth - 32,
+        backgroundColor: colors["neutral-surface-card"],
+        borderRadius: 24,
+        marginVertical: 2,
+        padding: 16,
+      }}
+    >
       <Text
         style={{
           alignSelf: "center",
@@ -177,8 +185,8 @@ export const DashboardCard: FunctionComponent<{
           color: colors["primary-text"],
         }}
       >
-        {chainStore.current.chainName} (
-        {chainStore.current.stakeCurrency.coinDenom})
+        {label}
+        {/* {chainStore.current.chainName} ({chainStore.current.stakeCurrency.coinDenom}) */}
       </Text>
       <View style={styles.headerWrapper}>
         <View style={styles.headerLeftWrapper}>
@@ -229,7 +237,7 @@ export const DashboardCard: FunctionComponent<{
         <OWEmpty
           style={styles.emptyChart}
           type="crash"
-          label={`Something went wrong with the chart.\nPlease pull to refresh.`}
+          label={`Empty data.\nPlease pull to refresh.`}
         />
       ) : null}
       {!isNetworkError && active === "price" ? (
@@ -239,7 +247,7 @@ export const DashboardCard: FunctionComponent<{
           withInnerLines={false}
           yAxisLabel={"$"}
           yAxisSuffix={chartSuffix}
-          width={metrics.screenWidth - 48}
+          width={metrics.screenWidth - 60}
           height={256}
           chartConfig={chartConfig}
           bezier
@@ -247,14 +255,14 @@ export const DashboardCard: FunctionComponent<{
       ) : !isNetworkError ? (
         <BarChart
           data={dataVolumes}
-          width={metrics.screenWidth - 48}
+          width={metrics.screenWidth - 60}
           height={256}
           yAxisLabel="$"
           yAxisSuffix={chartSuffix}
           chartConfig={chartConfig}
         />
       ) : null}
-    </OWBox>
+    </View>
   );
 });
 
@@ -285,7 +293,7 @@ const styling = (colors) =>
     },
     inActive: {
       padding: 7,
-      backgroundColor: colors["background-box"],
+      backgroundColor: colors["neutral-surface-bg2"],
       borderRadius: 4,
     },
     activeText: {

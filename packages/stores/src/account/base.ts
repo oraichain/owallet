@@ -37,9 +37,10 @@ import {
   isBase58,
   getBase58Address,
   getEvmAddress,
+  TxRestTronClient,
 } from "@owallet/common";
 import Web3 from "web3";
-import ERC20_ABI from "../query/evm/erc20";
+import ERC20_ABI from "human-standard-token-abi";
 import {
   BroadcastMode,
   makeSignDoc,
@@ -74,12 +75,14 @@ import { ETH } from "@hanchon/ethermint-address-converter";
 import { request } from "@owallet/background";
 import { AddressesLedger } from "@owallet/types";
 import { wallet } from "@owallet/bitcoin";
-
+import TronWebProvider from "tronweb";
 import { getEip712TypedDataBasedOnChainId } from "./utils";
+
 export interface Coin {
   readonly denom: string;
   readonly amount: string;
 }
+
 export enum WalletStatus {
   NotInit = "NotInit",
   Loading = "Loading",
@@ -87,6 +90,7 @@ export enum WalletStatus {
   NotExist = "NotExist",
   Rejected = "Rejected",
 }
+
 export type ExtraOptionSendToken = {
   type: string;
   from?: string;
@@ -347,13 +351,16 @@ export class AccountSetBase<MsgOpts, Queries> {
     this._address = null;
     this.pubKey = new Uint8Array(0);
   }
+
   @action
   public setAddressTypeBtc(type: AddressBtcType): void {
     this._addressType = type;
   }
+
   get walletVersion(): string | undefined {
     return this._walletVersion;
   }
+
   get address(): Uint8Array | null {
     return this._address;
   }
@@ -364,6 +371,7 @@ export class AccountSetBase<MsgOpts, Queries> {
       this.walletStatus === WalletStatus.Loaded && this.bech32Address !== ""
     );
   }
+
   getAddressDisplay(
     keyRingLedgerAddresses: AddressesLedger,
     toDisplay: boolean = true
@@ -402,6 +410,7 @@ export class AccountSetBase<MsgOpts, Queries> {
     }
     return this._bech32Address;
   }
+
   async sendMsgs(
     type: string | "unknown",
     msgs:
@@ -484,51 +493,13 @@ export class AccountSetBase<MsgOpts, Queries> {
     if (onBroadcasted) {
       onBroadcasted(txHash);
     }
-    const isInj = this.chainId.startsWith("injective");
-    if (isInj) {
-      const chainInfo = this.chainGetter.getChain(this.chainId);
-      const restApi = chainInfo?.rest;
-      const restConfig = chainInfo?.restConfig;
-      const txRestCosmos = new TxRestCosmosClient(restApi, restConfig);
-      const txHashRoot = Buffer.from(txHash).toString("hex");
-      try {
-        const res = await txRestCosmos.fetchTxPoll(txHashRoot);
-        // After sending tx, the balances is probably changed due to the fee.
-        for (const feeAmount of fee.amount) {
-          const bal = this.queries.queryBalances
-            .getQueryBech32Address(this.bech32Address)
-            .balances.find(
-              (bal) => bal.currency.coinMinimalDenom === feeAmount.denom
-            );
-
-          if (bal) {
-            bal.fetch();
-          }
-        }
-        OwalletEvent.txHashEmit(txHashRoot, res);
-      } catch (error) {
-        OwalletEvent.txHashEmit(txHashRoot, null);
-      } finally {
-        runInAction(() => {
-          this._isSendingMsg = false;
-        });
-      }
-    }
-
-    const txTracer = new TendermintTxTracer(
-      this.chainGetter.getChain(this.chainId).rpc,
-      "/websocket",
-      {
-        wsObject: this.opts.wsObject,
-      }
-    );
-    txTracer.traceTx(txHash).then((tx) => {
-      txTracer.close();
-
-      runInAction(() => {
-        this._isSendingMsg = false;
-      });
-
+    const chainInfo = this.chainGetter.getChain(this.chainId);
+    const restApi = chainInfo?.rest;
+    const restConfig = chainInfo?.restConfig;
+    const txRestCosmos = new TxRestCosmosClient(restApi, restConfig);
+    const txHashRoot = Buffer.from(txHash).toString("hex");
+    try {
+      const tx = await txRestCosmos.fetchTxPoll(txHashRoot);
       // After sending tx, the balances is probably changed due to the fee.
       for (const feeAmount of fee.amount) {
         const bal = this.queries.queryBalances
@@ -543,10 +514,11 @@ export class AccountSetBase<MsgOpts, Queries> {
       }
 
       // Always add the tx hash data.
+      //@ts-ignore
       if (tx && !tx.hash) {
+        //@ts-ignore
         tx.hash = Buffer.from(txHash).toString("hex");
       }
-
       if (this.opts.preTxEvents?.onFulfill) {
         this.opts.preTxEvents.onFulfill(tx);
       }
@@ -554,7 +526,56 @@ export class AccountSetBase<MsgOpts, Queries> {
       if (onFulfill) {
         onFulfill(tx);
       }
-    });
+      OwalletEvent.txHashEmit(txHashRoot, tx);
+    } catch (error) {
+      console.log(error, "error");
+      OwalletEvent.txHashEmit(txHashRoot, null);
+    } finally {
+      runInAction(() => {
+        this._isSendingMsg = false;
+      });
+    }
+
+    // const txTracer = new TendermintTxTracer(
+    //   this.chainGetter.getChain(this.chainId).rpc,
+    //   "/websocket",
+    //   {
+    //     wsObject: this.opts.wsObject,
+    //   }
+    // );
+    // txTracer.traceTx(txHash).then((tx) => {
+    //   txTracer.close();
+    //
+    //   runInAction(() => {
+    //     this._isSendingMsg = false;
+    //   });
+    //
+    //   // After sending tx, the balances is probably changed due to the fee.
+    //   for (const feeAmount of fee.amount) {
+    //     const bal = this.queries.queryBalances
+    //       .getQueryBech32Address(this.bech32Address)
+    //       .balances.find(
+    //         (bal) => bal.currency.coinMinimalDenom === feeAmount.denom
+    //       );
+    //
+    //     if (bal) {
+    //       bal.fetch();
+    //     }
+    //   }
+    //
+    //   // Always add the tx hash data.
+    //   if (tx && !tx.hash) {
+    //     tx.hash = Buffer.from(txHash).toString("hex");
+    //   }
+    //
+    //   if (this.opts.preTxEvents?.onFulfill) {
+    //     this.opts.preTxEvents.onFulfill(tx);
+    //   }
+    //
+    //   if (onFulfill) {
+    //     onFulfill(tx);
+    //   }
+    // });
   }
 
   async sendTronToken(
@@ -569,23 +590,77 @@ export class AccountSetBase<MsgOpts, Queries> {
     tokenTrc20?: object
   ) {
     try {
+      runInAction(() => {
+        this._isSendingMsg = "send";
+      });
       const ethereum = (await this.getEthereum())!;
-      const signResponse = await ethereum.signAndBroadcastTron(this.chainId, {
+      const tx = await ethereum.signAndBroadcastTron(this.chainId, {
         amount,
         currency,
         recipient,
         address,
         tokenTrc20,
       });
+      if (!tx?.txid) throw Error("Transaction Rejected");
+      if (onTxEvents?.onBroadcasted) {
+        onTxEvents?.onBroadcasted(tx.txid);
+      }
+
+      // After sending tx, the balances is probably changed due to the fee.
+      this.queriesStore
+        .get(this.chainId)
+        .queryBalances.getQueryBech32Address(this.evmosHexAddress)
+        .fetch();
+
+      this.queriesStore
+        .get(this.chainId)
+        //@ts-ignore
+        .tron.queryAccount.getQueryWalletAddress(
+          getBase58Address(this.evmosHexAddress)
+        )
+        .fetch();
+
+      if (this.opts.preTxEvents?.onFulfill) {
+        this.opts.preTxEvents.onFulfill({
+          ...tx,
+          code: 0,
+        });
+      }
 
       if (onTxEvents?.onFulfill) {
-        onTxEvents?.onFulfill(signResponse);
+        onTxEvents?.onFulfill({
+          ...tx,
+          code: 0,
+        });
       }
-      return {
-        txHash: signResponse,
-      };
+      OwalletEvent.txHashEmit(tx.txid, {
+        ...tx,
+        code: 0,
+      });
+      // }
     } catch (error) {
-      console.log("error sendTronToken", error);
+      // OwalletEvent.txHashEmit(txId, null);
+      if (this.opts.preTxEvents?.onBroadcastFailed) {
+        this.opts.preTxEvents.onBroadcastFailed(error);
+      }
+
+      if (
+        onTxEvents &&
+        "onBroadcastFailed" in onTxEvents &&
+        onTxEvents.onBroadcastFailed
+      ) {
+        //@ts-ignore
+        onTxEvents.onBroadcastFailed(error);
+      }
+      console.log(error, "error");
+      runInAction(() => {
+        this._isSendingMsg = false;
+      });
+      throw error;
+    } finally {
+      runInAction(() => {
+        this._isSendingMsg = false;
+      });
     }
   }
 
@@ -612,7 +687,7 @@ export class AccountSetBase<MsgOpts, Queries> {
     try {
       if (msgs.type === "erc20") {
         const { value } = msgs;
-        const provider = this.chainGetter.getChain(this.chainId).rest;
+        const provider = this.chainGetter.getChain(this.chainId).rpc;
         const web3 = new Web3(provider);
         const contract = new web3.eth.Contract(
           // @ts-ignore
@@ -620,11 +695,11 @@ export class AccountSetBase<MsgOpts, Queries> {
           value.contract_addr,
           { from: value.from }
         );
-        let data = contract.methods
+        const data = contract.methods
           .transfer(value.recipient, value.amount)
           .encodeABI();
 
-        let txObj = {
+        const txObj = {
           gas: web3.utils.toHex(value.gas),
           to: value.contract_addr,
           value: "0x0", // Must be 0x0, maybe this field is not in use while send erc20 tokens, but still need
@@ -661,8 +736,9 @@ export class AccountSetBase<MsgOpts, Queries> {
     }
 
     let onBroadcasted: ((txHash: Uint8Array) => void) | undefined;
-    let onFulfill: ((tx: any) => void) | undefined;
 
+    let onFulfill: ((tx: any) => void) | undefined;
+    console.log(txHash, "result result");
     if (onTxEvents) {
       if (typeof onTxEvents === "function") {
         onFulfill = onTxEvents;
@@ -677,6 +753,14 @@ export class AccountSetBase<MsgOpts, Queries> {
     runInAction(() => {
       this._isSendingMsg = false;
     });
+    if (this.opts.preTxEvents?.onBroadcasted) {
+      //@ts-ignore
+      this.opts.preTxEvents.onBroadcasted(txHash);
+    }
+    if (onBroadcasted) {
+      //@ts-ignore
+      onBroadcasted(txHash);
+    }
 
     if (this.chainId === ChainIdEnum.Oasis) {
       console.log(txHash, "txHash");
@@ -699,7 +783,10 @@ export class AccountSetBase<MsgOpts, Queries> {
       onFulfill,
       count = 0
     ) => {
-      if (count > 10) return;
+      if (count > 10) {
+        OwalletEvent.txHashEmit(txHash, { code: 1 });
+        return;
+      }
 
       try {
         let expectedBlockTime = 3000;
@@ -710,11 +797,14 @@ export class AccountSetBase<MsgOpts, Queries> {
           transactionReceipt = await request(rpc, "eth_getTransactionReceipt", [
             txHash,
           ]);
+          console.log(transactionReceipt, "tran receipt");
 
           retryCount += 1;
           if (retryCount === 10) break;
           await sleep(expectedBlockTime);
         }
+
+        OwalletEvent.txHashEmit(txHash, { code: 0 });
 
         if (this.opts.preTxEvents?.onFulfill) {
           this.opts.preTxEvents.onFulfill(transactionReceipt);
@@ -731,6 +821,7 @@ export class AccountSetBase<MsgOpts, Queries> {
 
     waitForPendingTransaction(rpc, txHash, onFulfill);
   }
+
   async sendBtcMsgs(
     type: string | "unknown",
     msgs: any,
@@ -855,6 +946,7 @@ export class AccountSetBase<MsgOpts, Queries> {
     }
     return parseInt(chainId);
   }
+
   protected async processSignedTxCosmos(
     msgs: AminoMsgsOrWithProtoMsgs,
     fee: StdFee,
@@ -1053,6 +1145,7 @@ export class AccountSetBase<MsgOpts, Queries> {
     }).finish();
     return signedTx;
   }
+
   // TODO; do we have to add a new broadcast msg for Ethereum? -- Update: Added done
   // Return the tx hash.
   protected async broadcastMsgs(
@@ -1082,6 +1175,7 @@ export class AccountSetBase<MsgOpts, Queries> {
       txHash: await sendTx(this.chainId, signedTx, mode as BroadcastMode),
     };
   }
+
   protected async broadcastBtcMsgs(
     msgs: any,
     fee: StdFee,
@@ -1115,6 +1209,7 @@ export class AccountSetBase<MsgOpts, Queries> {
       throw error;
     }
   }
+
   // Return the tx hash.
   protected async broadcastEvmMsgs(
     msgs: Msg,
@@ -1127,7 +1222,7 @@ export class AccountSetBase<MsgOpts, Queries> {
       if (this.walletStatus !== WalletStatus.Loaded) {
         throw new Error(`Wallet is not loaded: ${this.walletStatus}`);
       }
-
+      console.log("🚀 ~ AccountSetBase<MsgOpts, ~ fee:", fee);
       if (Object.values(msgs).length === 0) {
         throw new Error("There is no msg to send");
       }
@@ -1221,13 +1316,16 @@ export class AccountSetBase<MsgOpts, Queries> {
   get bech32Address(): string {
     return this._bech32Address;
   }
+
   get legacyAddress(): string {
     return this._legacyAddress;
   }
+
   @computed
   get addressType(): AddressBtcType {
     return this._addressType;
   }
+
   @computed
   get btcAddress(): string {
     if (this._addressType === AddressBtcType.Legacy) {
@@ -1235,6 +1333,12 @@ export class AccountSetBase<MsgOpts, Queries> {
     }
     return this._bech32Address;
   }
+
+  @computed
+  get allBtcAddresses(): { bech32: string; legacy: string } {
+    return { bech32: this._bech32Address, legacy: this.legacyAddress };
+  }
+
   get isNanoLedger(): boolean {
     return this._isNanoLedger;
   }

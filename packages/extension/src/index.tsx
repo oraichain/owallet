@@ -2,13 +2,14 @@ import React, { FunctionComponent } from "react";
 import ReactDOM from "react-dom";
 
 import "./styles/global.scss";
-
+import "react-sliding-pane/dist/react-sliding-pane.css";
 import { HashRouter, Route } from "react-router-dom";
 
 import { AccessPage, Secret20ViewingKeyAccessPage } from "./pages/access";
 import { IBCTransferPage } from "./pages/ibc-transfer";
 import { LockPage } from "./pages/lock";
-import { MainPage } from "./pages/main";
+import { HomePage } from "./pages/home/home-page";
+
 import { RegisterPage } from "./pages/register";
 import { ConfirmLedgerPage } from "./pages/register/ledger/confirm";
 import { SendPage } from "./pages/send";
@@ -67,10 +68,10 @@ import { LogPageViewWrapper } from "./components/analytics";
 import "./ledger";
 import manifest from "./manifest.json";
 import { Menu } from "./pages/main/menu";
-import { SendEvmPage } from "./pages/send-evm";
+import { SendEvmPage } from "./pages/send-evm/send-evm";
 import { ExportToMobilePage } from "./pages/setting/export-to-mobile";
-import { SignEthereumPage } from "./pages/sign/sign-ethereum";
 import { SignTronPage } from "./pages/sign/sign-tron";
+import { SignEvmPage } from "./pages/sign/sign-evm";
 import { SignBtcPage } from "./pages/sign/sign-btc";
 import { ValidatorListPage } from "./pages/stake/validator-list";
 import { TokenPage } from "./pages/token";
@@ -107,23 +108,26 @@ const bitcoin = new Bitcoin(
   new InExtensionMessageRequester()
 );
 
-Sentry.init({
-  dsn: "https://4ce54db1095b48ab8688e701d7cc8301@o1323226.ingest.sentry.io/4504615445725184",
-  integrations: [new BrowserTracing()],
+if (isProdMode) {
+  Sentry.init({
+    dsn: "https://4ce54db1095b48ab8688e701d7cc8301@o1323226.ingest.sentry.io/4504615445725184",
+    integrations: [new BrowserTracing()],
 
-  // We recommend adjusting this value in production, or using tracesSampler
-  // for finer control
-  tracesSampleRate: 1.0,
-  environment: "production",
-  ignoreErrors: [
-    "Request rejected",
-    "Failed to fetch",
-    "Load failed",
-    "User rejected the request",
-  ],
-});
+    // We recommend adjusting this value in production, or using tracesSampler
+    // for finer control
+    tracesSampleRate: 1.0,
+    environment: "production",
+    ignoreErrors: [
+      "Request rejected",
+      "Failed to fetch",
+      "Load failed",
+      "User rejected the request",
+    ],
+  });
+}
+
 //@ts-ignore
-window.oasis = oasis;
+window.oasis = null;
 //@ts-ignore
 window.owallet = owallet;
 //@ts-ignore
@@ -177,6 +181,11 @@ Modal.defaultStyles = {
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
+import { MainPage } from "./pages/main";
+import { ReceivePage } from "./pages/receive/receive-page";
+import { isProdMode } from "./helpers/helper";
+import { SelectAccountPage } from "./pages/account/select-account-page";
+import { EditAccountPage } from "./pages/account/edit-account";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -202,7 +211,7 @@ const StateRenderer: FunctionComponent = observer(() => {
     keyRingStore.persistent ||
     keyRingStore.status === KeyRingStatus.UNLOCKED
   ) {
-    return <MainPage />;
+    return <HomePage />;
   } else if (keyRingStore.status === KeyRingStatus.LOCKED) {
     return <LockPage />;
   } else if (keyRingStore.status === KeyRingStatus.EMPTY) {
@@ -269,6 +278,17 @@ ReactDOM.render(
                   <Route exact path="/" component={StateRenderer} />
                   <Route exact path="/unlock" component={LockPage} />
                   <Route exact path="/access" component={AccessPage} />
+                  <Route exact path="/receive" component={ReceivePage} />
+                  <Route
+                    exact
+                    path="/select-account"
+                    component={SelectAccountPage}
+                  />
+                  <Route
+                    exact
+                    path="/edit-account"
+                    component={EditAccountPage}
+                  />
                   <Route exact path="/token" component={TokenPage} />
                   <Route
                     exact
@@ -375,7 +395,7 @@ ReactDOM.render(
                   />
                   <Route path="/sign" component={SignPage} />
                   <Route path="/sign-bitcoin" component={SignBtcPage} />
-                  <Route path="/sign-ethereum" component={SignEthereumPage} />
+                  <Route path="/sign-ethereum" component={SignEvmPage} />
                   <Route path="/sign-tron" component={SignTronPage} />
                   <Route path="/suggest-chain" component={ChainSuggestedPage} />
                 </LogPageViewWrapper>

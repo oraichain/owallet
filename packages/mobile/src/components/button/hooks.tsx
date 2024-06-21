@@ -36,11 +36,11 @@ const useSize = ({ size }): IMapStyle => {
       sizeStyle = {
         btn: {
           borderRadius: 8,
-          height: 55,
+          height: 48,
         },
         text: {
-          fontSize: 16,
-          fontWeight: "700",
+          fontSize: 14,
+          fontWeight: "600",
         },
       };
       break;
@@ -89,10 +89,12 @@ export const useMapStyles = ({
           height: formatSize.btn.height,
           backgroundColor: disabled
             ? colors["background-btn-disable-danger"]
-            : colors["orange-800"],
+            : colors["error-surface-default"],
         },
         text: {
-          color: disabled ? colors["text-btn-disable-danger"] : colors["white"],
+          color: disabled
+            ? colors["text-btn-disable-danger"]
+            : colors["neutral-icon-on-dark"],
           fontSize: formatSize.text.fontSize,
           fontWeight: formatSize.text.fontWeight,
         },
@@ -104,7 +106,7 @@ export const useMapStyles = ({
           borderRadius: formatSize.btn.borderRadius,
           height: formatSize.btn.height,
           backgroundColor: disabled
-            ? colors["btn-disable-background"]
+            ? colors["neutral-surface-disable"]
             : colors["primary-surface-default"],
         },
         text: {
@@ -122,7 +124,7 @@ export const useMapStyles = ({
           borderRadius: formatSize.btn.borderRadius,
           height: formatSize.btn.height,
           backgroundColor: disabled
-            ? colors["btn-disable-background"]
+            ? colors["neutral-surface-disable"]
             : colors["neutral-surface-action3"],
         },
         text: {
@@ -144,7 +146,7 @@ export const useMapStyles = ({
         text: {
           color: disabled
             ? colors["text-btn-disable-color"]
-            : colors["btn-primary-background"],
+            : colors["primary-surface-default"],
           fontSize: formatSize.text.fontSize,
           fontWeight: formatSize.text.fontWeight,
         },

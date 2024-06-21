@@ -3,57 +3,63 @@ import React, { useEffect, useState } from "react";
 import { WebView } from "react-native-webview";
 import { observer } from "mobx-react-lite";
 import { useStore } from "@src/stores";
-import { colors, metrics } from "@src/themes";
-import { ChainIdEnum, KADOChainNameEnum } from "@owallet/common";
+import { metrics } from "@src/themes";
+import { ChainIdEnum } from "@owallet/common";
+import { PageHeader } from "@src/components/header/header-new";
+import { useTheme } from "@src/themes/theme-provider";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 const BuyFiat = observer(() => {
-  const { accountStore, appInitStore } = useStore();
+  const { accountStore, appInitStore, chainStore } = useStore();
+  const { colors } = useTheme();
+  const safeAreaInsets = useSafeAreaInsets();
 
   const theme = appInitStore.getInitApp.theme;
 
   const [accountList, setAccounts] = useState("");
 
-  const networkList =
-    "BITCOIN, OSMOSIS, ETHEREUM, JUNO, INJECTIVE, COSMOS HUB, ORAICHAIN"
-      .split(", ")
-      .join(",");
+  // const networkList =
+  //   "BITCOIN, OSMOSIS, ETHEREUM, JUNO, INJECTIVE, COSMOS HUB, ORAICHAIN"
+  //     .split(", ")
+  //     .join(",");
 
-  const cryptoList =
-    "ORAI, USDT, USDC, ETH, OSMO, ATOM, BTC, INJ, wETH, wBTC, USDC.e"
-      .split(", ")
-      .join(",");
+  // const cryptoList = "ORAI, USDT, USDC, ETH, OSMO, ATOM, INJ, wETH"
+  //   .split(", ")
+  //   .join(",");
 
-  let accounts = {};
+  const networkList = "ORAICHAIN".split(", ").join(",");
 
-  const delayedFunction = async () => {
-    Object.keys(ChainIdEnum).map((key) => {
-      if (KADOChainNameEnum[ChainIdEnum[key]]) {
-        let defaultAddress = accountStore.getAccount(
-          ChainIdEnum[key]
-        ).bech32Address;
-        if (defaultAddress.startsWith("evmos")) {
-          accounts[KADOChainNameEnum[ChainIdEnum[key]]] =
-            accountStore.getAccount(ChainIdEnum[key]).evmosHexAddress;
-        } else {
-          accounts[KADOChainNameEnum[ChainIdEnum[key]]] = defaultAddress;
-        }
-      }
-    });
+  const cryptoList = "ORAI, USDT, USDC".split(", ").join(",");
 
-    let tmpAccounts = "";
-
-    Object.keys(accounts).map((a) => {
-      tmpAccounts += `${a}:${accounts[a]},`;
-    });
-
-    setAccounts(tmpAccounts);
-  };
+  const accountOrai = accountStore.getAccount(ChainIdEnum.Oraichain);
+  const accountEth = accountStore.getAccount(ChainIdEnum.Ethereum);
 
   useEffect(() => {
-    delayedFunction();
-  }, []);
+    // InteractionManager.runAfterInteractions(() => {
+    //   let accounts = {};
+    //   let defaultEvmAddress = accountEth.evmosHexAddress;
+    //   Object.keys(ChainIdEnum).map((key) => {
+    //     // let defaultCosmosAddress = accountStore.getAccount(
+    //     //   ChainIdEnum[key]
+    //     // ).bech32Address;
+    //     // if (defaultCosmosAddress.startsWith("evmos")) {
+    //     //   accounts[KADOChainNameEnum[ChainIdEnum[key]]] = defaultEvmAddress;
+    //     // }
+    //     // else {
+    //     //   accounts[KADOChainNameEnum[ChainIdEnum[key]]] = defaultCosmosAddress;
+    //     // }
+    //   });
+    //   let tmpAccounts = "";
+    //   Object.keys(accounts).map((a) => {
+    //     tmpAccounts += `${a}:${accounts[a]},`;
+    //   });
+    //   setAccounts(tmpAccounts);
+    // });
+    setAccounts(`${"ORAICHAIN"}:${accountOrai.bech32Address}`);
+  }, [accountEth.evmosHexAddress]);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: safeAreaInsets.top }]}>
+      <PageHeader title="Buy" />
       {accountList.length > 0 ? (
         <View style={{ flex: 1 }}>
           <WebView

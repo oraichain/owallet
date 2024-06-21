@@ -113,7 +113,7 @@ export const SettingScreen: FunctionComponent = observer(() => {
             </View>
             <DownArrowIcon color={colors["primary-text"]} height={12} />
           </TouchableOpacity>
-          <TouchableOpacity
+          {/* <TouchableOpacity
             onPress={_onPressCountryModal}
             style={{
               flexDirection: "row",
@@ -152,7 +152,7 @@ export const SettingScreen: FunctionComponent = observer(() => {
               </View>
             </View>
             <DownArrowIcon color={colors["primary-text"]} height={12} />
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </OWBox>
       </ImageBackground>
 
@@ -229,6 +229,6 @@ const styling = (colors: object) =>
       borderRadius: 12,
       padding: 20,
       width: "100%",
-      backgroundColor: colors["background-box"],
+      backgroundColor: colors["neutral-surface-bg2"],
     },
   });

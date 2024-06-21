@@ -1,125 +1,160 @@
 import { OWButton } from "@src/components/button";
-import { OWEmpty } from "@src/components/empty";
 import { useTheme } from "@src/themes/theme-provider";
 import { observer } from "mobx-react-lite";
-import React, { FunctionComponent, useCallback, useState } from "react";
-import { StyleSheet, TouchableOpacity, View, ViewStyle } from "react-native";
-import { CardBody, OWBox } from "../../components/card";
+// @ts-ignore
+import React, {
+  FC,
+  FunctionComponent,
+  useEffect,
+  useState,
+  useTransition,
+} from "react";
+import {
+  Platform,
+  StyleSheet,
+  Switch,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
+import { OWBox } from "../../components/card";
 import { useStore } from "../../stores";
-import { spacing } from "../../themes";
-import { getTokenInfos, _keyExtract } from "../../utils/helper";
+import { maskedNumber, removeDataInParentheses } from "../../utils/helper";
 import OWIcon from "@src/components/ow-icon/ow-icon";
 import { Text } from "@src/components/text";
-import { useSmartNavigation } from "@src/navigation.provider";
 import { SCREENS } from "@src/common/constants";
 import { navigate } from "@src/router/root";
-import { RightArrowIcon } from "@src/components/icon";
+import { unknownToken } from "@owallet/common";
+
+import { metrics } from "@src/themes";
+import FastImage from "react-native-fast-image";
+import OWText from "@src/components/text/ow-text";
+import { HistoryCard } from "@src/screens/transactions";
+import { ViewRawToken, ViewToken } from "@src/stores/huge-queries";
+import { CoinPretty, Dec, PricePretty } from "@owallet/unit";
+import { OWSearchInput } from "@src/components/ow-search-input";
 
 export const TokensCardAll: FunctionComponent<{
   containerStyle?: ViewStyle;
-}> = observer(({ containerStyle }) => {
-  const { accountStore, universalSwapStore, chainStore, appInitStore } =
-    useStore();
+  dataTokens: ViewRawToken[];
+}> = observer(({ containerStyle, dataTokens }) => {
+  const { priceStore, appInitStore } = useStore();
+  const [keyword, setKeyword] = useState("");
   const { colors } = useTheme();
-  const [more, setMore] = useState(true);
-  const account = accountStore.getAccount(chainStore.current.chainId);
+  const [activeTab, setActiveTab] = useState("tokens");
+  const styles = styling(colors);
 
-  const tokenInfos = getTokenInfos({
-    tokens: universalSwapStore.getAmount,
-    prices: appInitStore.getInitApp.prices,
-  });
-
-  const styles = styling();
-
-  const smartNavigation = useSmartNavigation();
-
-  const onPressToken = async (item) => {
-    chainStore.selectChain(item?.chainId);
-    await chainStore.saveLastViewChainId();
-    if (!account.isNanoLedger) {
-      if (chainStore.current.networkType === "bitcoin") {
-        navigate(SCREENS.STACK.Others, {
-          screen: SCREENS.SendBtc,
-        });
-        return;
-      }
-      smartNavigation.navigateSmart("Send", {
-        currency: item.denom,
-        contractAddress: item.contractAddress,
-      });
+  const tokens = appInitStore.getInitApp.hideTokensWithoutBalance
+    ? dataTokens.filter((item, index) => {
+        const balance = new CoinPretty(item.token.currency, item.token.amount);
+        const price = priceStore.calculatePrice(balance, "usd");
+        return price?.toDec().gte(new Dec("1")) ?? false;
+      })
+    : dataTokens;
+  const tokensAll =
+    tokens &&
+    tokens.filter((item, index) =>
+      item.token.currency.coinDenom
+        .toLowerCase()
+        .includes(keyword.toLowerCase())
+    );
+  const renderContent = () => {
+    if (activeTab === "tokens") {
+      return (
+        <>
+          {tokensAll?.length > 0 ? (
+            tokensAll.map((item, index) => (
+              <TokenItem key={index.toString()} item={item} />
+            ))
+          ) : (
+            <View
+              style={{
+                justifyContent: "center",
+                alignItems: "center",
+                marginVertical: 42,
+              }}
+            >
+              <FastImage
+                source={require("../../assets/images/img_money.png")}
+                style={{
+                  width: 150,
+                  height: 150,
+                }}
+                resizeMode={"contain"}
+              />
+              <OWText
+                color={colors["neutral-text-title"]}
+                size={16}
+                weight="700"
+              >
+                {"no tokens yet".toUpperCase()}
+              </OWText>
+              <OWButton
+                style={{
+                  marginTop: 8,
+                  marginHorizontal: 16,
+                  width: metrics.screenWidth / 2,
+                  borderRadius: 999,
+                }}
+                label={"+ Buy ORAI with cash"}
+                size="large"
+                type="secondary"
+                onPress={() => {
+                  navigate(SCREENS.STACK.Others, {
+                    screen: SCREENS.BuyFiat,
+                  });
+                }}
+              />
+            </View>
+          )}
+          <OWButton
+            style={{
+              marginTop: Platform.OS === "android" ? 28 : 22,
+              marginHorizontal: 16,
+              width: metrics.screenWidth - 32,
+              borderRadius: 999,
+            }}
+            icon={
+              <OWIcon
+                name="tdesignplus"
+                color={colors["neutral-text-title"]}
+                size={20}
+              />
+            }
+            label={"Add token"}
+            size="large"
+            type="secondary"
+            onPress={() => {
+              navigate(SCREENS.STACK.Others, {
+                screen: SCREENS.NetworkToken,
+              });
+              return;
+            }}
+          />
+        </>
+      );
+    } else {
+      return (
+        <>
+          <HistoryCard />
+        </>
+      );
     }
   };
 
-  const renderTokenItem = useCallback(
-    (item) => {
-      if (item) {
-        return (
-          <TouchableOpacity
-            onPress={() => {
-              onPressToken(item);
-            }}
-            style={styles.btnItem}
-          >
-            <View style={styles.leftBoxItem}>
-              <View
-                style={{
-                  width: 40,
-                  height: 40,
-                  borderRadius: 12,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  overflow: "hidden",
-                  backgroundColor: colors["gray-10"],
-                }}
-              >
-                <OWIcon type="images" source={{ uri: item.icon }} size={35} />
-              </View>
-              <View style={styles.pl10}>
-                <Text
-                  size={16}
-                  color={colors["neutral-text-title"]}
-                  weight="500"
-                >
-                  {item.asset}
-                </Text>
-                <Text weight="500" color={colors["neutral-text-body"]}>
-                  {item.chain}
-                </Text>
-              </View>
-            </View>
-            <View style={styles.rightBoxItem}>
-              <View style={{ flexDirection: "row" }}>
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text color={colors["neutral-text-title"]}>
-                    {item.balance}
-                  </Text>
-                  <Text weight="500" color={colors["neutral-text-body"]}>
-                    ${item.value.toFixed(6)}
-                  </Text>
-                </View>
-                <View
-                  style={{
-                    flex: 0.5,
-                    justifyContent: "center",
-                    paddingLeft: 20,
-                  }}
-                >
-                  <RightArrowIcon height={12} color={colors["primary-text"]} />
-                </View>
-              </View>
-            </View>
-          </TouchableOpacity>
-        );
-      }
-    },
-    [universalSwapStore?.getAmount]
+  const [toggle, setToggle] = useState(
+    appInitStore.getInitApp.hideTokensWithoutBalance
   );
-
+  useEffect(() => {
+    appInitStore.updateHideTokensWithoutBalance(toggle);
+  }, [toggle]);
   return (
-    <View style={containerStyle}>
+    <View style={styles.container}>
       <OWBox
         style={{
           paddingTop: 12,
+          backgroundColor: colors["neutral-surface-card"],
+          paddingHorizontal: 0,
         }}
       >
         <View style={styles.wrapHeaderTitle}>
@@ -127,63 +162,293 @@ export const TokensCardAll: FunctionComponent<{
             type="link"
             label={"Tokens"}
             textStyle={{
-              color: colors["primary-text"],
-              fontWeight: "700",
+              color:
+                activeTab === "tokens"
+                  ? colors["primary-surface-default"]
+                  : colors["neutral-text-body"],
+              fontWeight: "600",
+              fontSize: 16,
             }}
-            style={{
-              width: "100%",
-              borderBottomColor: colors["primary-text"],
-              borderBottomWidth: 2,
+            onPress={() => {
+              setActiveTab("tokens");
             }}
+            style={[
+              {
+                width: "50%",
+              },
+              activeTab === "tokens" ? styles.active : styles.inactive,
+            ]}
+          />
+          <OWButton
+            type="link"
+            label={"History"}
+            onPress={() => {
+              setActiveTab("history");
+            }}
+            textStyle={{
+              color:
+                activeTab === "history"
+                  ? colors["primary-surface-default"]
+                  : colors["neutral-text-body"],
+              fontWeight: "600",
+              fontSize: 16,
+            }}
+            style={[
+              {
+                width: "50%",
+              },
+              activeTab === "history" ? styles.active : styles.inactive,
+            ]}
           />
         </View>
-
-        <CardBody>
-          {tokenInfos.length > 0 ? (
-            tokenInfos.map((token, index) => {
-              if (more) {
-                if (index < 3) return renderTokenItem(token);
-              } else {
-                return renderTokenItem(token);
-              }
-            })
-          ) : (
-            <OWEmpty />
-          )}
-        </CardBody>
-        <OWButton
-          label={more ? "View all" : "Hide"}
-          size="medium"
-          type="secondary"
-          onPress={() => {
-            setMore(!more);
-          }}
-        />
+        {activeTab === "tokens" ? (
+          <View
+            style={{
+              flexDirection: "row",
+              flexWrap: "wrap",
+              gap: 16,
+              paddingHorizontal: 16,
+              paddingBottom: 10,
+              paddingTop: 6,
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
+            <OWSearchInput
+              containerStyle={{
+                height: 35,
+              }}
+              onValueChange={(txt) => {
+                setKeyword(txt);
+              }}
+              style={{
+                height: 35,
+                paddingVertical: 8,
+              }}
+              placeHolder={"Search for a token"}
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+              }}
+            >
+              <OWText color={colors["neutral-text-body"]}>{`Hide <$1`}</OWText>
+              <Switch
+                onValueChange={(value) => {
+                  setToggle(value);
+                }}
+                style={{
+                  transform: [{ scaleX: 0.7 }, { scaleY: 0.7 }],
+                  marginRight: -5,
+                }}
+                value={toggle}
+              />
+            </View>
+          </View>
+        ) : null}
+        {renderContent()}
       </OWBox>
     </View>
   );
 });
 
-const styling = () =>
+const TokenItem: FC<{
+  item: ViewRawToken;
+}> = observer(({ item }) => {
+  const { colors } = useTheme();
+  const { priceStore } = useStore();
+  const fiatCurrency = priceStore.getFiatCurrency(priceStore.defaultVsCurrency);
+
+  if (!fiatCurrency) return;
+  const styles = styling(colors);
+  const onPressToken = async (item) => {
+    navigate(SCREENS.TokenDetails, {
+      item,
+    });
+    return;
+  };
+  const price24h = priceStore.getPrice24hChange(
+    item.token.currency.coinGeckoId
+  );
+  return (
+    <TouchableOpacity
+      onPress={() => {
+        onPressToken(item);
+      }}
+      key={`${item.chainInfo.chainId}-${item.token.toString()}`}
+      style={styles.btnItem}
+    >
+      <View style={[styles.wraperItem]}>
+        <View style={styles.leftBoxItem}>
+          <View style={styles.iconWrap}>
+            <OWIcon
+              style={{ borderRadius: 999 }}
+              type="images"
+              source={{
+                uri:
+                  item.token.currency.coinImageUrl.includes("missing.png") ||
+                  !item.token.currency.coinImageUrl
+                    ? unknownToken.coinImageUrl
+                    : item.token.currency.coinImageUrl,
+              }}
+              size={32}
+            />
+          </View>
+          <View style={styles.chainWrap}>
+            <OWIcon
+              type="images"
+              source={{
+                uri: item.chainInfo.chainImage || unknownToken.coinImageUrl,
+              }}
+              size={16}
+            />
+          </View>
+
+          <View style={styles.pl12}>
+            <Text size={16} color={colors["neutral-text-heading"]} weight="600">
+              {removeDataInParentheses(item.token.currency.coinDenom)}{" "}
+              <Text
+                size={12}
+                color={
+                  price24h < 0
+                    ? colors["error-text-body"]
+                    : colors["success-text-body"]
+                }
+                style={styles.profit}
+              >
+                {price24h > 0 ? "+" : ""}
+                {maskedNumber(price24h, 2, 2)}%
+              </Text>
+            </Text>
+            <Text weight="400" color={colors["neutral-text-body"]}>
+              {item.chainInfo.chainName}
+            </Text>
+            {item.type && (
+              <View style={styles.type}>
+                <Text
+                  weight="400"
+                  size={12}
+                  color={colors["neutral-text-body-2"]}
+                >
+                  {item.type}
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+        <View style={styles.rightBoxItem}>
+          <View style={{ flexDirection: "row" }}>
+            <View style={{ alignItems: "flex-end" }}>
+              <Text
+                size={16}
+                style={{ lineHeight: 24 }}
+                weight="500"
+                color={colors["neutral-text-heading"]}
+              >
+                {maskedNumber(
+                  new CoinPretty(item.token.currency, item.token.amount)
+                    .trim(true)
+                    .hideDenom(true)
+                    .toString()
+                )}
+              </Text>
+              <Text
+                size={14}
+                style={{ lineHeight: 24 }}
+                color={colors["neutral-text-body"]}
+              >
+                {new PricePretty(fiatCurrency, item.price).toString()}
+              </Text>
+              {/*<Text*/}
+              {/*  size={14}*/}
+              {/*  style={styles.profit}*/}
+              {/*  color={*/}
+              {/*    colors[*/}
+              {/*       "success-text-body"*/}
+              {/*      ]*/}
+              {/*  }*/}
+              {/*>*/}
+
+              {/*  +1.2% (${2.2 ?? 0})*/}
+              {/*</Text>*/}
+            </View>
+          </View>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+});
+const styling = (colors) =>
   StyleSheet.create({
     wrapHeaderTitle: {
       flexDirection: "row",
-      marginHorizontal: spacing["page-pad"],
+      paddingBottom: 12,
     },
-    pl10: {
-      paddingLeft: 10,
+    container: {
+      marginBottom: 60,
+    },
+    pl12: {
+      paddingLeft: 12,
     },
     leftBoxItem: {
       flexDirection: "row",
-      alignItems: "center",
     },
     rightBoxItem: {
       alignItems: "flex-end",
     },
-    btnItem: {
+    wraperItem: {
       flexDirection: "row",
       justifyContent: "space-between",
+      marginVertical: 8,
+      marginHorizontal: 16,
+    },
+    btnItem: {
+      borderBottomColor: colors["neutral-border-default"],
+      borderBottomWidth: 1,
+    },
+    profit: {
+      fontWeight: "400",
+      lineHeight: 20,
+    },
+    iconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 999,
       alignItems: "center",
-      marginVertical: 10,
+      justifyContent: "center",
+      overflow: "hidden",
+      backgroundColor: colors["neutral-icon-on-dark"],
+    },
+    chainWrap: {
+      width: 22,
+      height: 22,
+      borderRadius: 32,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors["neutral-icon-on-dark"],
+      position: "absolute",
+      bottom: -6,
+      left: 26,
+      top: 26,
+      borderWidth: 1,
+      borderColor: colors["neutral-border-bold"],
+    },
+    active: {
+      borderBottomColor: colors["primary-surface-default"],
+      borderBottomWidth: 2,
+    },
+    inactive: {
+      borderBottomColor: colors["neutral-border-default"],
+      borderBottomWidth: 1,
+    },
+    type: {
+      backgroundColor: colors["neutral-surface-action2"],
+      borderRadius: 4,
+      paddingHorizontal: 8,
+      paddingVertical: 2,
+      marginHorizontal: 2,
+      alignItems: "center",
     },
   });

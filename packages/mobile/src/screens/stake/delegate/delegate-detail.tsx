@@ -35,7 +35,6 @@ export const DelegateDetailScreen: FunctionComponent<DelegateDetailProps> =
     const styles = styling(colors);
     const validatorAddress = route?.params?.validatorAddress;
     const apr = route?.params?.apr;
-
     const account = accountStore.getAccount(chainStore.current.chainId);
     const queries = queriesStore.get(chainStore.current.chainId);
 
@@ -223,7 +222,9 @@ export const DelegateDetailScreen: FunctionComponent<DelegateDetailProps> =
             type="secondary"
             label="Switch validator"
             onPress={() => {
-              smartNavigation.navigateSmart("Redelegate", { validatorAddress });
+              smartNavigation.navigateSmart("Redelegate", {
+                validatorAddress,
+              });
             }}
           />
 
@@ -259,7 +260,7 @@ const styling = (colors) =>
       textAlign: "center",
     },
     containerInfo: {
-      backgroundColor: colors["background-box"],
+      backgroundColor: colors["neutral-surface-bg2"],
       borderRadius: spacing["24"],
       padding: spacing["24"],
     },

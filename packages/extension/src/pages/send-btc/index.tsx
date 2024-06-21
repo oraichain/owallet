@@ -80,12 +80,11 @@ export const SendBtcPage: FunctionComponent<{
   const sendConfigs = useSendTxConfig(
     chainStore,
     chainId,
+    //@ts-ignore
     accountInfo.msgOpts["send"],
     address,
     queries.queryBalances,
-    null,
-    null,
-    null,
+    EthereumEndpoint,
     queries.bitcoin.queryBitcoinBalance
   );
 
@@ -158,7 +157,7 @@ export const SendBtcPage: FunctionComponent<{
           e.preventDefault();
           if (accountInfo.isReadyToSendMsgs && txStateIsValid) {
             try {
-              (window as any).accountInfo = accountInfo;
+              // (window as any).accountInfo = accountInfo;
               await accountInfo.sendToken(
                 sendConfigs.amountConfig.amount,
                 // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -193,7 +192,7 @@ export const SendBtcPage: FunctionComponent<{
                       content: tx ? (
                         <div className="alert-inner--text">
                           Transaction successful with tx:{" "}
-                          <a target="_blank" href={url}>
+                          <a target="_blank" href={url} rel="noreferrer">
                             {Address.shortAddress(tx)}
                           </a>
                         </div>

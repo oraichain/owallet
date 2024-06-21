@@ -5,13 +5,13 @@ import { HeaderLayout, LayoutHidePage } from "../../layouts";
 import { Card, CardBody } from "reactstrap";
 
 import { AccountView } from "./account";
-import { AssetView, AssetViewBtc, AssetViewEvm } from "./asset";
+import { AssetView, AssetViewBtc, AssetViewEvm, AssetViewTron } from "./asset";
 import { LinkStakeView, StakeView } from "./stake";
 import style from "./style.module.scss";
-import { TxButtonBtcView, TxButtonEvmView, TxButtonView } from "./tx-button";
+import { TxButtonBtcView, TxButtonView } from "./tx-button";
 
 import { ChainUpdaterService } from "@owallet/background";
-import { TRON_ID } from "@owallet/common";
+import { ChainIdEnum, TRON_ID } from "@owallet/common";
 import classnames from "classnames";
 import { observer } from "mobx-react-lite";
 import { useIntl } from "react-intl";
@@ -19,10 +19,11 @@ import { useConfirm } from "../../components/confirm";
 import { SelectChain } from "../../layouts/header";
 import { useStore } from "../../stores";
 import { SendPage } from "../send";
-import { SendEvmPage } from "../send-evm";
+import { SendEvmPage } from "../send-evm/send-evm";
 import { SendTronEvmPage } from "../send-tron";
 import { BIP44SelectModal } from "./bip44-select-modal";
 import { SendBtcPage } from "../send-btc";
+import { FooterLayout } from "../../layouts/footer-layout/footer-layout";
 
 export const MainPage: FunctionComponent = observer(() => {
   const intl = useIntl();
@@ -72,6 +73,10 @@ export const MainPage: FunctionComponent = observer(() => {
 
   const renderAssetView = useMemo(() => {
     if (networkType === "evm") {
+      console.log(chainId, "chain ID");
+      if (chainId === ChainIdEnum.TRON) {
+        return <AssetViewTron />;
+      }
       return (
         <>
           <AssetViewEvm />
@@ -89,8 +94,9 @@ export const MainPage: FunctionComponent = observer(() => {
         <AssetView />
       </>
     );
-  }, [networkType]);
+  }, [networkType, chainId]);
 
+  // send page
   const handleCheckSendPage = () => {
     if (networkType === "evm") {
       if (chainId === TRON_ID) {
@@ -114,11 +120,7 @@ export const MainPage: FunctionComponent = observer(() => {
               <AccountView />
               {renderAssetView}
             </div>
-            {networkType === "evm" ? (
-              <div style={{ marginTop: 24 }}>
-                <TxButtonEvmView hasSend={hasSend} setHasSend={setHasSend} />
-              </div>
-            ) : networkType === "bitcoin" ? (
+            {networkType === "bitcoin" ? (
               <div style={{ marginTop: 24 }}>
                 <TxButtonBtcView hasSend={hasSend} setHasSend={setHasSend} />
               </div>
