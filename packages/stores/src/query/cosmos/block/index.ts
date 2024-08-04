@@ -3,7 +3,7 @@ import {
   ObservableChainQueryMap,
 } from "../../chain-query";
 import { Block } from "@cosmjs/tendermint-rpc";
-import { KVStore } from "@owallet/common";
+
 import { QuerySharedContext } from "../../../common";
 import { ChainGetter } from "../../../chain";
 import { computed, makeObservable } from "mobx";

@@ -1,5 +1,6 @@
 export * from "./queries";
 export * from "./chain-query";
+export * from "./chain-rpc-query";
 export * from "./balances";
 export * from "./evm";
 export * from "./bitcoin";
