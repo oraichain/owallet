@@ -1,154 +1,179 @@
-import { DenomHelper, KVStore } from "@owallet/common";
-import { ChainGetter, QueryResponse } from "../../../common";
-import { computed, makeObservable, override } from "mobx";
-import { CoinPretty, Int } from "@owallet/unit";
-import { StoreUtils } from "../../../common";
+import { DenomHelper } from "@owallet/common";
 import {
-  BalanceRegistry,
-  BalanceRegistryType,
-  ObservableQueryBalanceInner,
-} from "../../balances";
+  QueryError,
+  QueryResponse,
+  QuerySharedContext,
+  StoreUtils,
+} from "../../../common";
+import { ChainGetter } from "../../../chain";
+import { computed, makeObservable } from "mobx";
+import { CoinPretty, Int } from "@owallet/unit";
+import { BalanceRegistry, IObservableQueryBalanceImpl } from "../../balances";
 import { ObservableChainQuery } from "../../chain-query";
 import { Balances } from "./types";
+import { AppCurrency } from "@owallet/types";
+import { Bech32Address } from "@owallet/cosmos";
 
-export class ObservableQueryBalanceNative extends ObservableQueryBalanceInner {
+export class ObservableQueryCosmosBalancesImplParent extends ObservableChainQuery<Balances> {
+  // XXX: See comments below.
+  //      The reason why this field is here is that I don't know if it's mobx's bug or intention,
+  //      but fetch can be executed twice by observation of parent and child by `onBecomeObserved`,
+  //      so fetch should not be overridden in this parent class.
+  public duplicatedFetchResolver?: Promise<void>;
+
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
-    denomHelper: DenomHelper,
-    protected readonly nativeBalances: ObservableQueryCosmosBalances
+    protected readonly bech32Address: string
   ) {
     super(
-      kvStore,
+      sharedContext,
       chainId,
       chainGetter,
-      // No need to set the url
-      "",
-      denomHelper
+      `/cosmos/bank/v1beta1/balances/${bech32Address}?pagination.limit=1000`
     );
 
     makeObservable(this);
   }
 
-  protected canFetch(): boolean {
-    return false;
+  protected override canFetch(): boolean {
+    // If bech32 address is empty, it will always fail, so don't need to fetch it.
+    return this.bech32Address.length > 0;
   }
 
-  get isFetching(): boolean {
-    return this.nativeBalances.isFetching;
-  }
+  protected override onReceiveResponse(
+    response: Readonly<QueryResponse<Balances>>
+  ) {
+    super.onReceiveResponse(response);
 
-  get error() {
-    return this.nativeBalances.error;
+    const chainInfo = this.chainGetter.getChain(this.chainId);
+    const denoms = response.data.balances.map((coin) => coin.denom);
+    chainInfo.addUnknownDenoms(...denoms);
   }
+}
 
-  get response() {
-    return this.nativeBalances.response;
-  }
-
-  @override
-  *fetch() {
-    yield this.nativeBalances.fetch();
+export class ObservableQueryCosmosBalancesImpl
+  implements IObservableQueryBalanceImpl
+{
+  constructor(
+    protected readonly parent: ObservableQueryCosmosBalancesImplParent,
+    protected readonly chainId: string,
+    protected readonly chainGetter: ChainGetter,
+    protected readonly denomHelper: DenomHelper
+  ) {
+    makeObservable(this);
   }
 
   @computed
   get balance(): CoinPretty {
     const currency = this.currency;
 
-    if (!this.nativeBalances.response) {
+    if (!this.response) {
       return new CoinPretty(currency, new Int(0)).ready(false);
     }
 
     return StoreUtils.getBalanceFromCurrency(
       currency,
-      this.nativeBalances.response.data.balances
+      this.response.data.balances
     );
   }
-}
 
-export class ObservableQueryCosmosBalances extends ObservableChainQuery<Balances> {
-  protected bech32Address: string;
-
-  protected duplicatedFetchCheck: boolean = false;
-
-  constructor(
-    kvStore: KVStore,
-    chainId: string,
-    chainGetter: ChainGetter,
-    bech32Address: string
-  ) {
-    super(
-      kvStore,
-      chainId,
-      chainGetter,
-      `/cosmos/bank/v1beta1/balances/${bech32Address}?pagination.limit=1000`
-    );
-
-    this.bech32Address = bech32Address;
-
-    makeObservable(this);
-  }
-
-  protected canFetch(): boolean {
-    // If bech32 address is empty, it will always fail, so don't need to fetch it.
-    return this.bech32Address?.length > 0;
-  }
-
-  @override
-  *fetch() {
-    if (!this.duplicatedFetchCheck) {
-      // Because the native "bank" module's balance shares the querying result,
-      // it is inefficient to fetching duplicately in the same loop.
-      // So, if the fetching requests are in the same tick, this prevent to refetch the result and use the prior fetching.
-      this.duplicatedFetchCheck = true;
-      setTimeout(() => {
-        this.duplicatedFetchCheck = false;
-      }, 1);
-
-      yield super.fetch();
-    }
-  }
-
-  protected setResponse(response: Readonly<QueryResponse<Balances>>) {
-    super.setResponse(response);
+  @computed
+  get currency(): AppCurrency {
+    const denom = this.denomHelper.denom;
 
     const chainInfo = this.chainGetter.getChain(this.chainId);
-    // Attempt to register the denom in the returned response.
-    // If it's already registered anyway, it's okay because the method below doesn't do anything.
-    // Better to set it as an array all at once to reduce computed.
-    const denoms = response.data.balances.map((coin) => coin.denom);
-    chainInfo.addUnknownCurrencies(...denoms);
+    return chainInfo.forceFindCurrency(denom);
+  }
+
+  get error(): Readonly<QueryError<unknown>> | undefined {
+    return this.parent.error;
+  }
+  get isFetching(): boolean {
+    return this.parent.isFetching;
+  }
+  get isObserved(): boolean {
+    return this.parent.isObserved;
+  }
+  get isStarted(): boolean {
+    return this.parent.isStarted;
+  }
+  get response(): Readonly<QueryResponse<Balances>> | undefined {
+    return this.parent.response;
+  }
+
+  fetch(): Promise<void> {
+    // XXX: The balances of cosmos-sdk can share the result of one endpoint.
+    //      This class is implemented for this optimization.
+    //      But the problem is that the query store can't handle these process properly right now.
+    //      Currently, this is the only use-case,
+    //      so We'll manually implement this here.
+    //      In the case of fetch(), even if it is executed multiple times,
+    //      the actual logic should be processed only once.
+    //      So some sort of debouncing is needed.
+    if (!this.parent.duplicatedFetchResolver) {
+      this.parent.duplicatedFetchResolver = new Promise<void>(
+        (resolve, reject) => {
+          (async () => {
+            try {
+              await this.parent.fetch();
+              this.parent.duplicatedFetchResolver = undefined;
+              resolve();
+            } catch (e) {
+              this.parent.duplicatedFetchResolver = undefined;
+              reject(e);
+            }
+          })();
+        }
+      );
+      return this.parent.duplicatedFetchResolver;
+    }
+
+    return this.parent.duplicatedFetchResolver;
+  }
+
+  async waitFreshResponse(): Promise<
+    Readonly<QueryResponse<unknown>> | undefined
+  > {
+    return await this.parent.waitFreshResponse();
+  }
+
+  async waitResponse(): Promise<Readonly<QueryResponse<unknown>> | undefined> {
+    return await this.parent.waitResponse();
   }
 }
 
 export class ObservableQueryCosmosBalanceRegistry implements BalanceRegistry {
-  protected nativeBalances: Map<string, ObservableQueryCosmosBalances> =
+  protected parentMap: Map<string, ObservableQueryCosmosBalancesImplParent> =
     new Map();
 
-  readonly type: BalanceRegistryType = "cosmos";
+  constructor(protected readonly sharedContext: QuerySharedContext) {}
 
-  constructor(protected readonly kvStore: KVStore) {}
-
-  getBalanceInner(
+  getBalanceImpl(
     chainId: string,
     chainGetter: ChainGetter,
     bech32Address: string,
     minimalDenom: string
-  ): ObservableQueryBalanceInner | undefined {
+  ): ObservableQueryCosmosBalancesImpl | undefined {
     const denomHelper = new DenomHelper(minimalDenom);
     if (denomHelper.type !== "native") {
       return;
     }
-    const networkType = chainGetter.getChain(chainId).networkType;
-    if (networkType !== "cosmos") return;
+
+    try {
+      Bech32Address.validate(bech32Address);
+    } catch {
+      return;
+    }
+
     const key = `${chainId}/${bech32Address}`;
 
-    if (!this.nativeBalances.has(key)) {
-      this.nativeBalances.set(
+    if (!this.parentMap.has(key)) {
+      this.parentMap.set(
         key,
-        new ObservableQueryCosmosBalances(
-          this.kvStore,
+        new ObservableQueryCosmosBalancesImplParent(
+          this.sharedContext,
           chainId,
           chainGetter,
           bech32Address
@@ -156,13 +181,11 @@ export class ObservableQueryCosmosBalanceRegistry implements BalanceRegistry {
       );
     }
 
-    return new ObservableQueryBalanceNative(
-      this.kvStore,
+    return new ObservableQueryCosmosBalancesImpl(
+      this.parentMap.get(key)!,
       chainId,
       chainGetter,
-      denomHelper,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.nativeBalances.get(key)!
+      denomHelper
     );
   }
 }
