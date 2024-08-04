@@ -1,16 +1,17 @@
 import { ObservableChainQuery } from "../chain-query";
-import { KVStore } from "@owallet/common";
-import { ChainGetter } from "../../common";
-import { CancelToken } from "axios";
-import { QueryResponse } from "../../common";
+import { ChainGetter } from "../../chain";
+import { QuerySharedContext } from "../../common";
 
-import { Buffer } from "buffer";
+import { Buffer } from "buffer/";
+import { autorun } from "mobx";
 
 export class ObservableCosmwasmContractChainQuery<
   T
 > extends ObservableChainQuery<T> {
+  protected disposer?: () => void;
+
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     protected readonly contractAddress: string,
@@ -18,54 +19,56 @@ export class ObservableCosmwasmContractChainQuery<
     protected obj: object
   ) {
     super(
-      kvStore,
+      sharedContext,
       chainId,
       chainGetter,
-      ObservableCosmwasmContractChainQuery.getUrlFromObj(
-        contractAddress,
-        obj,
-        chainGetter.getChain(chainId).beta
-      )
+      ObservableCosmwasmContractChainQuery.getUrlFromObj(contractAddress, obj)
     );
   }
 
+  protected override onStart(): void {
+    super.onStart();
+
+    this.disposer = autorun(() => {
+      const chainInfo = this.chainGetter.getChain(this.chainId);
+      if (chainInfo.features && chainInfo.features.includes("wasmd_0.24+")) {
+        if (this.url.startsWith("/wasm/v1/")) {
+          this.setUrl(`/cosmwasm${this.url}`);
+        }
+      } else {
+        if (this.url.startsWith("/cosmwasm/")) {
+          this.setUrl(`${this.url.replace("/cosmwasm", "")}`);
+        }
+      }
+    });
+  }
+
+  protected override onStop() {
+    if (this.disposer) {
+      this.disposer();
+      this.disposer = undefined;
+    }
+    super.onStop();
+  }
+
   // eslint-disable-next-line @typescript-eslint/ban-types
-  protected static getUrlFromObj(
-    contractAddress: string,
-    obj: object,
-    beta?: boolean
-  ): string {
+  protected static getUrlFromObj(contractAddress: string, obj: object): string {
     const msg = JSON.stringify(obj);
     const query = Buffer.from(msg).toString("base64");
 
-    return `/cosmwasm/wasm/${
-      beta ? "v1beta1" : "v1"
-    }/contract/${contractAddress}/smart/${query}`;
+    return `/wasm/v1/contract/${contractAddress}/smart/${query}`;
   }
 
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  protected setObj(obj: object) {
-    this.obj = obj;
-
-    this.setUrl(
-      ObservableCosmwasmContractChainQuery.getUrlFromObj(
-        this.contractAddress,
-        this.obj,
-        this.beta
-      )
-    );
+  protected override canFetch(): boolean {
+    return this.contractAddress.length !== 0;
   }
 
-  protected canFetch(): boolean {
-    return this.contractAddress?.length !== 0;
-  }
+  protected override async fetchResponse(
+    abortController: AbortController
+  ): Promise<{ headers: any; data: T }> {
+    const { data, headers } = await super.fetchResponse(abortController);
 
-  protected async fetchResponse(
-    cancelToken: CancelToken
-  ): Promise<QueryResponse<T>> {
-    const response = await super.fetchResponse(cancelToken);
-
-    const wasmResult = response.data as unknown as
+    const wasmResult = data as unknown as
       | {
           data: any;
         }
@@ -76,10 +79,8 @@ export class ObservableCosmwasmContractChainQuery<
     }
 
     return {
+      headers,
       data: wasmResult.data as T,
-      status: response.status,
-      staled: false,
-      timestamp: Date.now(),
     };
   }
 }
