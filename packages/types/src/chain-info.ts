@@ -2,6 +2,7 @@ import { Currency, AppCurrency } from "./currency";
 import { BIP44 } from "./bip44";
 import { AxiosRequestConfig } from "axios";
 import { Bech32Config } from "./bech32";
+import { EVMInfo } from "./ethereum";
 
 export type NetworkType = "cosmos" | "evm" | "bitcoin" | "evmos";
 export interface ChainInfo {
@@ -14,6 +15,12 @@ export interface ChainInfo {
   readonly chainId: string;
   readonly chainName: string;
   readonly networkType?: NetworkType;
+  readonly walletUrl?: string;
+  readonly walletUrlForStaking?: string;
+  readonly chainSymbolImageUrl?: string;
+
+  readonly hideInUI?: boolean;
+
   /**
    * This indicates the type of coin that can be used for stake.
    * You can get actual currency information from Currencies.
@@ -56,6 +63,7 @@ export interface ChainInfo {
    * If the blockchain is in an early stage, please set it as beta.
    */
   readonly beta?: boolean;
+  readonly evm?: EVMInfo;
 }
 
 export interface AppChainInfo extends ChainInfo {
