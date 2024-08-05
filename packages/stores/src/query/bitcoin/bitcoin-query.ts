@@ -29,15 +29,12 @@ export class ObservableQueryBitcoinBalanceInner extends ObservableChainQuery<Res
   get balance() {
     const chainInfo = this.chainGetter.getChain(this.chainId);
     if (!this.response?.data || !this.response?.data?.balance) {
-      return new CoinPretty(
-        chainInfo.stakeCurrency,
-        new Int(new MyBigInt(0)?.toString())
-      );
+      return new CoinPretty(chainInfo.stakeCurrency, new Int(0));
     }
 
     return new CoinPretty(
       chainInfo.stakeCurrency,
-      new Int(new MyBigInt(this.response?.data?.balance)?.toString())
+      new Int(this.response?.data?.balance)
     );
   }
 
