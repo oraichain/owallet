@@ -47,6 +47,8 @@ import {
   privateToPublic,
   publicToAddress,
   toBuffer,
+  hashPersonalMessage,
+  toRpcSig,
 } from "ethereumjs-util";
 import TronWeb from "tronweb";
 import { LedgerService } from "../ledger";
@@ -150,7 +152,7 @@ export class KeyRing {
   private multiKeyStore: KeyStore[];
 
   private password: string = "";
-  private DAPP_CONNECT_STATUS: DAPP_CONNECT_STATUS =
+  private _dappConnectStatus: DAPP_CONNECT_STATUS =
     DAPP_CONNECT_STATUS.ASK_CONNECT;
   private _iv: string;
 
@@ -195,7 +197,12 @@ export class KeyRing {
     }
   }
   public get DappConnectStatus(): DAPP_CONNECT_STATUS {
-    return this.DAPP_CONNECT_STATUS;
+    return this._dappConnectStatus;
+  }
+  public setDappConnectStatus(status: DAPP_CONNECT_STATUS) {
+    if (!status) throw Error("Not Found Dapp Connect Status");
+    this._dappConnectStatus = status;
+    return this._dappConnectStatus;
   }
 
   public static getLedgerAddressOfKeyStore(
@@ -1591,6 +1598,27 @@ export class KeyRing {
     }
   }
 
+  public async signEthereumPersonalSign({
+    data,
+    chainId,
+  }: {
+    data: any;
+    chainId: string;
+  }): Promise<string> {
+    try {
+      const priKey = this.loadPrivKey(60).toBytes();
+
+      const wallet = new ethers.Wallet(priKey);
+      const signature = await wallet.signMessage(
+        ethers.utils.arrayify(data[0])
+      );
+
+      return signature;
+    } catch (error) {
+      console.log("Error on sign typed data: ", error);
+    }
+  }
+
   /**
    * Generate the "V1" hash for the provided typed message.
    *
@@ -2305,6 +2333,7 @@ export class KeyRing {
           : await this.chainsService.getChainInfo(inputChainId);
 
         return chainInfo.chainId;
+
       default:
         chainInfo = await this.chainsService.getChainInfo(chainId);
         if (!chainInfo.rest)

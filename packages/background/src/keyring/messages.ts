@@ -6,7 +6,11 @@ import {
   KeyRingStatus,
   MultiKeyStoreInfoWithSelected,
 } from "./keyring";
-import { ExportKeyRingData, SignEthereumTypedDataObject } from "./types";
+import {
+  ExportKeyRingData,
+  PersonalSignObject,
+  SignEthereumTypedDataObject,
+} from "./types";
 
 import {
   Bech32Address,
@@ -18,6 +22,7 @@ import {
   Key,
   BIP44HDPath,
   AppCurrency,
+  DAPP_CONNECT_STATUS,
 } from "@owallet/types";
 import Joi from "joi";
 import { AminoSignResponse, StdSignature } from "@cosmjs/launchpad";
@@ -1028,6 +1033,47 @@ export class RequestSignEthereumTypedDataMsg extends Message<{
   }
 }
 
+export class RequestEthereumPersonalSignMsg extends Message<{
+  readonly result: string; // raw tx signature to broadcast
+}> {
+  public static type() {
+    return "request-ethereum-personal-sign";
+  }
+
+  constructor(
+    public readonly chainId: string,
+    public readonly data: any // public readonly signOptions: OWalletSignOptions = {}
+  ) {
+    super();
+  }
+
+  validateBasic(): void {
+    if (!this.chainId) {
+      throw new OWalletError("keyring", 270, "chain id not set");
+    }
+
+    if (!this.data) {
+      throw new OWalletError("keyring", 231, "dât not set");
+    }
+
+    // if (!this.signOptions) {
+    //   throw new Error('Sign options are null');
+    // }
+  }
+
+  approveExternal(): boolean {
+    return true;
+  }
+
+  route(): string {
+    return ROUTE;
+  }
+
+  type(): string {
+    return RequestEthereumPersonalSignMsg.type();
+  }
+}
+
 export class RequestPublicKeyMsg extends Message<{
   readonly result: string; // raw tx signature to broadcast
 }> {
@@ -1572,5 +1618,63 @@ export class RequestEthereumMsg extends Message<string> {
 
   type(): string {
     return RequestEthereumMsg.type();
+  }
+}
+export class RequestSetDappStatusMsg extends Message<{
+  status: DAPP_CONNECT_STATUS;
+}> {
+  public static type() {
+    return "set-dapp-connect-status";
+  }
+
+  constructor(public readonly status: DAPP_CONNECT_STATUS) {
+    super();
+  }
+
+  validateBasic(): void {
+    if (!this.status) {
+      throw new OWalletError(
+        "keyring",
+        270,
+        "Status Dapp connect status not set"
+      );
+    }
+  }
+
+  approveExternal(): boolean {
+    return true;
+  }
+
+  route(): string {
+    return ROUTE;
+  }
+
+  type(): string {
+    return RequestSetDappStatusMsg.type();
+  }
+}
+export class RequestGetDappStatusMsg extends Message<{
+  status: DAPP_CONNECT_STATUS;
+}> {
+  public static type() {
+    return "get-dapp-connect-status";
+  }
+
+  constructor() {
+    super();
+  }
+
+  validateBasic(): void {}
+
+  approveExternal(): boolean {
+    return true;
+  }
+
+  route(): string {
+    return ROUTE;
+  }
+
+  type(): string {
+    return RequestGetDappStatusMsg.type();
   }
 }

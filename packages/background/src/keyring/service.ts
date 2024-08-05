@@ -19,6 +19,7 @@ import {
   ECDSASignature,
   ExportKeyRingData,
   MessageTypes,
+  PersonalSignObject,
   SignEthereumTypedDataObject,
   SignTypedDataVersion,
   TypedMessage,
@@ -684,6 +685,26 @@ export class KeyRingService {
     }
   }
 
+  async requestEthereumPersonalSign(
+    env: Env,
+    chainId: string,
+    data: any
+  ): Promise<string> {
+    // Need to check ledger here and ledger app type by chainId
+    try {
+      const rawTxHex = await this.keyRing.signEthereumPersonalSign({
+        data,
+        chainId,
+      });
+
+      return rawTxHex;
+    } catch (e) {
+      console.log("e", e.message);
+    } finally {
+      this.interactionService.dispatchEvent(APP_PORT, "request-sign-end", {});
+    }
+  }
+
   async requestSignBitcoin(
     env: Env,
     chainId: string,
@@ -1185,5 +1206,11 @@ export class KeyRingService {
     // }
     const rs = await this.keyRing.request_eth(chainId, method, params);
     return rs;
+  }
+  setDappConnectStatus(status: DAPP_CONNECT_STATUS) {
+    return this.keyRing.setDappConnectStatus(status);
+  }
+  getDappConnectStatus(): DAPP_CONNECT_STATUS {
+    return this.keyRing.DappConnectStatus;
   }
 }
