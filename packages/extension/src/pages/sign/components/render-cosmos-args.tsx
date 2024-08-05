@@ -203,11 +203,11 @@ export const CosmosRenderArgs: FunctionComponent<{
       coin
     );
     receiveToken = {
-      amount: clearDecimals(parsed.amount),
+      amount: clearDecimals(parsed?.amount),
       denom: parsed.denom,
     };
     tokenOut = parsed.currency || {
-      amount: clearDecimals(parsed.amount),
+      amount: clearDecimals(parsed?.amount),
       denom: parsed.denom,
     };
   }
@@ -221,7 +221,7 @@ export const CosmosRenderArgs: FunctionComponent<{
       );
       tokensIn.push(
         parsed.currency || {
-          amount: clearDecimals(parsed.amount),
+          amount: clearDecimals(parsed?.amount),
           denom: parsed.denom,
         }
       );
@@ -243,6 +243,12 @@ export const CosmosRenderArgs: FunctionComponent<{
               }}
             >
               <img
+                style={{
+                  width: 14,
+                  height: 14,
+                  borderRadius: 28,
+                  marginRight: 4,
+                }}
                 src={
                   chain?.chainSymbolImageUrl ??
                   chain?.stakeCurrency.coinImageUrl
@@ -263,7 +269,7 @@ export const CosmosRenderArgs: FunctionComponent<{
         }
       />
       {tokensIn.length > 0 ? (
-        tokensIn.map((token, index) => (
+        tokensIn?.map((token, index) => (
           <PathRenderer key={index} inToken={token} />
         ))
       ) : (
@@ -271,14 +277,14 @@ export const CosmosRenderArgs: FunctionComponent<{
       )}
       {!isMore && (
         <>
-          {txInfo.unpacked?.funds.map((fund, index) => (
+          {txInfo.unpacked?.funds?.map((fund, index) => (
             <InfoRenderer
               key={index}
               condition={fund}
               label="Fund"
               leftContent={
                 <Text color={colors["neutral-text-body"]}>
-                  {fund.amount} {fund.denom}
+                  {fund?.amount} {fund?.denom}
                 </Text>
               }
             />
@@ -320,7 +326,7 @@ export const CosmosRenderArgs: FunctionComponent<{
             label="Transfer"
             leftContent={
               <Text color={colors["neutral-text-body"]}>
-                {receiveToken.amount} {receiveToken.denom}
+                {receiveToken?.amount} {receiveToken?.denom}
               </Text>
             }
           />

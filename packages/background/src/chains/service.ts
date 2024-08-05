@@ -158,7 +158,7 @@ export class ChainsService {
       });
     }
     if (!chainInfo) {
-      throw new Error(`There is no chain info for ${chainId}`);
+      throw new Error(`There is no chain info for ${chainId} getChainInfo`);
     }
     return chainInfo;
   }
@@ -166,7 +166,9 @@ export class ChainsService {
   async getChainCoinType(chainId: string): Promise<number> {
     const chainInfo = await this.getChainInfo(chainId);
     if (!chainInfo) {
-      throw new Error(`There is no chain info for ${chainId}`);
+      throw new Error(
+        `There is no chain info for ${chainId} in getChainCoinType`
+      );
     }
 
     return chainInfo.bip44.coinType;
