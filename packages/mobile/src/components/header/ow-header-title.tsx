@@ -31,7 +31,7 @@ const OWHeaderTitle = observer(({ title, ...props }: IOWHeaderTitle) => {
         enableOverDrag: false,
       },
     });
-    modalStore.setChildren(<NetworkModal />);
+    modalStore.setChildren(<NetworkModal navigation={navigation} />);
   };
   if (title === HEADER_KEY.showNetworkHeader)
     return (

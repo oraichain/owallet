@@ -167,9 +167,6 @@ const { SmartNavigatorProvider, useSmartNavigation } =
       "Transactions.Detail": {
         upperScreenName: "Others",
       },
-      "Network.select": {
-        upperScreenName: "Others",
-      },
       "Network.token": {
         upperScreenName: "Others",
       },

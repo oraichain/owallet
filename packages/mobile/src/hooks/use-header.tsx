@@ -80,7 +80,23 @@ const useHeaderOptions = (
             sizeIcon={16}
           />
         );
-      return null;
+      return (
+        <OWButtonIcon
+          style={[
+            {
+              backgroundColor: colors["neutral-surface-card"],
+              height: 40,
+              width: 40,
+              borderRadius: 999,
+            },
+          ]}
+          colorIcon={colors["neutral-text-title"]}
+          sizeIcon={20}
+          fullWidth={false}
+          onPress={onScan}
+          name="tdesignscan"
+        />
+      );
     },
     ...TransitionPresets.SlideFromRightIOS,
     headerShown:

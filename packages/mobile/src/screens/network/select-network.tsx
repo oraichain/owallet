@@ -144,6 +144,7 @@ export const SelectFeatures = ({ onChange, networkType }) => {
   );
 };
 
+// smartNavigation.navigateSmart('Network.select', {});
 export const SelectNetworkScreen = () => {
   const {
     control,
@@ -526,7 +527,7 @@ export const SelectNetworkScreen = () => {
               }}
               error={errors.feeLow?.message}
               onBlur={onBlur}
-              onChangeText={(txt) => onChange(txt.replace(/,/g, "."))}
+              onChangeText={(txt) => onChange(Number(txt.replace(/,/g, ".")))}
               value={value.toString()}
               ref={ref}
             />
@@ -554,7 +555,7 @@ export const SelectNetworkScreen = () => {
               }}
               error={errors.feeMedium?.message}
               onBlur={onBlur}
-              onChangeText={(txt) => onChange(txt.replace(/,/g, "."))}
+              onChangeText={(txt) => onChange(Number(txt.replace(/,/g, ".")))}
               value={value.toString()}
               ref={ref}
             />
@@ -582,7 +583,7 @@ export const SelectNetworkScreen = () => {
               }}
               error={errors.feeHigh?.message}
               onBlur={onBlur}
-              onChangeText={(txt) => onChange(txt.replace(/,/g, "."))}
+              onChangeText={(txt) => onChange(Number(txt.replace(/,/g, ".")))}
               value={value.toString()}
               ref={ref}
             />

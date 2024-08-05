@@ -16,19 +16,16 @@ import { Popup } from "react-native-popup-confirm-toast";
 import OWIcon from "@src/components/ow-icon/ow-icon";
 import { OWButton } from "@src/components/button";
 import { RadioButton } from "react-native-radio-buttons-group";
-import { ChainInfoWithEmbed } from "@owallet/background";
-import { ChainInfoInner } from "@owallet/stores";
 import { initPrice } from "@src/screens/home/hooks/use-multiple-assets";
 import { PricePretty } from "@owallet/unit";
-
 import { tracking } from "@src/utils/tracking";
+import OWButtonIcon from "@src/components/button/ow-button-icon";
+import { SCREENS } from "@src/common/constants";
 
-interface ChainInfoItem extends ChainInfoInner<ChainInfoWithEmbed> {
-  balance: PricePretty;
-}
 export const NetworkModal: FC<{
+  navigation?: any;
   hideAllNetwork?: boolean;
-}> = ({ hideAllNetwork }) => {
+}> = ({ hideAllNetwork, navigation }) => {
   const { colors } = useTheme();
   const [keyword, setKeyword] = useState("");
   const [activeTab, setActiveTab] = useState<"mainnet" | "testnet">("mainnet");
@@ -44,7 +41,6 @@ export const NetworkModal: FC<{
     appInitStore,
     priceStore,
   } = useStore();
-
   const account = accountStore.getAccount(chainStore.current.chainId);
   const styles = styling(colors);
 
@@ -274,17 +270,53 @@ export const NetworkModal: FC<{
         alignItems: "center",
       }}
     >
-      <Text
+      <View
         style={{
-          ...typography.h6,
-          fontWeight: "900",
-          color: colors["neutral-text-title"],
-          width: "100%",
-          textAlign: "center",
+          flexDirection: "row",
+          justifyContent: "space-between",
+          paddingHorizontal: 36,
+          alignItems: "center",
         }}
       >
-        {`choose networks`.toUpperCase()}
-      </Text>
+        <View
+          style={{
+            height: 40,
+            width: 40,
+          }}
+        />
+        <Text
+          style={{
+            ...typography.h6,
+            fontWeight: "900",
+            color: colors["neutral-text-title"],
+            width: "100%",
+            textAlign: "center",
+          }}
+        >
+          {`choose networks`.toUpperCase()}
+        </Text>
+        <OWButtonIcon
+          style={[
+            {
+              backgroundColor: colors["neutral-surface-card"],
+              height: 40,
+              width: 40,
+              borderRadius: 999,
+            },
+          ]}
+          colorIcon={colors["neutral-text-title"]}
+          sizeIcon={20}
+          fullWidth={false}
+          onPress={() => {
+            navigation.navigate(SCREENS.STACK.Others, {
+              screen: SCREENS.NetworkSelect,
+            });
+            modalStore.close();
+            Popup.hide();
+          }}
+          name="tdesigntask-add"
+        />
+      </View>
       <View style={styles.header}>
         <View style={styles.searchInput}>
           <View style={{ paddingRight: 4 }}>

@@ -11,10 +11,12 @@ import { SCREENS } from "@src/common/constants";
 import { useNavigation } from "@react-navigation/native";
 import { metrics } from "@src/themes";
 import { observer } from "mobx-react-lite";
+import { useSmartNavigation } from "@src/navigation.provider";
 
 export const CommonPageHeader: FunctionComponent<{ title: string }> = observer(
   ({ title }) => {
     const navigation = useNavigation();
+    const smartNavigation = useSmartNavigation();
     const { chainStore, appInitStore, modalStore } = useStore();
     const { colors } = useTheme();
 
@@ -41,13 +43,33 @@ export const CommonPageHeader: FunctionComponent<{ title: string }> = observer(
           enableOverDrag: false,
         },
       });
-      modalStore.setChildren(<NetworkModal />);
+      modalStore.setChildren(<NetworkModal navigation={navigation} />);
     };
 
     return (
       <View>
         <PageHeader
-          left={<View style={{ width: metrics.screenWidth / 4 }} />}
+          left={
+            <View style={{ width: metrics.screenWidth / 4 }}>
+              <TouchableOpacity
+                onPress={() => {
+                  smartNavigation.navigateSmart("Network.select", {});
+                }}
+                style={{
+                  backgroundColor: colors["neutral-surface-card"],
+                  padding: 12,
+                  borderRadius: 999,
+                  marginRight: 8,
+                }}
+              >
+                <OWIcon
+                  size={22}
+                  name="tdesigntask-add"
+                  color={colors["neutral-text-title"]}
+                />
+              </TouchableOpacity>
+            </View>
+          }
           middle={
             <TouchableOpacity
               onPress={_onPressNetworkModal}

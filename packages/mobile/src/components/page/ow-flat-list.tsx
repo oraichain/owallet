@@ -10,9 +10,7 @@ import { FlatListProps } from "react-native";
 import { OWEmpty } from "../empty";
 import { _keyExtract } from "@src/utils/helper";
 import SkeletonPlaceholder from "react-native-skeleton-placeholder";
-
 import { useTheme } from "@src/themes/theme-provider";
-
 import { BottomSheetFlatList } from "@gorhom/bottom-sheet";
 import { OwLoading } from "@src/components/owallet-loading/ow-loading";
 import { listSkeleton } from "@src/common/constants";
@@ -46,7 +44,7 @@ interface IOWFlatListProps extends FlatListProps<any> {
 }
 
 const OWFlatList: FC<IOWFlatListProps> = (props) => {
-  const { colors, images } = useTheme();
+  const { colors } = useTheme();
   const listRef = useRef(null);
   const {
     SkeletonComponent = <TxSkeleton />,
