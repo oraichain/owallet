@@ -11,6 +11,7 @@ import { ChainGetter } from "src/chain";
 import { AppCurrency } from "@owallet/types";
 
 export class ObservableQueryErc20BalancesImplParent extends ObservableChainQuery<Erc20ContractBalance> {
+  public duplicatedFetchResolver?: Promise<void>;
   constructor(
     sharedContext: QuerySharedContext,
     chainId: string,
@@ -115,9 +116,26 @@ export class ObservableQueryErc20BalancesImpl
   get response(): Readonly<QueryResponse<Erc20ContractBalance>> | undefined {
     return this.parent.response;
   }
-  @override
-  *fetch() {
-    yield this.parent.fetch();
+  fetch(): Promise<void> {
+    if (!this.parent.duplicatedFetchResolver) {
+      this.parent.duplicatedFetchResolver = new Promise<void>(
+        (resolve, reject) => {
+          (async () => {
+            try {
+              await this.parent.fetch();
+              this.parent.duplicatedFetchResolver = undefined;
+              resolve();
+            } catch (e) {
+              this.parent.duplicatedFetchResolver = undefined;
+              reject(e);
+            }
+          })();
+        }
+      );
+      return this.parent.duplicatedFetchResolver;
+    }
+
+    return this.parent.duplicatedFetchResolver;
   }
 
   @computed

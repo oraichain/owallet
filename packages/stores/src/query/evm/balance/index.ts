@@ -63,9 +63,26 @@ export class ObservableQueryEvmBalancesImpl
     return this.parent.isStarted;
   }
 
-  @override
-  *fetch() {
-    yield this.parent.fetch();
+  fetch(): Promise<void> {
+    if (!this.parent.duplicatedFetchResolver) {
+      this.parent.duplicatedFetchResolver = new Promise<void>(
+        (resolve, reject) => {
+          (async () => {
+            try {
+              await this.parent.fetch();
+              this.parent.duplicatedFetchResolver = undefined;
+              resolve();
+            } catch (e) {
+              this.parent.duplicatedFetchResolver = undefined;
+              reject(e);
+            }
+          })();
+        }
+      );
+      return this.parent.duplicatedFetchResolver;
+    }
+
+    return this.parent.duplicatedFetchResolver;
   }
   @computed
   get currency(): AppCurrency {
@@ -100,7 +117,7 @@ export class ObservableQueryEvmBalancesImpl
 
 export class ObservableQueryEvmBalancesImplParent extends ObservableChainQuery<Balances> {
   protected walletAddress: string;
-
+  public duplicatedFetchResolver?: Promise<void>;
   constructor(
     sharedContext: QuerySharedContext,
     chainId: string,

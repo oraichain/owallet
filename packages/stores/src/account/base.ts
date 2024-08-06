@@ -130,30 +130,37 @@ export type AminoMsgsOrWithProtoMsgs = {
   >;
 };
 
+// export interface AccountSetOpts {
+//   readonly prefetching: boolean;
+//   readonly suggestChain: boolean;
+//   readonly suggestChainFn?: (
+//     owallet: OWallet,
+//     chainInfo: ReturnType<ChainGetter["getChain"]>
+//   ) => Promise<void>;
+//   readonly autoInit: boolean;
+//   readonly preTxEvents?: {
+//     onBroadcastFailed?: (e?: Error) => void;
+//     onBroadcasted?: (txHash: Uint8Array) => void;
+//     onFulfill?: (tx: any) => void;
+//   };
+//   readonly getOWallet: () => Promise<OWallet | undefined>;
+//   readonly getBitcoin: () => Promise<Bitcoin | undefined>;
+//   readonly getEthereum: () => Promise<Ethereum | undefined>;
+//   readonly getTronWeb: () => Promise<TronWeb | undefined>;
+//   // readonly msgOpts: MsgOpts;
+//   readonly wsObject?: new (
+//     url: string,
+//     protocols?: string | string[]
+//   ) => WebSocket;
+// }
 export interface AccountSetOpts {
-  readonly prefetching: boolean;
   readonly suggestChain: boolean;
   readonly suggestChainFn?: (
     owallet: OWallet,
     chainInfo: ReturnType<ChainGetter["getChain"]>
   ) => Promise<void>;
   readonly autoInit: boolean;
-  readonly preTxEvents?: {
-    onBroadcastFailed?: (e?: Error) => void;
-    onBroadcasted?: (txHash: Uint8Array) => void;
-    onFulfill?: (tx: any) => void;
-  };
-  readonly getOWallet: () => Promise<OWallet | undefined>;
-  readonly getBitcoin: () => Promise<Bitcoin | undefined>;
-  readonly getEthereum: () => Promise<Ethereum | undefined>;
-  readonly getTronWeb: () => Promise<TronWeb | undefined>;
-  // readonly msgOpts: MsgOpts;
-  readonly wsObject?: new (
-    url: string,
-    protocols?: string | string[]
-  ) => WebSocket;
 }
-
 export class AccountSetBase {
   @observable
   protected _walletVersion: string | undefined = undefined;
@@ -684,258 +691,258 @@ export class AccountSetBase {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
   }
 
-  async waitForPendingTransaction(rpc, txHash, onFulfill, count = 0) {
-    if (count > 10) {
-      OwalletEvent.txHashEmit(txHash, { code: 1 });
-      return;
-    }
+  // async waitForPendingTransaction(rpc, txHash, onFulfill, count = 0) {
+  //   if (count > 10) {
+  //     OwalletEvent.txHashEmit(txHash, { code: 1 });
+  //     return;
+  //   }
 
-    try {
-      let expectedBlockTime = 3000;
-      let transactionReceipt = null;
-      let retryCount = 0;
-      while (!transactionReceipt) {
-        // Waiting expectedBlockTime until the transaction is mined
-        transactionReceipt = await request(rpc, "eth_getTransactionReceipt", [
-          txHash,
-        ]);
-        console.log(transactionReceipt, "tran receipt");
+  //   try {
+  //     let expectedBlockTime = 3000;
+  //     let transactionReceipt = null;
+  //     let retryCount = 0;
+  //     while (!transactionReceipt) {
+  //       // Waiting expectedBlockTime until the transaction is mined
+  //       transactionReceipt = await request(rpc, "eth_getTransactionReceipt", [
+  //         txHash,
+  //       ]);
+  //       console.log(transactionReceipt, "tran receipt");
 
-        retryCount += 1;
-        if (retryCount === 10) break;
-        await this.sleep(expectedBlockTime);
-      }
+  //       retryCount += 1;
+  //       if (retryCount === 10) break;
+  //       await this.sleep(expectedBlockTime);
+  //     }
 
-      OwalletEvent.txHashEmit(txHash, { code: 0 });
+  //     OwalletEvent.txHashEmit(txHash, { code: 0 });
 
-      if (this.opts.preTxEvents?.onFulfill) {
-        this.opts.preTxEvents.onFulfill(transactionReceipt);
-      }
+  //     if (this.opts.preTxEvents?.onFulfill) {
+  //       this.opts.preTxEvents.onFulfill(transactionReceipt);
+  //     }
 
-      if (onFulfill) {
-        onFulfill(transactionReceipt);
-      }
-    } catch (error) {
-      await this.sleep(3000);
-      this.waitForPendingTransaction(rpc, txHash, onFulfill, count + 1);
-    }
-  }
+  //     if (onFulfill) {
+  //       onFulfill(transactionReceipt);
+  //     }
+  //   } catch (error) {
+  //     await this.sleep(3000);
+  //     this.waitForPendingTransaction(rpc, txHash, onFulfill, count + 1);
+  //   }
+  // }
 
-  async handleErc20Transaction(msgs, fee) {
-    const { value } = msgs;
-    const provider = this.chainGetter.getChain(this.chainId).rpc;
-    const web3 = new Web3(provider);
-    const contract = new web3.eth.Contract(ERC20_ABI, value.contract_addr, {
-      from: value.from,
-    });
-    const data = contract.methods
-      .transfer(value.recipient, value.amount)
-      .encodeABI();
+  // async handleErc20Transaction(msgs, fee) {
+  //   const { value } = msgs;
+  //   const provider = this.chainGetter.getChain(this.chainId).rpc;
+  //   const web3 = new Web3(provider);
+  //   const contract = new web3.eth.Contract(ERC20_ABI, value.contract_addr, {
+  //     from: value.from,
+  //   });
+  //   const data = contract.methods
+  //     .transfer(value.recipient, value.amount)
+  //     .encodeABI();
 
-    const txObj = {
-      gas: web3.utils.toHex(value.gas),
-      to: value.contract_addr,
-      value: "0x0",
-      from: value.from,
-      data,
-    };
+  //   const txObj = {
+  //     gas: web3.utils.toHex(value.gas),
+  //     to: value.contract_addr,
+  //     value: "0x0",
+  //     from: value.from,
+  //     data,
+  //   };
 
-    return await this.broadcastErc20EvmMsgs(txObj, fee);
-  }
+  //   return await this.broadcastErc20EvmMsgs(txObj, fee);
+  // }
 
-  async handleEvmTransaction(msgs, fee, signOptions) {
-    if (msgs.type === "erc20") {
-      return await this.handleErc20Transaction(msgs, fee);
-    } else {
-      return await this.broadcastEvmMsgs(msgs, fee, signOptions);
-    }
-  }
+  // async handleEvmTransaction(msgs, fee, signOptions) {
+  //   if (msgs.type === "erc20") {
+  //     return await this.handleErc20Transaction(msgs, fee);
+  //   } else {
+  //     return await this.broadcastEvmMsgs(msgs, fee, signOptions);
+  //   }
+  // }
 
-  handleTxEvents(txHash, onTxEvents) {
-    let onBroadcasted;
-    let onFulfill;
+  // handleTxEvents(txHash, onTxEvents) {
+  //   let onBroadcasted;
+  //   let onFulfill;
 
-    if (onTxEvents) {
-      if (typeof onTxEvents === "function") {
-        onFulfill = onTxEvents;
-      } else {
-        onBroadcasted = onTxEvents.onBroadcasted;
-        onFulfill = onTxEvents.onFulfill;
-      }
-    }
+  //   if (onTxEvents) {
+  //     if (typeof onTxEvents === "function") {
+  //       onFulfill = onTxEvents;
+  //     } else {
+  //       onBroadcasted = onTxEvents.onBroadcasted;
+  //       onFulfill = onTxEvents.onFulfill;
+  //     }
+  //   }
 
-    if (this.opts.preTxEvents?.onBroadcasted) {
-      this.opts.preTxEvents.onBroadcasted(txHash);
-    }
+  //   if (this.opts.preTxEvents?.onBroadcasted) {
+  //     this.opts.preTxEvents.onBroadcasted(txHash);
+  //   }
 
-    if (onBroadcasted) {
-      onBroadcasted(txHash);
-    }
+  //   if (onBroadcasted) {
+  //     onBroadcasted(txHash);
+  //   }
 
-    if (this.chainId === ChainIdEnum.Oasis) {
-      console.log(txHash, "txHash");
-      if (this.opts.preTxEvents?.onFulfill) {
-        this.opts.preTxEvents.onFulfill(txHash);
-      }
+  //   if (this.chainId === ChainIdEnum.Oasis) {
+  //     console.log(txHash, "txHash");
+  //     if (this.opts.preTxEvents?.onFulfill) {
+  //       this.opts.preTxEvents.onFulfill(txHash);
+  //     }
 
-      if (onFulfill) {
-        onFulfill(txHash);
-      }
-      return;
-    }
+  //     if (onFulfill) {
+  //       onFulfill(txHash);
+  //     }
+  //     return;
+  //   }
 
-    const rpc = this.chainGetter.getChain(this.chainId).rest;
-    this.waitForPendingTransaction(rpc, txHash, onFulfill);
-  }
+  //   const rpc = this.chainGetter.getChain(this.chainId).rest;
+  //   this.waitForPendingTransaction(rpc, txHash, onFulfill);
+  // }
 
-  async sendEvmMsgs(type, msgs, memo = "", fee, signOptions, onTxEvents) {
-    runInAction(() => {
-      this._isSendingMsg = type;
-    });
+  // async sendEvmMsgs(type, msgs, memo = "", fee, signOptions, onTxEvents) {
+  //   runInAction(() => {
+  //     this._isSendingMsg = type;
+  //   });
 
-    let txHash;
+  //   let txHash;
 
-    try {
-      const result = await this.handleEvmTransaction(msgs, fee, signOptions);
-      txHash = result.txHash;
+  //   try {
+  //     const result = await this.handleEvmTransaction(msgs, fee, signOptions);
+  //     txHash = result.txHash;
 
-      if (!txHash) throw Error("Transaction Rejected");
-    } catch (e) {
-      runInAction(() => {
-        this._isSendingMsg = false;
-      });
+  //     if (!txHash) throw Error("Transaction Rejected");
+  //   } catch (e) {
+  //     runInAction(() => {
+  //       this._isSendingMsg = false;
+  //     });
 
-      if (this.opts.preTxEvents?.onBroadcastFailed) {
-        this.opts.preTxEvents.onBroadcastFailed(e);
-      }
+  //     if (this.opts.preTxEvents?.onBroadcastFailed) {
+  //       this.opts.preTxEvents.onBroadcastFailed(e);
+  //     }
 
-      if (
-        onTxEvents &&
-        "onBroadcastFailed" in onTxEvents &&
-        onTxEvents.onBroadcastFailed
-      ) {
-        onTxEvents.onBroadcastFailed(e);
-      }
+  //     if (
+  //       onTxEvents &&
+  //       "onBroadcastFailed" in onTxEvents &&
+  //       onTxEvents.onBroadcastFailed
+  //     ) {
+  //       onTxEvents.onBroadcastFailed(e);
+  //     }
 
-      throw e;
-    }
+  //     throw e;
+  //   }
 
-    runInAction(() => {
-      this._isSendingMsg = false;
-    });
+  //   runInAction(() => {
+  //     this._isSendingMsg = false;
+  //   });
 
-    this.handleTxEvents(txHash, onTxEvents);
-  }
+  //   this.handleTxEvents(txHash, onTxEvents);
+  // }
 
-  async sendBtcMsgs(
-    type: string | "unknown",
-    msgs: any,
-    memo: string = "",
-    fee: StdFee,
-    signOptions?: OWalletSignOptions,
-    onTxEvents?:
-      | ((tx: any) => void)
-      | {
-          onBroadcastFailed?: (e?: Error) => void;
-          onBroadcasted?: (txHash: Uint8Array) => void;
-          onFulfill?: (tx: any) => void;
-        },
-    extraOptions?: ExtraOptionSendToken
-  ) {
-    runInAction(() => {
-      this._isSendingMsg = type;
-    });
+  // async sendBtcMsgs(
+  //   type: string | "unknown",
+  //   msgs: any,
+  //   memo: string = "",
+  //   fee: StdFee,
+  //   signOptions?: OWalletSignOptions,
+  //   onTxEvents?:
+  //     | ((tx: any) => void)
+  //     | {
+  //         onBroadcastFailed?: (e?: Error) => void;
+  //         onBroadcasted?: (txHash: Uint8Array) => void;
+  //         onFulfill?: (tx: any) => void;
+  //       },
+  //   extraOptions?: ExtraOptionSendToken
+  // ) {
+  //   runInAction(() => {
+  //     this._isSendingMsg = type;
+  //   });
 
-    let txHash: string;
+  //   let txHash: string;
 
-    try {
-      const result = await this.broadcastBtcMsgs(
-        msgs,
-        fee,
-        memo,
-        signOptions,
-        extraOptions
-      );
-      txHash = result?.txHash;
-      if (!txHash) throw Error("Transaction Rejected");
-    } catch (e: any) {
-      console.log("🚀 ~ file: base.ts:644 ~ AccountSetBase<MsgOpts, ~ e:", e);
-      runInAction(() => {
-        this._isSendingMsg = false;
-      });
+  //   try {
+  //     const result = await this.broadcastBtcMsgs(
+  //       msgs,
+  //       fee,
+  //       memo,
+  //       signOptions,
+  //       extraOptions
+  //     );
+  //     txHash = result?.txHash;
+  //     if (!txHash) throw Error("Transaction Rejected");
+  //   } catch (e: any) {
+  //     console.log("🚀 ~ file: base.ts:644 ~ AccountSetBase<MsgOpts, ~ e:", e);
+  //     runInAction(() => {
+  //       this._isSendingMsg = false;
+  //     });
 
-      this.opts?.preTxEvents?.onBroadcastFailed(e);
+  //     this.opts?.preTxEvents?.onBroadcastFailed(e);
 
-      onTxEvents &&
-        "onBroadcastFailed" in onTxEvents &&
-        onTxEvents.onBroadcastFailed(e);
+  //     onTxEvents &&
+  //       "onBroadcastFailed" in onTxEvents &&
+  //       onTxEvents.onBroadcastFailed(e);
 
-      throw e;
-    }
+  //     throw e;
+  //   }
 
-    this.onHandleEvents(onTxEvents, txHash);
-  }
+  //   this.onHandleEvents(onTxEvents, txHash);
+  // }
 
-  async onHandleEvents(onTxEvents, txHash) {
-    let onBroadcasted: ((txHash: Uint8Array) => void) | undefined;
-    let onFulfill: ((tx: any) => void) | undefined;
+  // async onHandleEvents(onTxEvents, txHash) {
+  //   let onBroadcasted: ((txHash: Uint8Array) => void) | undefined;
+  //   let onFulfill: ((tx: any) => void) | undefined;
 
-    if (onTxEvents) {
-      if (typeof onTxEvents === "function") {
-        onFulfill = onTxEvents;
-      } else {
-        onBroadcasted = onTxEvents.onBroadcasted;
-        onFulfill = onTxEvents.onFulfill;
-      }
-    }
+  //   if (onTxEvents) {
+  //     if (typeof onTxEvents === "function") {
+  //       onFulfill = onTxEvents;
+  //     } else {
+  //       onBroadcasted = onTxEvents.onBroadcasted;
+  //       onFulfill = onTxEvents.onFulfill;
+  //     }
+  //   }
 
-    if (this.opts.preTxEvents?.onFulfill && txHash) {
-      this.opts.preTxEvents.onFulfill(txHash);
-    }
+  //   if (this.opts.preTxEvents?.onFulfill && txHash) {
+  //     this.opts.preTxEvents.onFulfill(txHash);
+  //   }
 
-    if (onFulfill && txHash) {
-      onFulfill(txHash);
-    }
-  }
+  //   if (onFulfill && txHash) {
+  //     onFulfill(txHash);
+  //   }
+  // }
 
-  async sendToken(
-    amount: string,
-    currency: AppCurrency,
-    recipient: string,
-    memo: string = "",
-    stdFee: Partial<StdFee | StdFeeEthereum> = {},
-    signOptions?: OWalletSignOptions,
-    onTxEvents?:
-      | ((tx: any) => void)
-      | {
-          onBroadcasted?: (txHash: Uint8Array) => void;
-          onFulfill?: (tx: any) => void;
-        },
-    extraOptions?: ExtraOptionSendToken
-  ) {
-    for (let i = 0; i < this.sendTokenFns.length; i++) {
-      const fn = this.sendTokenFns[i];
+  // async sendToken(
+  //   amount: string,
+  //   currency: AppCurrency,
+  //   recipient: string,
+  //   memo: string = "",
+  //   stdFee: Partial<StdFee | StdFeeEthereum> = {},
+  //   signOptions?: OWalletSignOptions,
+  //   onTxEvents?:
+  //     | ((tx: any) => void)
+  //     | {
+  //         onBroadcasted?: (txHash: Uint8Array) => void;
+  //         onFulfill?: (tx: any) => void;
+  //       },
+  //   extraOptions?: ExtraOptionSendToken
+  // ) {
+  //   for (let i = 0; i < this.sendTokenFns.length; i++) {
+  //     const fn = this.sendTokenFns[i];
 
-      if (
-        await fn(
-          amount,
-          currency,
-          recipient,
-          memo,
-          stdFee,
-          signOptions,
-          onTxEvents,
-          extraOptions
-        )
-      ) {
-        return;
-      }
-    }
+  //     if (
+  //       await fn(
+  //         amount,
+  //         currency,
+  //         recipient,
+  //         memo,
+  //         stdFee,
+  //         signOptions,
+  //         onTxEvents,
+  //         extraOptions
+  //       )
+  //     ) {
+  //       return;
+  //     }
+  //   }
 
-    const denomHelper = new DenomHelper(currency.coinMinimalDenom);
+  //   const denomHelper = new DenomHelper(currency.coinMinimalDenom);
 
-    throw new Error(`Unsupported type of currency (${denomHelper.type})`);
-  }
+  //   throw new Error(`Unsupported type of currency (${denomHelper.type})`);
+  // }
 
   validateChainId(chainId: string): number {
     // chain id example: kawaii_6886-1. If chain id input is already a number in string => parse it immediately

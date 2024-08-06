@@ -98,26 +98,26 @@ export class BitcoinAccountImpl {
             feeRate: extraOptions.feeRate,
           };
 
-          await this.base.sendBtcMsgs(
-            "send",
-            msg,
-            memo,
-            stdFee,
-            signOptions,
-            this.txEventsWithPreOnFulfill(onTxEvents, (tx) => {
-              if (tx) {
-                // After succeeding to send token, refresh the balance.
-                const queryBtcBalance =
-                  this.queries.bitcoin.queryBitcoinBalance.getQueryBalance(
-                    this.base.btcAddress
-                  );
-                if (queryBtcBalance) {
-                  queryBtcBalance.fetch();
-                }
-              }
-            }),
-            extraOptions
-          );
+          // await this.base.sendBtcMsgs(
+          //   "send",
+          //   msg,
+          //   memo,
+          //   stdFee,
+          //   signOptions,
+          //   this.txEventsWithPreOnFulfill(onTxEvents, (tx) => {
+          //     if (tx) {
+          //       // After succeeding to send token, refresh the balance.
+          //       const queryBtcBalance =
+          //         this.queries.bitcoin.queryBitcoinBalance.getQueryBalance(
+          //           this.base.btcAddress
+          //         );
+          //       if (queryBtcBalance) {
+          //         queryBtcBalance.fetch();
+          //       }
+          //     }
+          //   }),
+          //   extraOptions
+          // );
           return true;
       }
     }

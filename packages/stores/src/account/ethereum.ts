@@ -12,8 +12,9 @@ import {
   QueriesStore,
 } from "../query";
 import { DeepReadonly } from "utility-types";
-import { ChainGetter, StdFeeEthereum } from "../common";
+import { StdFeeEthereum } from "../common";
 import Web3 from "web3";
+import { ChainGetter } from "src/chain";
 
 // export interface HasEthereumAccount {
 //   ethereum: DeepReadonly<EthereumAccount>;
@@ -122,37 +123,38 @@ export class EthereumAccountImpl {
             return dec.truncate().toString();
           })();
 
-          await this.base.sendEvmMsgs(
-            "send",
-            {
-              type: "erc20",
-              value: { ...extraOptions, amount: realAmount },
-            },
-            memo,
-            {
-              gas: Web3.utils.toHex(stdFee.gas),
-              gasPrice: Web3.utils.toHex(stdFee.gasPrice),
-            },
-            signOptions,
-            this.txEventsWithPreOnFulfill(onTxEvents, (tx) => {
-              if (tx) {
-                // After succeeding to send token, refresh the balance.
+          // await this.base.sendEvmMsgs(
+          //   "send",
+          //   {
+          //     type: "erc20",
+          //     value: { ...extraOptions, amount: realAmount },
+          //   },
+          //   memo,
+          //   {
+          //     gas: Web3.utils.toHex(stdFee.gas),
+          //     gasPrice: Web3.utils.toHex(stdFee.gasPrice),
+          //   },
+          //   signOptions,
+          //   this.txEventsWithPreOnFulfill(onTxEvents, (tx) => {
+          //     if (tx) {
+          //       // After succeeding to send token, refresh the balance.
 
-                const queryBalance = this.queries.queryBalances
-                  .getQueryBech32Address(this.base.evmosHexAddress)
-                  .balances.find((bal) => {
-                    return (
-                      bal.currency.coinMinimalDenom ===
-                      currency.coinMinimalDenom
-                    );
-                  });
+          //       const queryBalance = this.queries.queryBalances
+          //         .getQueryBech32Address(this.base.evmosHexAddress)
+          //         .balances.find((bal) => {
+          //           return (
+          //             bal.currency.coinMinimalDenom ===
+          //             currency.coinMinimalDenom
+          //           );
+          //         });
 
-                if (queryBalance) {
-                  queryBalance.fetch();
-                }
-              }
-            })
-          );
+          //       if (queryBalance) {
+          //         queryBalance.fetch();
+          //       }
+          //     }
+          //   })
+          // );
+
           return true;
         case "native":
           const actualAmount = (() => {
@@ -177,34 +179,34 @@ export class EthereumAccountImpl {
             },
           };
 
-          await this.base.sendEvmMsgs(
-            "send",
-            msg,
-            memo,
-            {
-              gas: Web3.utils.toHex(stdFee.gas),
-              gasPrice: Web3.utils.toHex(stdFee.gasPrice),
-            },
-            signOptions,
-            this.txEventsWithPreOnFulfill(onTxEvents, (tx) => {
-              console.log("Tx on fullfill: ", tx);
-              if (tx) {
-                // After succeeding to send token, refresh the balance.
-                const queryBalance = this.queries.queryBalances
-                  .getQueryBech32Address(this.base.evmosHexAddress)
-                  .balances.find((bal) => {
-                    return (
-                      bal.currency.coinMinimalDenom ===
-                      currency.coinMinimalDenom
-                    );
-                  });
+          // await this.base.sendEvmMsgs(
+          //   "send",
+          //   msg,
+          //   memo,
+          //   {
+          //     gas: Web3.utils.toHex(stdFee.gas),
+          //     gasPrice: Web3.utils.toHex(stdFee.gasPrice),
+          //   },
+          //   signOptions,
+          //   this.txEventsWithPreOnFulfill(onTxEvents, (tx) => {
+          //     console.log("Tx on fullfill: ", tx);
+          //     if (tx) {
+          //       // After succeeding to send token, refresh the balance.
+          //       const queryBalance = this.queries.queryBalances
+          //         .getQueryBech32Address(this.base.evmosHexAddress)
+          //         .balances.find((bal) => {
+          //           return (
+          //             bal.currency.coinMinimalDenom ===
+          //             currency.coinMinimalDenom
+          //           );
+          //         });
 
-                if (queryBalance) {
-                  queryBalance.fetch();
-                }
-              }
-            })
-          );
+          //       if (queryBalance) {
+          //         queryBalance.fetch();
+          //       }
+          //     }
+          //   })
+          // );
           return true;
       }
     }

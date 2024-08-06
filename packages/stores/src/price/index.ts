@@ -463,7 +463,27 @@ export class CoinGeckoPriceStore extends ObservableQuery<CoinGeckoSimplePrice> {
 
     return new PricePretty(fiatCurrency, dec.mul(priceDec));
   }
+  getPrice24hChange(coinId: string, vsCurrency?: string): number | undefined {
+    if (!vsCurrency) {
+      vsCurrency = this.defaultVsCurrency;
+    }
 
+    if (!this.supportedVsCurrencies[vsCurrency]) {
+      return undefined;
+    }
+
+    this.updateURL([coinId], [vsCurrency]);
+
+    if (!this.response) {
+      return undefined;
+    }
+
+    const coinPrices24h = this.response.data[coinId];
+    if (!coinPrices24h) {
+      return undefined;
+    }
+    return coinPrices24h[`${vsCurrency}_24h_change`];
+  }
   async waitFreshCalculatePrice(
     coin: CoinPretty,
     vsCurrrency?: string

@@ -20,6 +20,9 @@ import {
   CosmwasmAccount,
   SecretAccount,
   getOWalletFromWindow,
+  getEthereumFromWindow,
+  getBitcoinFromWindow,
+  getTronWebFromWindow,
 } from "@owallet/stores";
 import { AsyncKVStore } from "../common";
 import { APP_PORT } from "@owallet/router";
@@ -73,7 +76,9 @@ export class RootStore {
       EvmContractQueries
     ]
   >;
-  public readonly accountStore: AccountStore<[]>;
+  public readonly accountStore: AccountStore<
+    [CosmosAccount, CosmwasmAccount, SecretAccount]
+  >;
   public readonly priceStore: CoinGeckoPriceStore;
   public readonly tokensStore: TokensStore<ChainInfoWithEmbed>;
 
@@ -351,6 +356,9 @@ export class RootStore {
       //@ts-ignore
       this.chainStore,
       getOWalletFromWindow,
+      getEthereumFromWindow,
+      getBitcoinFromWindow,
+      getTronWebFromWindow,
       () => {
         return {
           suggestChain: false,
