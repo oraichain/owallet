@@ -63,7 +63,7 @@ export class RootStore {
   public readonly ledgerInitStore: LedgerInitStore;
   public readonly signInteractionStore: SignInteractionStore;
   // public readonly hugeQueriesStore: HugeQueriesStore;
-  public readonly hugeQueriesNewStore: HugeQueriesStore;
+  public readonly hugeQueriesStore: HugeQueriesStore;
   public readonly queriesStore: QueriesStore<
     [
       CosmosQueries,
@@ -511,7 +511,7 @@ export class RootStore {
       BitcoinQueries.use(),
       EvmContractQueries.use()
     );
-    this.hugeQueriesNewStore = new HugeQueriesStore(
+    this.hugeQueriesStore = new HugeQueriesStore(
       this.chainStore,
       this.queriesStore,
       this.accountStore,

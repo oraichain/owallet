@@ -48,7 +48,7 @@ export class ChainStore extends BaseChainStore<ChainInfoWithEmbed> {
 
   get chainInfosInUI() {
     return this.chainInfos.filter((chainInfo) => {
-      return !chainInfo.raw.hideInUI;
+      return !chainInfo.hideInUI;
     });
   }
 

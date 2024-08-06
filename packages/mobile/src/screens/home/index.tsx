@@ -2,6 +2,7 @@ import React, {
   FunctionComponent,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useTransition,
 } from "react";
@@ -43,6 +44,7 @@ import { MainTabHome } from "./components";
 import { sha256 } from "sha.js";
 import { Mixpanel } from "mixpanel-react-native";
 import { tracking } from "@src/utils/tracking";
+import OWText from "@src/components/text/ow-text";
 const mixpanel = globalThis.mixpanel as Mixpanel;
 export const HomeScreen: FunctionComponent = observer((props) => {
   const [refreshing, setRefreshing] = React.useState(false);
@@ -75,6 +77,7 @@ export const HomeScreen: FunctionComponent = observer((props) => {
       refreshing,
       accountOrai.bech32Address
     );
+
   const [isPending, startTransition] = useTransition();
   const accountEth = accountStore.getAccount(ChainIdEnum.Ethereum);
   const accountTron = accountStore.getAccount(ChainIdEnum.TRON);
@@ -107,7 +110,22 @@ export const HomeScreen: FunctionComponent = observer((props) => {
         .catch((err) => console.log(err));
     });
   }, []);
-
+  const allBalance = hugeQueriesStore.getAllBalances(true);
+  const availableTotalPrice = useMemo(() => {
+    let result: PricePretty | undefined;
+    let balances = hugeQueriesStore.allKnownBalances;
+    for (const bal of balances) {
+      if (bal.price) {
+        if (!result) {
+          result = bal.price;
+        } else {
+          result = result.add(bal.price);
+        }
+      }
+    }
+    return result;
+  }, [hugeQueriesStore.allKnownBalances, chainStore.current.chainId]);
+  console.log(availableTotalPrice?.toString(), "availableTotalPrice");
   const checkAndUpdateChainInfo = useCallback(() => {
     if (!chainStoreIsInitializing) {
       (async () => {
@@ -373,13 +391,16 @@ export const HomeScreen: FunctionComponent = observer((props) => {
           fiatCurrency,
           dataTokensByChain?.[chainStore.current.chainId]?.totalBalance
         )?.toString()}
-        totalPriceBalance={new PricePretty(
-          fiatCurrency,
-          totalPriceBalance
-        )?.toString()}
+        totalPriceBalance={availableTotalPrice?.toString()}
       />
       <EarningCardNew />
-      <MainTabHome dataTokens={dataTokens} />
+      {/* <MainTabHome dataTokens={dataTokens} /> */}
+      {allBalance &&
+        allBalance.map((item) => (
+          <OWText>{`${item.token.currency.coinDenom}:${
+            item.chainInfo.chainName
+          } - ${item.price?.toString()}`}</OWText>
+        ))}
     </PageWithScrollViewInBottomTabView>
   );
 });

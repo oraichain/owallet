@@ -5,6 +5,13 @@ import {
   AccountStore,
   QueriesStore,
   QueryError,
+  EvmQueries,
+  TronQueries,
+  BitcoinQueries,
+  EvmContractQueries,
+  CosmwasmQueries,
+  SecretQueries,
+  OsmosisQueries,
 } from "@owallet/stores";
 import { CoinPretty, Dec, PricePretty } from "@owallet/unit";
 import { action, autorun, computed } from "mobx";
@@ -42,7 +49,18 @@ export class HugeQueriesStore {
 
   constructor(
     protected readonly chainStore: ChainStore,
-    protected readonly queriesStore: QueriesStore<[CosmosQueries]>,
+    protected readonly queriesStore: QueriesStore<
+      [
+        CosmosQueries,
+        CosmwasmQueries,
+        SecretQueries,
+        OsmosisQueries,
+        EvmQueries,
+        TronQueries,
+        BitcoinQueries,
+        EvmContractQueries
+      ]
+    >,
     protected readonly accountStore: AccountStore<[]>,
     protected readonly priceStore: CoinGeckoPriceStore
   ) {
@@ -199,6 +217,7 @@ export class HugeQueriesStore {
   getAllBalances = computedFn(
     (allowIBCToken: boolean): ReadonlyArray<ViewToken> => {
       const keys: Map<string, boolean> = new Map();
+
       for (const chainInfo of this.chainStore.chainInfosInUI) {
         for (const currency of chainInfo.currencies) {
           const denomHelper = new DenomHelper(currency.coinMinimalDenom);

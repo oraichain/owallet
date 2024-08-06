@@ -60,7 +60,6 @@ export class RootStore {
   public readonly priceStore: CoinGeckoPriceStore;
   public readonly tokensStore: TokensStore<ChainInfoWithEmbed>;
   public readonly hugeQueriesStore: HugeQueriesStore;
-  public readonly hugeQueriesNewStore: HugeQueriesStore;
 
   protected readonly ibcCurrencyRegistrar: IBCCurrencyRegsitrar<ChainInfoWithEmbed>;
 
