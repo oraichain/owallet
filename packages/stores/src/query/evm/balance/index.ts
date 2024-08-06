@@ -12,37 +12,31 @@ import {
   urlTxHistory,
   Web3Provider,
 } from "@owallet/common";
-import { ChainGetter, CoinPrimitive, QueryResponse } from "../../../common";
+import {
+  CoinPrimitive,
+  QueryResponse,
+  QuerySharedContext,
+} from "../../../common";
 import { computed, makeObservable, override } from "mobx";
 import { CoinPretty, Int } from "@owallet/unit";
 import { StoreUtils } from "../../../common";
-import {
-  BalanceRegistry,
-  BalanceRegistryType,
-  ObservableQueryBalanceInner,
-} from "../../balances";
+import { BalanceRegistry, IObservableQueryBalanceImpl } from "../../balances";
 import { ObservableChainQuery } from "../../chain-query";
 import { Balances } from "./types";
 import { CancelToken } from "axios";
 import Web3 from "web3";
+import { AppCurrency } from "@owallet/types";
+import { ChainGetter } from "src/chain";
 
-export class ObservableQueryBalanceNative extends ObservableQueryBalanceInner {
+export class ObservableQueryEvmBalancesImpl
+  implements IObservableQueryBalanceImpl
+{
   constructor(
-    kvStore: KVStore,
-    chainId: string,
-    chainGetter: ChainGetter,
-    denomHelper: DenomHelper,
-    protected readonly nativeBalances: ObservableQueryEvmBalances
+    protected readonly parent: ObservableQueryEvmBalancesImplParent,
+    protected readonly chainId: string,
+    protected readonly chainGetter: ChainGetter,
+    protected readonly denomHelper: DenomHelper // protected readonly nativeBalances: ObservableQueryEvmBalances
   ) {
-    super(
-      kvStore,
-      chainId,
-      chainGetter,
-      // No need to set the url
-      "",
-      denomHelper
-    );
-
     makeObservable(this);
   }
 
@@ -51,49 +45,69 @@ export class ObservableQueryBalanceNative extends ObservableQueryBalanceInner {
   }
 
   get isFetching(): boolean {
-    return this.nativeBalances.isFetching;
+    return this.parent.isFetching;
   }
 
   get error() {
-    return this.nativeBalances.error;
+    return this.parent.error;
   }
 
   get response() {
-    return this.nativeBalances.response;
+    return this.parent.response;
+  }
+
+  get isObserved(): boolean {
+    return this.parent.isObserved;
+  }
+  get isStarted(): boolean {
+    return this.parent.isStarted;
   }
 
   @override
   *fetch() {
-    yield this.nativeBalances.fetch();
+    yield this.parent.fetch();
   }
+  @computed
+  get currency(): AppCurrency {
+    const denom = this.denomHelper.denom;
 
+    const chainInfo = this.chainGetter.getChain(this.chainId);
+    return chainInfo.forceFindCurrency(denom);
+  }
   @computed
   get balance(): CoinPretty {
     const currency = this.currency;
 
-    if (!this.nativeBalances.response) {
+    if (!this.parent.response) {
       return new CoinPretty(currency, new Int(0)).ready(false);
     }
 
     return StoreUtils.getBalanceFromCurrency(
       currency,
-      this.nativeBalances.response.data.balances
+      this.parent.response.data.balances
     );
+  }
+  async waitFreshResponse(): Promise<
+    Readonly<QueryResponse<unknown>> | undefined
+  > {
+    return await this.parent.waitFreshResponse();
+  }
+
+  async waitResponse(): Promise<Readonly<QueryResponse<unknown>> | undefined> {
+    return await this.parent.waitResponse();
   }
 }
 
-export class ObservableQueryEvmBalances extends ObservableChainQuery<Balances> {
+export class ObservableQueryEvmBalancesImplParent extends ObservableChainQuery<Balances> {
   protected walletAddress: string;
 
-  protected duplicatedFetchCheck: boolean = false;
-
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     walletAddress: string
   ) {
-    super(kvStore, chainId, chainGetter, "", null);
+    super(sharedContext, chainId, chainGetter, "");
 
     this.walletAddress = walletAddress;
 
@@ -105,22 +119,10 @@ export class ObservableQueryEvmBalances extends ObservableChainQuery<Balances> {
     return this.walletAddress?.length > 0;
   }
 
-  @override
-  *fetch() {
-    if (!this.duplicatedFetchCheck) {
-      // it is inefficient to fetching duplicately in the same loop.
-      // So, if the fetching requests are in the same tick, this prevent to refetch the result and use the prior fetching.
-      this.duplicatedFetchCheck = true;
-      setTimeout(() => {
-        this.duplicatedFetchCheck = false;
-      }, 1);
-
-      yield super.fetch();
-    }
-  }
   protected async getOasisBalance() {
     try {
       const chainInfo = this.chainGetter.getChain(this._chainId);
+      //@ts-ignore
       const nic = getOasisNic(chainInfo.raw.grpc);
       const publicKey = await addressToPublicKey(this.walletAddress);
       const account = await nic.stakingAccount({ owner: publicKey, height: 0 });
@@ -134,70 +136,12 @@ export class ObservableQueryEvmBalances extends ObservableChainQuery<Balances> {
       );
     }
   }
-  // protected async fetchResponse(response: Readonly<QueryResponse<Balances>>) {
-  //   super.setResponse(balances as any);
-  //
-  //     // const denoms = response.data.balances.map((coin) => coin.denom);
-  //     // chainInfo.addUnknownCurrencies(...denoms);
-  //   });
-  //   // try {
-  //   //   if (this._chainId === ChainIdEnum.Oasis) {
-  //   //     const oasisRs = await this.getOasisBalance();
-  //   //     const denomNative = this.chainGetter.getChain(this.chainId)
-  //   //       .stakeCurrency.coinMinimalDenom;
-  //   //     const balances: CoinPrimitive[] = [
-  //   //       {
-  //   //         amount: oasisRs.available,
-  //   //         denom: denomNative,
-  //   //       },
-  //   //     ];
 
-  //   //     const data = {
-  //   //       balances,
-  //   //     };
-  //   //     return {
-  //   //       status: 1,
-  //   //       staled: false,
-  //   //       data,
-  //   //       timestamp: Date.now(),
-  //   //     };
-  //   //   }
-  //   //   const web3 = new Web3(
-  //   //     getRpcByChainId(this.chainGetter.getChain(this.chainId), this.chainId)
-  //   //   );
-  //   //   const ethBalance = await web3.eth.getBalance(this.walletAddress);
-  //   //   console.log(
-  //   //     "🚀 ~ ObservableQueryEvmBalances ~ fetchResponse ~ ethBalance:",
-  //   //     ethBalance
-  //   //   );
-  //   //   const denomNative = this.chainGetter.getChain(this.chainId).stakeCurrency
-  //   //     .coinMinimalDenom;
-  //   //   const balances: CoinPrimitive[] = [
-  //   //     {
-  //   //       amount: ethBalance,
-  //   //       denom: denomNative,
-  //   //     },
-  //   //   ];
-
-  //   //   const data = {
-  //   //     balances,
-  //   //   };
-  //   //   console.log(data,"data");
-  //   //   return {
-  //   //     status: 1,
-  //   //     staled: false,
-  //   //     data,
-  //   //     timestamp: Date.now(),
-  //   //   };
-  //   // } catch (error) {
-  //   //   console.log(
-  //   //     "🚀 ~ ObservableQueryEvmBalances ~ fetchResponse ~ error:",
-  //   //     error
-  //   //   );
-  //   // }
-  // }
-  protected async fetchResponse(): Promise<QueryResponse<Balances>> {
+  protected async fetchResponse(
+    abortController: AbortController
+  ): Promise<{ headers: any; data: Balances }> {
     try {
+      const { data, headers } = await super.fetchResponse(abortController);
       if (this._chainId === ChainIdEnum.Oasis) {
         const oasisRs = await this.getOasisBalance();
         console.log(oasisRs, "oasis rs");
@@ -211,14 +155,12 @@ export class ObservableQueryEvmBalances extends ObservableChainQuery<Balances> {
           },
         ];
 
-        const data = {
+        const balancesOasis = {
           balances,
         };
         return {
-          status: 1,
-          staled: false,
-          data,
-          timestamp: Date.now(),
+          headers,
+          data: balancesOasis,
         };
       }
       const web3 = new Web3(
@@ -238,14 +180,12 @@ export class ObservableQueryEvmBalances extends ObservableChainQuery<Balances> {
         },
       ];
       this.fetchAllErc20();
-      const data = {
+      const balancesEvm = {
         balances,
       };
       return {
-        status: 1,
-        staled: false,
-        data,
-        timestamp: Date.now(),
+        headers,
+        data: balancesEvm,
       };
     } catch (error) {
       console.log(
@@ -321,55 +261,46 @@ export class ObservableQueryEvmBalances extends ObservableChainQuery<Balances> {
     //@ts-ignore
     chainInfo.addCurrencies(...infoTokens);
   }
-  protected getCacheKey(): string {
-    return `${this.instance.name}-${this.instance.defaults.baseURL}-balance-evm-native-${this.chainId}-${this.walletAddress}`;
-  }
 }
 
 export class ObservableQueryEvmBalanceRegistry implements BalanceRegistry {
-  protected nativeBalances: Map<string, ObservableQueryEvmBalances> = new Map();
+  protected parentMap: Map<string, ObservableQueryEvmBalancesImplParent> =
+    new Map();
 
-  readonly type: BalanceRegistryType = "evm";
+  constructor(protected readonly sharedContext: QuerySharedContext) {}
 
-  constructor(protected readonly kvStore: KVStore) {}
-
-  getBalanceInner(
+  getBalanceImpl(
     chainId: string,
     chainGetter: ChainGetter,
     walletAddress: string,
     minimalDenom: string
-  ): ObservableQueryBalanceInner | undefined {
+  ): ObservableQueryEvmBalancesImpl | undefined {
     const denomHelper = new DenomHelper(minimalDenom);
-    console.log(
-      "🚀 ~ ObservableQueryEvmBalanceRegistry ~ denomHelper.type:",
-      minimalDenom,
-      denomHelper.type
-    );
+
     if (denomHelper.type !== "native") {
       return;
     }
+    //@ts-ignore
     const networkType = chainGetter.getChain(chainId).networkType;
     if (networkType !== "evm") return;
     const key = `evm-${chainId}/${walletAddress}`;
 
-    if (!this.nativeBalances.has(key)) {
-      this.nativeBalances.set(
+    if (!this.parentMap.has(key)) {
+      this.parentMap.set(
         key,
-        new ObservableQueryEvmBalances(
-          this.kvStore,
+        new ObservableQueryEvmBalancesImplParent(
+          this.sharedContext,
           chainId,
           chainGetter,
           walletAddress
         )
       );
     }
-    return new ObservableQueryBalanceNative(
-      this.kvStore,
+    return new ObservableQueryEvmBalancesImpl(
+      this.parentMap.get(key),
       chainId,
       chainGetter,
-      denomHelper,
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      this.nativeBalances.get(key)!
+      denomHelper
     );
   }
 }
