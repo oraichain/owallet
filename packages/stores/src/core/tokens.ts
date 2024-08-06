@@ -105,28 +105,28 @@ export class TokensStore<
       );
     });
     makeObservable(this);
+    //TODO: need check for addSetChainInfoHandler method
+    // this.chainStore.addSetChainInfoHandler((chainInfoInner) => {
+    //   autorun(() => {
+    //     const chainIdentifier = ChainIdHelper.parse(chainInfoInner.chainId);
 
-    this.chainStore.addSetChainInfoHandler((chainInfoInner) => {
-      autorun(() => {
-        const chainIdentifier = ChainIdHelper.parse(chainInfoInner.chainId);
+    //     // Tokens should be changed whenever the account changed.
+    //     // But, the added currencies are not removed automatically.
+    //     // So, we should remove the prev token currencies from the chain info.
+    //     const prevToken = this.prevTokens.get(chainIdentifier.identifier) ?? [];
+    //     chainInfoInner.removeCurrencies(
+    //       ...prevToken.map((token) => token.coinMinimalDenom)
+    //     );
 
-        // Tokens should be changed whenever the account changed.
-        // But, the added currencies are not removed automatically.
-        // So, we should remove the prev token currencies from the chain info.
-        const prevToken = this.prevTokens.get(chainIdentifier.identifier) ?? [];
-        chainInfoInner.removeCurrencies(
-          ...prevToken.map((token) => token.coinMinimalDenom)
-        );
+    //     const inner = this.getTokensOf(chainInfoInner.chainId);
+    //     chainInfoInner.addCurrencies(...inner.tokens);
 
-        const inner = this.getTokensOf(chainInfoInner.chainId);
-        chainInfoInner.addCurrencies(...inner.tokens);
-
-        this.prevTokens.set(
-          chainIdentifier.identifier,
-          inner.tokens as AppCurrency[]
-        );
-      });
-    });
+    //     this.prevTokens.set(
+    //       chainIdentifier.identifier,
+    //       inner.tokens as AppCurrency[]
+    //     );
+    //   });
+    // });
   }
 
   getTokensOf(chainId: string) {
