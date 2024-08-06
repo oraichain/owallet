@@ -5,7 +5,7 @@ import { DeepReadonly } from "utility-types";
 import { OWallet } from "@owallet/types";
 import { ObservableQueryBitcoinBalanceRegistry } from "./bitcoin-balance";
 import { ObservableQueryBitcoinBalance } from "./bitcoin-query";
-import { QueriesWrappedEvmContract } from "../evm-contract";
+
 import { ChainGetter } from "src/chain";
 
 // export interface HasBtcQueries {
