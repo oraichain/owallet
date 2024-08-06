@@ -360,6 +360,8 @@ const handleGetKeySettledMsg: (
     const paramArray = msg.chainIds.map((chainId) =>
       handleGetKeyMsg(service)(env, { chainId } as GetKeyMsg)
     );
+
+    // const paramArray = msg.chainIds.map(chainId => service.getKey(chainId));
     const data = await Promise.allSettled(paramArray);
     return data;
   };
@@ -379,7 +381,7 @@ const handleGetKeyMsg: (
 
     const networkType = getNetworkTypeByChainId(msg.chainId);
 
-    // hereeee
+    // // hereeee
 
     const isInj = msg.chainId?.startsWith("injective");
     const isBtc = msg.chainId?.startsWith("bitcoin");
@@ -390,15 +392,15 @@ const handleGetKeyMsg: (
     const { bech32PrefixAccAddr } = (
       await service.chainsService.getChainInfo(msg.chainId)
     ).bech32Config;
-    // hereee
+    // // hereee
     const bech32Convert =
       networkType === "bitcoin"
         ? bech32Address.toBech32Btc(bech32PrefixAccAddr)
         : bech32Address.toBech32(bech32PrefixAccAddr);
 
     return {
-      name: service.getKeyStoreMeta("name"),
-      algo: "secp256k1",
+      name: key.name,
+      algo: key.algo,
       pubKey: key.pubKey,
       address: key.address,
       bech32Address: (() => {
@@ -412,7 +414,8 @@ const handleGetKeyMsg: (
         }
         return bech32Convert;
       })(),
-      legacyAddress: key.legacyAddress ?? "",
+      // bech32Address: key.bech32Address,
+      legacyAddress: key.legacyAddress,
       isNanoLedger: key.isNanoLedger,
     };
   };

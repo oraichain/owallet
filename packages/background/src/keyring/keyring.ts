@@ -100,6 +100,7 @@ export enum KeyRingStatus {
 }
 
 export interface Key {
+  name: string;
   algo: string;
   pubKey: Uint8Array;
   address: Uint8Array;
@@ -879,6 +880,7 @@ export class KeyRing {
         signerPublicKey
       );
       return {
+        name: this.getKeyStoreMeta("name"),
         algo: "ethsecp256k1",
         pubKey: signerPublicKey,
         address: addressUint8Array,
@@ -915,6 +917,7 @@ export class KeyRing {
       return null;
     })();
     return {
+      name: this.getKeyStoreMeta("name"),
       algo: isEthermint ? "ethsecp256k1" : "secp256k1",
       pubKey: pubKey.toBytes(),
       address: address,

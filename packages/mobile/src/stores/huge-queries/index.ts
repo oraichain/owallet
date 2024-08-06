@@ -14,7 +14,6 @@ import { DenomHelper } from "@owallet/common";
 import { computedFn } from "mobx-utils";
 import { BinarySortArray } from "./sort";
 import { ChainInfo } from "@owallet/types";
-import { ChainIdHelper } from "@owallet/cosmos";
 
 interface ViewToken {
   chainInfo: ChainInfo;

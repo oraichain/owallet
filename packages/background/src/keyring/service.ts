@@ -324,7 +324,6 @@ export class KeyRingService {
 
   async unlock(password: string, saving: boolean): Promise<KeyRingStatus> {
     await this.keyRing.unlock(password, saving);
-
     return this.keyRing.status;
   }
 
