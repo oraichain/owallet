@@ -5,8 +5,6 @@ import {
   AccountStore,
   QueriesStore,
   QueryError,
-  QueriesWrappedTron,
-  AccountWithAll,
 } from "@owallet/stores";
 import { CoinPretty, Dec, PricePretty } from "@owallet/unit";
 import { action, autorun, computed } from "mobx";
@@ -44,8 +42,8 @@ export class HugeQueriesStore {
 
   constructor(
     protected readonly chainStore: ChainStore,
-    protected readonly queriesStore: QueriesStore<QueriesWrappedTron>,
-    protected readonly accountStore: AccountStore<AccountWithAll>,
+    protected readonly queriesStore: QueriesStore<[CosmosQueries]>,
+    protected readonly accountStore: AccountStore<[]>,
     protected readonly priceStore: CoinGeckoPriceStore
   ) {
     let balanceDisposal: (() => void) | undefined;

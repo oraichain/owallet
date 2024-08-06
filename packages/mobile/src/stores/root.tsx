@@ -6,11 +6,20 @@ import {
   AccountStore,
   SignInteractionStore,
   TokensStore,
-  QueriesWrappedTron,
-  AccountWithAll,
   LedgerInitStore,
-  IBCCurrencyRegsitrar,
   PermissionStore,
+  EvmQueries,
+  CosmosQueries,
+  CosmwasmQueries,
+  SecretQueries,
+  OsmosisQueries,
+  TronQueries,
+  BitcoinQueries,
+  EvmContractQueries,
+  CosmosAccount,
+  CosmwasmAccount,
+  SecretAccount,
+  getOWalletFromWindow,
 } from "@owallet/stores";
 import { AsyncKVStore } from "../common";
 import { APP_PORT } from "@owallet/router";
@@ -35,11 +44,11 @@ import { FiatCurrency } from "@owallet/types";
 import { ModalStore } from "./modal";
 import { version, name } from "../../package.json";
 import { SendStore } from "./send";
-import { ChainInfoInner } from "@owallet/stores";
+
 import { ChainInfo } from "@owallet/types";
 import { TxsStore } from "./txs";
 import { universalSwapStore, UniversalSwapStore } from "./universal_swap";
-import { HugeQueriesNewStore } from "@src/stores/huge-queries";
+import { HugeQueriesStore } from "@src/stores/huge-queries";
 
 export class RootStore {
   public readonly uiConfigStore: UIConfigStore;
@@ -51,13 +60,24 @@ export class RootStore {
   public readonly ledgerInitStore: LedgerInitStore;
   public readonly signInteractionStore: SignInteractionStore;
   // public readonly hugeQueriesStore: HugeQueriesStore;
-  public readonly hugeQueriesNewStore: HugeQueriesNewStore;
-  public readonly queriesStore: QueriesStore<QueriesWrappedTron>;
-  public readonly accountStore: AccountStore<AccountWithAll>;
+  public readonly hugeQueriesNewStore: HugeQueriesStore;
+  public readonly queriesStore: QueriesStore<
+    [
+      CosmosQueries,
+      CosmwasmQueries,
+      SecretQueries,
+      OsmosisQueries,
+      EvmQueries,
+      TronQueries,
+      BitcoinQueries,
+      EvmContractQueries
+    ]
+  >;
+  public readonly accountStore: AccountStore<[]>;
   public readonly priceStore: CoinGeckoPriceStore;
   public readonly tokensStore: TokensStore<ChainInfoWithEmbed>;
 
-  protected readonly ibcCurrencyRegistrar: IBCCurrencyRegsitrar<ChainInfoWithEmbed>;
+  // protected readonly ibcCurrencyRegistrar: IBCCurrencyRegsitrar<ChainInfoWithEmbed>;
 
   public readonly keychainStore: KeychainStore;
 
@@ -90,9 +110,9 @@ export class RootStore {
   public readonly appInitStore: AppInit;
   public readonly universalSwapStore: UniversalSwapStore;
   public readonly notificationStore: Notification;
-  public readonly txsStore: (
-    currentChain: ChainInfoInner<ChainInfo>
-  ) => TxsStore;
+  // public readonly txsStore: (
+  //   currentChain: ChainInfoInner<ChainInfo>
+  // ) => TxsStore;
 
   constructor() {
     const router = new RNRouterUI(RNEnv.produceEnv);
@@ -129,112 +149,113 @@ export class RootStore {
         },
       },
       "pbkdf2",
+      //@ts-ignore
       this.chainStore,
       new RNMessageRequesterInternal(),
       this.interactionStore
     );
 
-    this.queriesStore = new QueriesStore(
-      // Fix prefix key because there was a problem with storage being corrupted.
-      // In the case of storage where the prefix key is "store_queries" or "store_queries_fix", we should not use it because it is already corrupted in some users.
+    // this.queriesStore = new QueriesStore(
+    //   // Fix prefix key because there was a problem with storage being corrupted.
+    //   // In the case of storage where the prefix key is "store_queries" or "store_queries_fix", we should not use it because it is already corrupted in some users.
 
-      new AsyncKVStore("store_queries_fix2"),
-      this.chainStore,
-      async () => {
-        return new OWallet(
-          `${name}-${version}`,
-          "core",
-          new RNMessageRequesterInternal()
-        );
-      },
-      QueriesWrappedTron
-    );
+    //   new AsyncKVStore("store_queries_fix2"),
+    //   this.chainStore,
+    //   async () => {
+    //     return new OWallet(
+    //       `${name}-${version}`,
+    //       "core",
+    //       new RNMessageRequesterInternal()
+    //     );
+    //   },
+    //   QueriesWrappedTron
+    // );
 
-    this.accountStore = new AccountStore<AccountWithAll>(
-      {
-        addEventListener: (type: string, fn: () => void) => {
-          eventEmitter.addListener(type, fn);
-        },
-        removeEventListener: (type: string, fn: () => void) => {
-          eventEmitter.removeListener(type, fn);
-        },
-      },
-      AccountWithAll,
-      this.chainStore,
-      this.queriesStore,
-      {
-        defaultOpts: {
-          prefetching: false,
-          suggestChain: false,
-          autoInit: true,
-          getOWallet: async () => {
-            return new OWallet(
-              `${name}-${version}`,
-              "core",
-              new RNMessageRequesterInternal()
-            );
-          },
-          getEthereum: async () => {
-            return new Ethereum(
-              version,
-              "core",
-              "0x38",
-              new RNMessageRequesterInternal()
-            );
-          },
-          getBitcoin: async () => {
-            return new Bitcoin(
-              version,
-              "core",
-              new RNMessageRequesterInternal()
-            );
-          },
-          getTronWeb: async () => {
-            return new TronWeb(
-              version,
-              "core",
-              "0x2b6653dc",
-              new RNMessageRequesterInternal()
-            );
-          },
-        },
-        chainOpts: this.chainStore.chainInfos.map((chainInfo) => {
-          // In evm network, default gas for sending
-          if (chainInfo.networkType.startsWith("evm")) {
-            return {
-              chainId: chainInfo.chainId,
-              msgOpts: {
-                send: {
-                  native: {
-                    gas: 21000,
-                  },
-                  erc20: {
-                    gas: 21000,
-                  },
-                },
-              },
-            };
-          }
-          if (chainInfo.chainId.startsWith("osmosis")) {
-            return {
-              chainId: chainInfo.chainId,
-              msgOpts: {
-                withdrawRewards: {
-                  gas: 400000,
-                },
-                send: {
-                  native: {
-                    gas: 400000,
-                  },
-                },
-              },
-            };
-          }
+    // this.accountStore = new AccountStore<AccountWithAll>(
+    //   {
+    //     addEventListener: (type: string, fn: () => void) => {
+    //       eventEmitter.addListener(type, fn);
+    //     },
+    //     removeEventListener: (type: string, fn: () => void) => {
+    //       eventEmitter.removeListener(type, fn);
+    //     },
+    //   },
+    //   AccountWithAll,
+    //   this.chainStore,
+    //   this.queriesStore,
+    //   {
+    //     defaultOpts: {
+    //       prefetching: false,
+    //       suggestChain: false,
+    //       autoInit: true,
+    //       getOWallet: async () => {
+    //         return new OWallet(
+    //           `${name}-${version}`,
+    //           "core",
+    //           new RNMessageRequesterInternal()
+    //         );
+    //       },
+    //       getEthereum: async () => {
+    //         return new Ethereum(
+    //           version,
+    //           "core",
+    //           "0x38",
+    //           new RNMessageRequesterInternal()
+    //         );
+    //       },
+    //       getBitcoin: async () => {
+    //         return new Bitcoin(
+    //           version,
+    //           "core",
+    //           new RNMessageRequesterInternal()
+    //         );
+    //       },
+    //       getTronWeb: async () => {
+    //         return new TronWeb(
+    //           version,
+    //           "core",
+    //           "0x2b6653dc",
+    //           new RNMessageRequesterInternal()
+    //         );
+    //       },
+    //     },
+    //     chainOpts: this.chainStore.chainInfos.map((chainInfo) => {
+    //       // In evm network, default gas for sending
+    //       if (chainInfo.networkType.startsWith("evm")) {
+    //         return {
+    //           chainId: chainInfo.chainId,
+    //           msgOpts: {
+    //             send: {
+    //               native: {
+    //                 gas: 21000,
+    //               },
+    //               erc20: {
+    //                 gas: 21000,
+    //               },
+    //             },
+    //           },
+    //         };
+    //       }
+    //       if (chainInfo.chainId.startsWith("osmosis")) {
+    //         return {
+    //           chainId: chainInfo.chainId,
+    //           msgOpts: {
+    //             withdrawRewards: {
+    //               gas: 400000,
+    //             },
+    //             send: {
+    //               native: {
+    //                 gas: 400000,
+    //               },
+    //             },
+    //           },
+    //         };
+    //       }
 
-          return { chainId: chainInfo.chainId };
-        }),
-      }
-    );
+    //       return { chainId: chainInfo.chainId };
+    //     }),
+    //   }
+    // );
 
     this.priceStore = new CoinGeckoPriceStore(
       new AsyncKVStore("store_prices"),
@@ -253,19 +274,20 @@ export class RootStore {
           eventEmitter.addListener(type, fn);
         },
       },
+      //@ts-ignore
       this.chainStore,
       new RNMessageRequesterInternal(),
       this.interactionStore
     );
 
-    this.ibcCurrencyRegistrar = new IBCCurrencyRegsitrar<ChainInfoWithEmbed>(
-      new AsyncKVStore("store_test_ibc_currency_registrar"),
-      24 * 3600 * 1000,
-      this.chainStore,
-      this.accountStore,
-      this.queriesStore,
-      this.queriesStore
-    );
+    // this.ibcCurrencyRegistrar = new IBCCurrencyRegsitrar<ChainInfoWithEmbed>(
+    //   new AsyncKVStore("store_test_ibc_currency_registrar"),
+    //   24 * 3600 * 1000,
+    //   this.chainStore,
+    //   this.accountStore,
+    //   this.queriesStore,
+    //   this.queriesStore
+    // );
 
     router.listen(APP_PORT);
 
@@ -317,7 +339,171 @@ export class RootStore {
     //   this.priceStore,
     //   this.keyRingStore
     // );
-    this.hugeQueriesNewStore = new HugeQueriesNewStore(
+    this.accountStore = new AccountStore(
+      {
+        addEventListener: (type: string, fn: () => void) => {
+          eventEmitter.addListener(type, fn);
+        },
+        removeEventListener: (type: string, fn: () => void) => {
+          eventEmitter.removeListener(type, fn);
+        },
+      },
+      //@ts-ignore
+      this.chainStore,
+      getOWalletFromWindow,
+      () => {
+        return {
+          suggestChain: false,
+          autoInit: true,
+        };
+      },
+      CosmosAccount.use({
+        queriesStore: this.queriesStore,
+        msgOptsCreator: (chainId) => {
+          // In certik, change the msg type of the MsgSend to "bank/MsgSend"
+          if (chainId.startsWith("shentu-")) {
+            return {
+              send: {
+                native: {
+                  type: "bank/MsgSend",
+                },
+              },
+            };
+          }
+
+          // In akash or sifchain, increase the default gas for sending
+          if (
+            chainId.startsWith("akashnet-") ||
+            chainId.startsWith("sifchain")
+          ) {
+            return {
+              send: {
+                native: {
+                  gas: 120000,
+                },
+              },
+            };
+          }
+
+          if (chainId.startsWith("secret-")) {
+            return {
+              send: {
+                native: {
+                  gas: 20000,
+                },
+              },
+              withdrawRewards: {
+                gas: 25000,
+              },
+            };
+          }
+
+          // For terra related chains
+          if (
+            chainId.startsWith("bombay-") ||
+            chainId.startsWith("columbus-")
+          ) {
+            return {
+              send: {
+                native: {
+                  type: "bank/MsgSend",
+                },
+              },
+              withdrawRewards: {
+                type: "distribution/MsgWithdrawDelegationReward",
+              },
+              delegate: {
+                type: "staking/MsgDelegate",
+              },
+              undelegate: {
+                type: "staking/MsgUndelegate",
+              },
+              redelegate: {
+                type: "staking/MsgBeginRedelegate",
+              },
+            };
+          }
+
+          if (chainId.startsWith("evmos_") || chainId.startsWith("planq_")) {
+            return {
+              send: {
+                native: {
+                  gas: 140000,
+                },
+              },
+              withdrawRewards: {
+                gas: 200000,
+              },
+            };
+          }
+
+          if (chainId.startsWith("osmosis")) {
+            return {
+              send: {
+                native: {
+                  gas: 100000,
+                },
+              },
+              withdrawRewards: {
+                gas: 300000,
+              },
+            };
+          }
+
+          if (chainId.startsWith("stargaze-")) {
+            return {
+              send: {
+                native: {
+                  gas: 100000,
+                },
+              },
+              withdrawRewards: {
+                gas: 200000,
+              },
+            };
+          }
+        },
+      }),
+      CosmwasmAccount.use({
+        queriesStore: this.queriesStore,
+      }),
+      SecretAccount.use({
+        queriesStore: this.queriesStore,
+        msgOptsCreator: (chainId) => {
+          if (chainId.startsWith("secret-")) {
+            return {
+              send: {
+                secret20: {
+                  gas: 175000,
+                },
+              },
+              createSecret20ViewingKey: {
+                gas: 175000,
+              },
+            };
+          }
+        },
+      })
+    );
+    this.queriesStore = new QueriesStore(
+      new AsyncKVStore("store_queries"),
+      //@ts-ignore
+      this.chainStore,
+      {
+        responseDebounceMs: 75,
+      },
+      CosmosQueries.use(),
+      CosmwasmQueries.use(),
+      SecretQueries.use({
+        apiGetter: getOWalletFromWindow,
+      }),
+      OsmosisQueries.use(),
+      EvmQueries.use(),
+      TronQueries.use(),
+      BitcoinQueries.use(),
+      EvmContractQueries.use()
+    );
+    this.hugeQueriesNewStore = new HugeQueriesStore(
       this.chainStore,
       this.queriesStore,
       this.accountStore,
@@ -325,8 +511,8 @@ export class RootStore {
     );
     this.notificationStore = notification;
     this.sendStore = new SendStore();
-    this.txsStore = (currentChain: ChainInfoInner<ChainInfo>): TxsStore =>
-      new TxsStore(currentChain);
+    // this.txsStore = (currentChain: ChainInfoInner<ChainInfo>): TxsStore =>
+    //   new TxsStore(currentChain);
   }
 }
 
