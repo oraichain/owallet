@@ -27,7 +27,7 @@ import {
   OfflineSigner,
   StdSignature,
 } from "@cosmjs/launchpad";
-import { SecretUtils } from "secretjs/types/enigmautils";
+import { SecretUtils } from "@owallet/types";
 import { OWalletEnigmaUtils } from "./enigma";
 import { DirectSignResponse, OfflineDirectSigner } from "@cosmjs/proto-signing";
 import { CosmJSOfflineSigner, CosmJSOfflineSignerOnlyAmino } from "./cosmjs";
@@ -570,12 +570,9 @@ export class InjectedEthereum implements Ethereum {
         // console.log("🚀 ~ file: inject.ts ~ line 524 ~ InjectedEthereum ~ eventListener.addMessageListener ~ message.method", message.method)
         // console.log("🚀 ~ file: inject.ts ~ line 524 ~ InjectedEthereum ~ eventListener.addMessageListener ~ message & chain id", message, chainId)
         switch (message.method) {
-          case "eth_signTypedData_v4":
-            result = await ethereum.signEthereumTypeData(
-              chainId,
-              message.args[0]
-            );
-            break;
+          // case "eth_signTypedData_v4":
+          //   result = await ethereum.signEthereumTypeData(chainId, message.args[0]);
+          //   break;
           case "public_key":
             result = await ethereum.getPublicKey(chainId);
             break;
@@ -633,6 +630,7 @@ export class InjectedEthereum implements Ethereum {
               params: message.args[0],
               chainId,
             });
+            console.log("result provider", result);
 
             break;
         }

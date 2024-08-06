@@ -20,7 +20,8 @@ import { ChainInfoWithEmbed } from "@owallet/background";
 import { ChainInfoInner } from "@owallet/stores";
 import { initPrice } from "@src/screens/home/hooks/use-multiple-assets";
 import { PricePretty } from "@owallet/unit";
-import ByteBrew from "react-native-bytebrew-sdk";
+
+import { tracking } from "@src/utils/tracking";
 
 interface ChainInfoItem extends ChainInfoInner<ChainInfoWithEmbed> {
   balance: PricePretty;
@@ -32,7 +33,7 @@ export const NetworkModal: FC<{
   const [keyword, setKeyword] = useState("");
   const [activeTab, setActiveTab] = useState<"mainnet" | "testnet">("mainnet");
   useEffect(() => {
-    ByteBrew.NewCustomEvent("Modal Select Network Screen");
+    tracking("Modal Select Network Screen");
   }, []);
   const bip44Option = useBIP44Option();
   const {
@@ -41,7 +42,6 @@ export const NetworkModal: FC<{
     keyRingStore,
     accountStore,
     appInitStore,
-    universalSwapStore,
     priceStore,
   } = useStore();
 
@@ -79,6 +79,12 @@ export const NetworkModal: FC<{
     }
   }, [chainStore.current.chainName]);
 
+  useEffect(() => {
+    if (appInitStore.getInitApp.hideTestnet) {
+      setActiveTab("mainnet");
+    }
+  }, [appInitStore.getInitApp.hideTestnet]);
+
   const handleSwitchNetwork = useCallback(async (item) => {
     try {
       if (account.isNanoLedger) {
@@ -113,13 +119,13 @@ export const NetworkModal: FC<{
       } else {
         modalStore.close();
         if (!item.isAll) {
-          ByteBrew.NewCustomEvent(`Select ${item?.chainName} Network`);
+          tracking(`Select ${item?.chainName} Network`);
           chainStore.selectChain(item?.chainId);
           await chainStore.saveLastViewChainId();
           appInitStore.selectAllNetworks(false);
           modalStore.close();
         } else {
-          ByteBrew.NewCustomEvent("Select All Network");
+          tracking("Select All Network");
           appInitStore.selectAllNetworks(true);
         }
       }
@@ -301,40 +307,42 @@ export const NetworkModal: FC<{
           />
         </View>
       </View>
-      <View style={styles.wrapHeaderTitle}>
-        <OWButton
-          type="link"
-          label={"Mainnet"}
-          textStyle={{
-            color: colors["primary-surface-default"],
-            fontWeight: "600",
-            fontSize: 16,
-          }}
-          onPress={() => setActiveTab("mainnet")}
-          style={[
-            {
-              width: "50%",
-            },
-            activeTab === "mainnet" ? styles.active : null,
-          ]}
-        />
-        <OWButton
-          type="link"
-          label={"Testnet"}
-          onPress={() => setActiveTab("testnet")}
-          textStyle={{
-            color: colors["primary-surface-default"],
-            fontWeight: "600",
-            fontSize: 16,
-          }}
-          style={[
-            {
-              width: "50%",
-            },
-            activeTab === "testnet" ? styles.active : null,
-          ]}
-        />
-      </View>
+      {!appInitStore.getInitApp.hideTestnet ? (
+        <View style={styles.wrapHeaderTitle}>
+          <OWButton
+            type="link"
+            label={"Mainnet"}
+            textStyle={{
+              color: colors["primary-surface-default"],
+              fontWeight: "600",
+              fontSize: 16,
+            }}
+            onPress={() => setActiveTab("mainnet")}
+            style={[
+              {
+                width: "50%",
+              },
+              activeTab === "mainnet" ? styles.active : null,
+            ]}
+          />
+          <OWButton
+            type="link"
+            label={"Testnet"}
+            onPress={() => setActiveTab("testnet")}
+            textStyle={{
+              color: colors["primary-surface-default"],
+              fontWeight: "600",
+              fontSize: 16,
+            }}
+            style={[
+              {
+                width: "50%",
+              },
+              activeTab === "testnet" ? styles.active : null,
+            ]}
+          />
+        </View>
+      ) : null}
       <View
         style={{
           marginTop: spacing["12"],

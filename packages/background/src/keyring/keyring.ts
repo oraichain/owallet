@@ -47,8 +47,9 @@ import TronWeb from "tronweb";
 import { LedgerService } from "../ledger";
 import { request } from "../tx";
 import { TYPED_MESSAGE_SCHEMA } from "./constants";
+import { ethers } from "ethers";
 import { Crypto, KeyStore } from "./crypto";
-import PRE from "proxy-recrypt-js";
+// import PRE from "proxy-recrypt-js";
 import {
   CommonCrypto,
   ECDSASignature,
@@ -954,6 +955,7 @@ export class KeyRing {
         );
       }
       const privKey = Mnemonic.generateWalletFromMnemonic(this.mnemonic, path);
+
       this.cached.set(path, privKey);
       return new PrivKeySecp256k1(privKey);
     } else if (this.type === "privateKey") {
@@ -983,12 +985,20 @@ export class KeyRing {
   }
 
   async simulateSignTron(transaction: any) {
-    const privKey = this.loadPrivKey(195);
-    const signedTxn = TronWeb.utils.crypto.signTransaction(
-      privKey.toBytes(),
-      transaction
-    );
-    return signedTxn;
+    try {
+      const privKey = this.loadPrivKey(195);
+      const signedTxn = TronWeb.utils.crypto.signTransaction(
+        privKey.toBytes(),
+        transaction
+      );
+      return signedTxn;
+    } catch (error) {
+      throw new OWalletError(
+        "keyring",
+        500,
+        `Failed to simulate sign Tron: ${error.message}`
+      );
+    }
   }
 
   public async sign(
@@ -1353,10 +1363,12 @@ export class KeyRing {
 
     const privKey = this.loadPrivKey(getCoinTypeByChainId(chainId));
     const privKeyHex = Buffer.from(privKey.toBytes()).toString("hex");
-    const decryptedData = PRE.decryptData(privKeyHex, message[0]);
-    return {
-      decryptedData,
-    };
+    //TODO: This is comment for security proxy-recrypt-js lib
+    // const decryptedData = PRE.decryptData(privKeyHex, message[0]);
+    // return {
+    //   decryptedData
+    // };
+    return;
   }
 
   public async signProxyReEncryptionData(
@@ -1373,11 +1385,13 @@ export class KeyRing {
 
     const privKey = this.loadPrivKey(getCoinTypeByChainId(chainId));
     const privKeyHex = Buffer.from(privKey.toBytes()).toString("hex");
-    const rk = PRE.generateReEncrytionKey(privKeyHex, message[0]);
+    //TODO: This is comment for security proxy-recrypt-js lib
+    // const rk = PRE.generateReEncrytionKey(privKeyHex, message[0]);
 
-    return {
-      rk,
-    };
+    // return {
+    //   rk
+    // };
+    return;
   }
 
   public async signDecryptData(
@@ -1513,7 +1527,7 @@ export class KeyRing {
     return pubKeyHex;
   }
 
-  public signEthereumTypedData<
+  public async signEthereumTypedData<
     V extends SignTypedDataVersion,
     T extends MessageTypes
   >({
@@ -1522,38 +1536,46 @@ export class KeyRing {
     chainId,
     defaultCoinType,
   }: {
-    typedMessage: V extends "V1" ? TypedDataV1 : TypedMessage<T>;
+    typedMessage: string;
     version: V;
     chainId: string;
     defaultCoinType: number;
-  }): ECDSASignature {
+  }): Promise<string> {
     try {
       this.validateVersion(version);
       if (!typedMessage) {
         throw new Error("Missing data parameter");
       }
 
-      const coinType = this.computeKeyStoreCoinType(chainId, defaultCoinType);
-      // Need to check network type by chain id instead of coin type
       const networkType = getNetworkTypeByChainId(chainId);
-      // if (coinType !== 60) {
       if (networkType !== "evm") {
         throw new Error(
           "Invalid coin type passed in to Ethereum signing (expected 60)"
         );
       }
 
-      const privateKey = this.loadPrivKey(coinType).toBytes();
+      const privateKey = this.loadPrivKey(defaultCoinType).toBytes();
+
+      const typedMessageParsed = JSON.parse(typedMessage);
 
       const messageHash =
         version === SignTypedDataVersion.V1
-          ? this._typedSignatureHash(typedMessage as TypedDataV1)
+          ? this._typedSignatureHash(typedMessageParsed as TypedDataV1)
           : this.eip712Hash(
-              typedMessage as TypedMessage<T>,
+              typedMessageParsed as TypedMessage<T>,
               version as SignTypedDataVersion.V3 | SignTypedDataVersion.V4
             );
+
       const sig = ecsign(messageHash, Buffer.from(privateKey));
-      return sig;
+
+      const rHex = ethers.utils.hexlify(sig.r).substring(2); // Remove '0x' prefix
+      const sHex = ethers.utils.hexlify(sig.s).substring(2); // Remove '0x' prefix
+      const vHex = ethers.utils.hexlify(sig.v).substring(2).padStart(2, "0"); // Ensure v is 2 characters
+
+      // Combine r, s, and v into a single hex string
+      const signatureHex = `0x${rHex}${sHex}${vHex}`;
+
+      return signatureHex;
     } catch (error) {
       console.log("Error on sign typed data: ", error);
     }
@@ -1832,7 +1854,12 @@ export class KeyRing {
   }
 
   // Show private key or mnemonic key if password is valid.
-  public async showKeyRing(index: number, password: string): Promise<string> {
+  public async showKeyRing(
+    index: number,
+    password: string,
+    chainId: string | number,
+    isShowPrivKey: boolean
+  ): Promise<string> {
     if (this.status !== KeyRingStatus.UNLOCKED) {
       throw new Error("Key ring is not unlocked");
     }
@@ -1846,10 +1873,20 @@ export class KeyRing {
     if (!keyStore) {
       throw new Error("Empty key store");
     }
+    const coinType = await this.chainsService.getChainCoinType(
+      chainId as string
+    );
     // If password is invalid, error will be thrown.
-    return Buffer.from(
+    const keyring = Buffer.from(
       await Crypto.decrypt(this.crypto, keyStore, password)
     ).toString();
+
+    if (keyStore.type === "mnemonic" && isShowPrivKey) {
+      const privKeyBytes = this.loadPrivKey(coinType).toBytes();
+      const privKey = Buffer.from(privKeyBytes).toString("hex");
+      return privKey;
+    }
+    return keyring;
   }
 
   public get canSetPath(): boolean {

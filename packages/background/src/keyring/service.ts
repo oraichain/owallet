@@ -27,7 +27,6 @@ import TronWeb from "tronweb";
 
 import {
   KVStore,
-  fetchAdapter,
   EVMOS_NETWORKS,
   MyBigInt,
   escapeHTML,
@@ -248,8 +247,18 @@ export class KeyRingService {
     };
   }
 
-  async showKeyRing(index: number, password: string): Promise<string> {
-    return await this.keyRing.showKeyRing(index, password);
+  async showKeyRing(
+    index: number,
+    password: string,
+    chainId: string | number,
+    isShowPrivKey: boolean
+  ): Promise<string> {
+    return await this.keyRing.showKeyRing(
+      index,
+      password,
+      chainId,
+      isShowPrivKey
+    );
   }
 
   async simulateSignTron(transaction: any): Promise<any> {
@@ -652,12 +661,33 @@ export class KeyRingService {
     }
   }
 
+  async requestSignEthereumTypedData(
+    env: Env,
+    chainId: string,
+    data: SignEthereumTypedDataObject
+    // ): Promise<ECDSASignature> {
+  ): Promise<string> {
+    try {
+      const rawTxHex = await this.keyRing.signEthereumTypedData({
+        typedMessage: data[1],
+        version: SignTypedDataVersion.V4,
+        chainId,
+        defaultCoinType: 60,
+      });
+
+      return rawTxHex;
+    } catch (e) {
+      console.log("e", e.message);
+    } finally {
+      // this.interactionService.dispatchEvent(APP_PORT, "request-sign-end", {});
+    }
+  }
+
   async requestSignBitcoin(
     env: Env,
     chainId: string,
     data: object
   ): Promise<string> {
-    // here
     const newData = (await this.interactionService.waitApprove(
       env,
       "/sign-bitcoin",
@@ -684,27 +714,6 @@ export class KeyRingService {
         "request-sign-bitcoin-end",
         {}
       );
-    }
-  }
-
-  async requestSignEthereumTypedData(
-    env: Env,
-    chainId: string,
-    data: SignEthereumTypedDataObject
-  ): Promise<ECDSASignature> {
-    try {
-      const rawTxHex = await this.keyRing.signEthereumTypedData({
-        typedMessage: data.typedMessage,
-        version: data.version,
-        chainId,
-        defaultCoinType: data.defaultCoinType,
-      });
-
-      return rawTxHex;
-    } catch (e) {
-      console.log("e", e.message);
-    } finally {
-      this.interactionService.dispatchEvent(APP_PORT, "request-sign-end", {});
     }
   }
 
@@ -997,7 +1006,6 @@ export class KeyRingService {
     try {
       const chainInfo = await this.chainsService.getChainInfo(chainId);
       const tronWeb = TronWebProvider(chainInfo.rpc);
-      tronWeb.fullNode.instance.defaults.adapter = fetchAdapter;
       return await tronWeb.trx.sendRawTransaction(transaction);
     } catch (error) {
       throw error;
@@ -1026,7 +1034,6 @@ export class KeyRingService {
     try {
       const chainInfo = await this.chainsService.getChainInfo(chainId);
       const tronWeb = TronWebProvider(chainInfo.rpc);
-      tronWeb.fullNode.instance.defaults.adapter = fetchAdapter;
 
       const chainParameters = await tronWeb.trx.getChainParameters();
 
@@ -1104,7 +1111,6 @@ export class KeyRingService {
       const chainInfo = await this.chainsService.getChainInfo(chainId);
       const tronWeb = TronWebProvider(chainInfo.rpc);
 
-      tronWeb.fullNode.instance.defaults.adapter = fetchAdapter;
       let transaction: any;
 
       if (newData?.currency?.contractAddress) {
