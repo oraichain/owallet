@@ -30,7 +30,7 @@ import { BIP44HDPath, ISimulateSignTron } from "@owallet/types";
 import { computed, flow, makeObservable, observable, runInAction } from "mobx";
 
 import { InteractionStore } from "./interaction";
-import { ChainGetter } from "../common";
+import { ChainGetter } from "../chain";
 import { BIP44, AddressesLedger } from "@owallet/types";
 import { DeepReadonly } from "utility-types";
 import { toGenerator } from "@owallet/common";

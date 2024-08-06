@@ -1,11 +1,12 @@
 import {
   ChainGetter,
-  CosmosMsgOpts,
-  CosmwasmMsgOpts,
-  Erc20MsgOpts,
-  ObservableQueryBitcoinBalance,
-  QueriesWrappedTron,
-  SecretMsgOpts,
+  // CosmosMsgOpts,
+  // CosmwasmMsgOpts,
+  // Erc20MsgOpts,
+  // ObservableQueryBitcoinBalance,
+  //TODO: need check any type
+  // QueriesWrappedTron,
+  // SecretMsgOpts,
 } from "@owallet/stores";
 import { ObservableQueryBalances } from "@owallet/stores";
 import { FeeConfig, useFeeConfig } from "./fee";
@@ -18,7 +19,7 @@ import { Int } from "@owallet/unit";
 import { useEffect, useState } from "react";
 import { useSendGasEvmConfig } from "./send-gas-evm";
 
-type MsgOpts = CosmosMsgOpts & SecretMsgOpts & CosmwasmMsgOpts & Erc20MsgOpts;
+type MsgOpts = any;
 
 export const useSendTxEvmConfig = (
   chainGetter: ChainGetter,
@@ -26,9 +27,9 @@ export const useSendTxEvmConfig = (
   sendMsgOpts: MsgOpts["send"],
   sender: string,
   queryBalances: ObservableQueryBalances,
-  queriesStore: QueriesWrappedTron,
+  queriesStore: any,
   ensEndpoint?: string,
-  queryBtcBalances?: ObservableQueryBitcoinBalance
+  queryBtcBalances?: any
 ) => {
   const recipientConfig = useRecipientConfig(chainGetter, chainId, ensEndpoint);
   const amountConfig = useAmountConfig(

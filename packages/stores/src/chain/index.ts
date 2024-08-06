@@ -14,12 +14,31 @@ import {
   Currency,
   NetworkType,
 } from "@owallet/types";
-import { ChainGetter } from "../common";
+
 import { ChainIdHelper } from "@owallet/cosmos";
 import { DeepReadonly } from "utility-types";
 import { AxiosRequestConfig } from "axios";
 import { keepAlive } from "mobx-utils";
-
+export interface ChainGetter {
+  // Return the chain info matched with chain id.
+  // Expect that this method will return the chain info reactively,
+  // so it is possible to detect the chain info changed without any additional effort.
+  getChain(chainId: string): ChainInfo & {
+    raw: ChainInfo;
+    readonly chainIdentifier: string;
+    readonly embedded: ChainInfo;
+    readonly evm:
+      | {
+          chainId: number;
+          rpc: string;
+        }
+      | undefined;
+    hasFeature(feature: string): boolean;
+    addUnknownCurrencies(...coinMinimalDenoms: string[]): void;
+    findCurrency(coinMinimalDenom: string): AppCurrency | undefined;
+    forceFindCurrency(coinMinimalDenom: string): AppCurrency;
+  };
+}
 type CurrencyRegistrar = (
   coinMinimalDenom: string
 ) => AppCurrency | [AppCurrency | undefined, boolean] | undefined;
@@ -71,7 +90,23 @@ export class ChainInfoInner<C extends ChainInfo = ChainInfo>
     }
     return undefined;
   }
-
+  hasFeature(feature: string): boolean {
+    return !!(
+      this._chainInfo.features && this._chainInfo.features.includes(feature)
+    );
+  }
+  get embedded(): C {
+    return this._chainInfo;
+  }
+  get evm(): { chainId: number; rpc: string } | undefined {
+    //TODO: need check
+    // return this._chainInfo.evm;
+    return;
+  }
+  @computed
+  get chainIdentifier(): string {
+    return ChainIdHelper.parse(this.chainId).identifier;
+  }
   /*
    * When you do not know the currency of the corresponding denom, you can use this method to request registration.
    * Do nothing if already registered or attempting to register.

@@ -1,11 +1,13 @@
 import {
   ChainGetter,
-  CosmosMsgOpts,
-  CosmwasmMsgOpts,
-  Erc20MsgOpts,
-  ObservableQueryBitcoinBalance,
-  QueriesWrappedTron,
-  SecretMsgOpts,
+  // CosmosMsgOpts,
+  // CosmwasmMsgOpts,
+  //TODO: need check any type
+  // Erc20MsgOpts,
+  // ObservableQueryBitcoinBalance,
+  //TODO: need check any type
+  // QueriesWrappedTron,
+  // SecretMsgOpts,
 } from "@owallet/stores";
 import { ObservableQueryBalances } from "@owallet/stores";
 import { useMemoConfig } from "./memo";
@@ -14,7 +16,7 @@ import { useAmountConfig } from "./amount";
 import { useFeeTronConfig } from "./fee-tron";
 import { useSendGasTronConfig } from "./send-gas-tron";
 
-type MsgOpts = CosmosMsgOpts & SecretMsgOpts & CosmwasmMsgOpts & Erc20MsgOpts;
+type MsgOpts = any;
 
 export const useSendTxTronConfig = (
   chainGetter: ChainGetter,
@@ -22,9 +24,9 @@ export const useSendTxTronConfig = (
   sendMsgOpts: MsgOpts["send"],
   sender: string,
   queryBalances: ObservableQueryBalances,
-  queriesStore: QueriesWrappedTron,
+  queriesStore: any,
   ensEndpoint?: string,
-  queryBtcBalances?: ObservableQueryBitcoinBalance
+  queryBtcBalances?: any
 ) => {
   const recipientConfig = useRecipientConfig(chainGetter, chainId, ensEndpoint);
   const amountConfig = useAmountConfig(

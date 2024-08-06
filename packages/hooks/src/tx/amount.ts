@@ -3,7 +3,8 @@ import { TxChainSetter } from "./chain";
 import {
   ChainGetter,
   CoinPrimitive,
-  ObservableQueryBitcoinBalance,
+  //TODO: need check any type
+  // ObservableQueryBitcoinBalance,
   // ObservableQueryEvmBalance
 } from "@owallet/stores";
 import { action, computed, makeObservable, observable } from "mobx";
@@ -29,7 +30,7 @@ export class AmountConfig extends TxChainSetter implements IAmountConfig {
   // @observable.ref
   // protected queryEvmBalances?: ObservableQueryEvmBalance;
   @observable.ref
-  protected queryBtcBalance?: ObservableQueryBitcoinBalance;
+  protected queryBtcBalance?: any;
   @observable
   protected _sender: string;
 
@@ -51,7 +52,7 @@ export class AmountConfig extends TxChainSetter implements IAmountConfig {
     sender: string,
     feeConfig: IFeeConfig | undefined,
     queryBalances: ObservableQueryBalances,
-    queryBtcBalance?: ObservableQueryBitcoinBalance
+    queryBtcBalance?: any
   ) {
     super(chainGetter, initialChainId);
 
@@ -83,7 +84,7 @@ export class AmountConfig extends TxChainSetter implements IAmountConfig {
   //   this.queryEvmBalances = queryEvmBalances;
   // }
   @action
-  setQueryBtcBalance(queryBtcBalance: ObservableQueryBitcoinBalance) {
+  setQueryBtcBalance(queryBtcBalance: any) {
     this.queryBtcBalance = queryBtcBalance;
   }
 
@@ -275,7 +276,7 @@ export const useAmountConfig = (
   sender: string,
   queryBalances: ObservableQueryBalances,
 
-  queryBtcBalance?: ObservableQueryBitcoinBalance
+  queryBtcBalance?: any
 ) => {
   const [txConfig] = useState(
     () =>

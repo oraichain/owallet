@@ -5,14 +5,15 @@ import {
   CosmosMsgOpts,
   SecretMsgOpts,
   CosmwasmMsgOpts,
-  Erc20MsgOpts,
+  //TODO: need check any type
+  // Erc20MsgOpts,
 } from "@owallet/stores";
 import { IAmountConfig } from "./types";
 import { useState } from "react";
 import { action, makeObservable, observable } from "mobx";
 import { GasEvmConfig } from "./gas-evm";
 
-type MsgOpts = CosmosMsgOpts & SecretMsgOpts & CosmwasmMsgOpts & Erc20MsgOpts;
+type MsgOpts = any;
 
 export class SendGasEvmConfig extends GasEvmConfig {
   @observable.ref

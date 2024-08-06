@@ -10,8 +10,9 @@ import { TxChainSetter } from "./chain";
 import {
   ChainGetter,
   CoinPrimitive,
-  ObservableQueryBitcoinBalance,
-  QueriesWrappedTron,
+  // ObservableQueryBitcoinBalance,
+  //TODO: need check any type
+  // QueriesWrappedTron,
 } from "@owallet/stores";
 import { action, computed, makeObservable, observable } from "mobx";
 import { Coin, CoinPretty, Dec, DecUtils, Int } from "@owallet/unit";
@@ -60,7 +61,7 @@ export class FeeEvmConfig extends TxChainSetter implements IFeeConfig {
     protected readonly amountConfig: IAmountConfig,
     protected readonly gasConfig: GasEvmConfig,
     additionAmountToNeedFee: boolean = true,
-    protected readonly queryStore: QueriesWrappedTron,
+    protected readonly queryStore: any,
     protected readonly memoConfig?: IMemoConfig
   ) {
     super(chainGetter, initialChainId);
@@ -313,7 +314,7 @@ export const useFeeEvmConfig = (
   amountConfig: IAmountConfig,
   gasConfig: GasEvmConfig,
   additionAmountToNeedFee: boolean = true,
-  queryStore: QueriesWrappedTron,
+  queryStore: any,
   memoConfig?: IMemoConfig
 ) => {
   const [config] = useState(

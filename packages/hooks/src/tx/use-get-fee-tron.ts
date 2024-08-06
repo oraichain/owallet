@@ -9,10 +9,11 @@ import {
   TronWebProvider,
 } from "@owallet/common";
 import {
-  ChainInfoInner,
+  //TODO: need check any type
+  // ChainInfoInner,
   CoinPrimitive,
   KeyRingStore,
-  TronQueries,
+  // TronQueries,
 } from "@owallet/stores";
 import { ChainInfoWithEmbed } from "@owallet/background";
 import { useEffect, useState } from "react";
@@ -31,8 +32,8 @@ export const useGetFeeTron = (
   addressTronBase58: string,
   amountConfig: AmountConfig,
   recipientConfig: RecipientConfig,
-  queriesTron: TronQueries,
-  chainInfo: ChainInfoInner<ChainInfoWithEmbed>,
+  queriesTron: any,
+  chainInfo: any,
   keyRingStore: KeyRingStore,
   dataSign: any
 ): IGetFeeTron => {

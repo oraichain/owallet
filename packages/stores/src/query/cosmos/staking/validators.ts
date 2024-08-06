@@ -3,17 +3,9 @@ import {
   ObservableChainQueryMap,
 } from "../../chain-query";
 import { BondStatus, Validators, Validator } from "./types";
-import { KVStore } from "@owallet/common";
-import { ChainGetter } from "../../../common";
-import {
-  autorun,
-  computed,
-  makeObservable,
-  observable,
-  runInAction,
-} from "mobx";
-import { ObservableQuery, QueryResponse } from "../../../common";
-import Axios, { CancelToken } from "axios";
+import { ChainGetter } from "../../../chain";
+import { computed, makeObservable, observable, runInAction } from "mobx";
+import { ObservableQuery, QuerySharedContext } from "../../../common";
 import PQueue from "p-queue";
 import { CoinPretty, Dec } from "@owallet/unit";
 import { computedFn } from "mobx-utils";
@@ -50,15 +42,10 @@ export class ObservableQueryValidatorThumbnail extends ObservableQuery<KeybaseRe
 
   protected readonly validator: Validator;
 
-  constructor(kvStore: KVStore, validator: Validator) {
-    const instance = Axios.create({
-      baseURL: "https://keybase.io/",
-      adapter: "fetch",
-    });
-
+  constructor(sharedContext: QuerySharedContext, validator: Validator) {
     super(
-      kvStore,
-      instance,
+      sharedContext,
+      "https://keybase.io/",
       `_/api/1.0/user/lookup.json?fields=pictures&key_suffix=${validator.description.identity}`
     );
     makeObservable(this);
@@ -66,31 +53,28 @@ export class ObservableQueryValidatorThumbnail extends ObservableQuery<KeybaseRe
     this.validator = validator;
   }
 
-  protected canFetch(): boolean {
-    return this.validator?.description?.identity !== "";
+  protected override canFetch(): boolean {
+    return this.validator.description.identity !== "";
   }
 
-  protected async fetchResponse(
-    cancelToken: CancelToken
-  ): Promise<QueryResponse<KeybaseResult>> {
+  protected override async fetchResponse(
+    abortController: AbortController
+  ): Promise<{ headers: any; data: KeybaseResult }> {
     return await ObservableQueryValidatorThumbnail.fetchingThumbnailQueue.add(
       () => {
-        return super.fetchResponse(cancelToken);
+        return super.fetchResponse(abortController);
       }
     );
   }
 
   @computed
   get thumbnail(): string {
-    if (
-      !this.response?.data?.status?.code ||
-      this.response?.data?.status?.code !== 0 ||
-      !this.response?.data?.them
-    )
-      return "";
-    if (this.response.data.them && this.response.data.them.length > 0) {
-      return this.response.data.them[0].pictures?.primary?.url ?? "";
+    if (this.response?.data.status.code === 0) {
+      if (this.response.data.them && this.response.data.them.length > 0) {
+        return this.response.data.them[0].pictures?.primary?.url ?? "";
+      }
     }
+
     return "";
   }
 }
@@ -101,13 +85,13 @@ export class ObservableQueryValidatorsInner extends ObservableChainQuery<Validat
     new Map();
 
   constructor(
-    kvStore: KVStore,
+    sharedContext: QuerySharedContext,
     chainId: string,
     chainGetter: ChainGetter,
     protected readonly status: BondStatus
   ) {
     super(
-      kvStore,
+      sharedContext,
       chainId,
       chainGetter,
       `/cosmos/staking/v1beta1/validators?pagination.limit=1000&status=${(() => {
@@ -124,24 +108,13 @@ export class ObservableQueryValidatorsInner extends ObservableChainQuery<Validat
       })()}`
     );
     makeObservable(this);
+  }
 
-    // autorun(() => {
-    //   const chainInfo = this.chainGetter.getChain(this.chainId);
-    //   if (chainInfo.features && chainInfo.features.includes('stargate')) {
-    //     const url = (() => {
-    //       switch (this.status) {
-    //         case BondStatus.Bonded:
-    //           return `/staking/validators?status=BOND_STATUS_BONDED`;
-    //         case BondStatus.Unbonded:
-    //           return `/staking/validators?status=BOND_STATUS_UNBONDED&limit=500`;
-    //         case BondStatus.Unbonding:
-    //           return `/staking/validators?status=BOND_STATUS_UNBONDING&limit=500`;
-    //       }
-    //     })();
-
-    //     this.setUrl(url);
-    //   }
-    // });
+  protected override canFetch(): boolean {
+    if (!this.chainGetter.getChain(this.chainId).stakeCurrency) {
+      return false;
+    }
+    return super.canFetch();
   }
 
   @computed
@@ -167,24 +140,35 @@ export class ObservableQueryValidatorsInner extends ObservableChainQuery<Validat
   get validatorsSortedByVotingPower(): Validator[] {
     const validators = this.validators;
     return validators.sort((v1, v2) => {
-      return new Dec(v1.delegator_shares).gt(new Dec(v2.delegator_shares))
-        ? -1
-        : 1;
+      return new Dec(v1.tokens).gt(new Dec(v2.tokens)) ? -1 : 1;
     });
   }
 
   readonly getValidatorThumbnail = computedFn(
     (operatorAddress: string): string => {
+      const query = this.getQueryValidatorThumbnail(operatorAddress);
+      if (!query) {
+        return "";
+      }
+
+      return query.thumbnail;
+    }
+  );
+
+  readonly getQueryValidatorThumbnail = computedFn(
+    (
+      operatorAddress: string
+    ): ObservableQueryValidatorThumbnail | undefined => {
       const validators = this.validators;
       const validator = validators.find(
         (val) => val.operator_address === operatorAddress
       );
       if (!validator) {
-        return "";
+        return;
       }
 
       if (!validator.description.identity) {
-        return "";
+        return;
       }
 
       const identity = validator.description.identity;
@@ -193,13 +177,13 @@ export class ObservableQueryValidatorsInner extends ObservableChainQuery<Validat
         runInAction(() => {
           this.thumbnailMap.set(
             identity,
-            new ObservableQueryValidatorThumbnail(this.kvStore, validator)
+            new ObservableQueryValidatorThumbnail(this.sharedContext, validator)
           );
         });
       }
 
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      return this.thumbnailMap.get(identity)!.thumbnail;
+      return this.thumbnailMap.get(identity)!;
     }
   );
 
@@ -219,7 +203,11 @@ export class ObservableQueryValidatorsInner extends ObservableChainQuery<Validat
       const chainInfo = this.chainGetter.getChain(this.chainId);
       const stakeCurrency = chainInfo.stakeCurrency;
 
-      const power = new Dec(validator.delegator_shares).truncate();
+      if (!stakeCurrency) {
+        return;
+      }
+
+      const power = new Dec(validator.tokens).truncate();
 
       return new CoinPretty(stakeCurrency, power);
     }
@@ -228,13 +216,13 @@ export class ObservableQueryValidatorsInner extends ObservableChainQuery<Validat
 
 export class ObservableQueryValidators extends ObservableChainQueryMap<Validators> {
   constructor(
-    protected readonly kvStore: KVStore,
-    protected readonly chainId: string,
-    protected readonly chainGetter: ChainGetter
+    sharedContext: QuerySharedContext,
+    chainId: string,
+    chainGetter: ChainGetter
   ) {
-    super(kvStore, chainId, chainGetter, (status: string) => {
+    super(sharedContext, chainId, chainGetter, (status: string) => {
       return new ObservableQueryValidatorsInner(
-        this.kvStore,
+        this.sharedContext,
         this.chainId,
         this.chainGetter,
         status as BondStatus

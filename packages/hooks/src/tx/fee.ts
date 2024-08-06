@@ -10,7 +10,8 @@ import { TxChainSetter } from "./chain";
 import {
   ChainGetter,
   CoinPrimitive,
-  ObservableQueryBitcoinBalance,
+  //TODO: need check any type
+  // ObservableQueryBitcoinBalance,
 } from "@owallet/stores";
 import { action, computed, makeObservable, observable } from "mobx";
 import { Coin, CoinPretty, Dec, DecUtils, Int } from "@owallet/unit";
@@ -30,7 +31,7 @@ export class FeeConfig extends TxChainSetter implements IFeeConfig {
   // @observable.ref
   // protected queryEvmBalances?: ObservableQueryEvmBalance;
   @observable.ref
-  protected queryBtcBalances?: ObservableQueryBitcoinBalance;
+  protected queryBtcBalances?: any;
 
   @observable
   protected _sender: string;
@@ -73,7 +74,7 @@ export class FeeConfig extends TxChainSetter implements IFeeConfig {
     additionAmountToNeedFee: boolean = true,
     // queryEvmBalances?: ObservableQueryEvmBalance,
     // senderEvm?: string,
-    queryBtcBalances?: ObservableQueryBitcoinBalance,
+    queryBtcBalances?: any,
     protected readonly memoConfig?: IMemoConfig
   ) {
     super(chainGetter, initialChainId);
@@ -396,7 +397,7 @@ export const useFeeConfig = (
   additionAmountToNeedFee: boolean = true,
   // queryEvmBalances?: ObservableQueryEvmBalance,
   // senderEvm?: string,
-  queryBtcBalances?: ObservableQueryBitcoinBalance,
+  queryBtcBalances?: any,
   memoConfig?: IMemoConfig
 ) => {
   const [config] = useState(
