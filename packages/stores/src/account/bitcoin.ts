@@ -4,13 +4,18 @@ import { AppCurrency, OWalletSignOptions } from "@owallet/types";
 import { StdFee } from "@cosmjs/launchpad";
 import { DenomHelper } from "@owallet/common";
 
-import { HasBtcQueries, QueriesSetBase, QueriesStore } from "../query";
+import {
+  BitcoinQueries,
+  IQueriesStore,
+  QueriesSetBase,
+  QueriesStore,
+} from "../query";
 import { DeepReadonly } from "utility-types";
-import { ChainGetter } from "../common";
+import { ChainGetter } from "src/chain";
 
-export interface HasBitcoinAccount {
-  bitcoin: DeepReadonly<BitcoinAccount>;
-}
+// export interface HasBitcoinAccount {
+//   bitcoin: DeepReadonly<BitcoinAccount>;
+// }
 
 export interface BitcoinMsgOpts {
   readonly send: {
@@ -18,47 +23,45 @@ export interface BitcoinMsgOpts {
   };
 }
 
-export class AccountWithBitcoin
-  extends AccountSetBase<BitcoinMsgOpts, HasBtcQueries>
-  implements HasBitcoinAccount
-{
-  public readonly bitcoin: DeepReadonly<BitcoinAccount>;
+// export class AccountWithBitcoin
+//   extends AccountSetBase<BitcoinMsgOpts, HasBtcQueries>
+//   implements HasBitcoinAccount
+// {
+//   public readonly bitcoin: DeepReadonly<BitcoinAccount>;
 
-  static readonly defaultMsgOpts: BitcoinMsgOpts = {
-    send: {
-      native: {
-        type: "send",
-        gas: 80000,
-      },
-    },
-  };
+//   static readonly defaultMsgOpts: BitcoinMsgOpts = {
+//     send: {
+//       native: {
+//         type: "send",
+//         gas: 80000,
+//       },
+//     },
+//   };
 
+//   constructor(
+//     protected readonly eventListener: {
+//       addEventListener: (type: string, fn: () => unknown) => void;
+//       removeEventListener: (type: string, fn: () => unknown) => void;
+//     },
+//     protected readonly chainGetter: ChainGetter,
+//     protected readonly chainId: string,
+//     protected readonly queriesStore: QueriesStore<
+//       QueriesSetBase & HasBtcQueries
+//     >,
+//     protected readonly opts: AccountSetOpts
+//   ) {
+//     super(eventListener, chainGetter, chainId, queriesStore, opts);
+
+//     this.bitcoin = new BitcoinAccount(this, chainGetter, chainId, queriesStore);
+//   }
+// }
+
+export class BitcoinAccountImpl {
   constructor(
-    protected readonly eventListener: {
-      addEventListener: (type: string, fn: () => unknown) => void;
-      removeEventListener: (type: string, fn: () => unknown) => void;
-    },
+    protected readonly base: AccountSetBase,
     protected readonly chainGetter: ChainGetter,
     protected readonly chainId: string,
-    protected readonly queriesStore: QueriesStore<
-      QueriesSetBase & HasBtcQueries
-    >,
-    protected readonly opts: AccountSetOpts<BitcoinMsgOpts>
-  ) {
-    super(eventListener, chainGetter, chainId, queriesStore, opts);
-
-    this.bitcoin = new BitcoinAccount(this, chainGetter, chainId, queriesStore);
-  }
-}
-
-export class BitcoinAccount {
-  constructor(
-    protected readonly base: AccountSetBase<BitcoinMsgOpts, HasBtcQueries>,
-    protected readonly chainGetter: ChainGetter,
-    protected readonly chainId: string,
-    protected readonly queriesStore: QueriesStore<
-      QueriesSetBase & HasBtcQueries
-    >
+    protected readonly queriesStore: IQueriesStore<BitcoinQueries>
   ) {
     this.base.registerSendTokenFn(this.processSendToken.bind(this));
   }
@@ -162,7 +165,7 @@ export class BitcoinAccount {
     };
   }
 
-  protected get queries(): DeepReadonly<QueriesSetBase & HasBtcQueries> {
+  protected get queries(): DeepReadonly<QueriesSetBase & BitcoinQueries> {
     return this.queriesStore.get(this.chainId);
   }
 

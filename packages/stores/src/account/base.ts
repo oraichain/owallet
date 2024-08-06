@@ -21,7 +21,7 @@ import {
 } from "@owallet/types";
 import { DeepReadonly, Mutable } from "utility-types";
 import bech32, { fromWords } from "bech32";
-import { ChainGetter } from "../common";
+// import { ChainGetter } from "../common";
 import { QueriesSetBase, QueriesStore } from "../query";
 import {
   DenomHelper,
@@ -77,6 +77,8 @@ import { wallet } from "@owallet/bitcoin";
 import TronWebProvider from "tronweb";
 import { getEip712TypedDataBasedOnChainId } from "./utils";
 import { AccountSharedContext } from "./context";
+import { MakeTxResponse } from "./types";
+import { ChainGetter } from "src/chain";
 
 export interface Coin {
   readonly denom: string;
@@ -128,7 +130,7 @@ export type AminoMsgsOrWithProtoMsgs = {
   >;
 };
 
-export interface AccountSetOpts<MsgOpts> {
+export interface AccountSetOpts {
   readonly prefetching: boolean;
   readonly suggestChain: boolean;
   readonly suggestChainFn?: (
@@ -145,14 +147,14 @@ export interface AccountSetOpts<MsgOpts> {
   readonly getBitcoin: () => Promise<Bitcoin | undefined>;
   readonly getEthereum: () => Promise<Ethereum | undefined>;
   readonly getTronWeb: () => Promise<TronWeb | undefined>;
-  readonly msgOpts: MsgOpts;
+  // readonly msgOpts: MsgOpts;
   readonly wsObject?: new (
     url: string,
     protocols?: string | string[]
   ) => WebSocket;
 }
 
-export class AccountSetBase<MsgOpts, Queries> {
+export class AccountSetBase {
   @observable
   protected _walletVersion: string | undefined = undefined;
 
@@ -162,6 +164,7 @@ export class AccountSetBase<MsgOpts, Queries> {
   @observable
   protected _name: string = "";
 
+  protected _pubKey: Uint8Array;
   @observable
   protected _bech32Address: string = "";
   @observable
@@ -179,11 +182,10 @@ export class AccountSetBase<MsgOpts, Queries> {
 
   public broadcastMode: "sync" | "async" | "block" = "sync";
 
-  protected pubKey: Uint8Array;
-
-  protected readonly sharedContext: AccountSharedContext;
-
   protected hasInited = false;
+
+  @observable
+  protected _txTypeInProgress: string = "";
 
   protected sendTokenFns: ((
     amount: string,
@@ -201,7 +203,11 @@ export class AccountSetBase<MsgOpts, Queries> {
         },
     extraOptions?: ExtraOptionSendToken
   ) => Promise<boolean>)[] = [];
-
+  protected makeSendTokenTxFns: ((
+    amount: string,
+    currency: AppCurrency,
+    recipient: string
+  ) => MakeTxResponse | undefined)[] = [];
   constructor(
     protected readonly eventListener: {
       addEventListener: (type: string, fn: () => unknown) => void;
@@ -209,23 +215,31 @@ export class AccountSetBase<MsgOpts, Queries> {
     },
     protected readonly chainGetter: ChainGetter,
     protected readonly chainId: string,
-    protected readonly queriesStore: QueriesStore<QueriesSetBase & Queries>,
-    protected readonly opts: AccountSetOpts<MsgOpts>
+    protected readonly sharedContext: AccountSharedContext,
+    protected readonly opts: AccountSetOpts
   ) {
     makeObservable(this);
-    this.sharedContext = new AccountSharedContext(
-      this.opts.getOWallet,
-      this.opts.getEthereum,
-      this.opts.getTronWeb,
-      this.opts.getBitcoin
-    );
-    this.pubKey = new Uint8Array();
+    // this.sharedContext = new AccountSharedContext(
+    //   this.opts.getOWallet,
+    //   this.opts.getEthereum,
+    //   this.opts.getTronWeb,
+    //   this.opts.getBitcoin
+    // );
+    this._pubKey = new Uint8Array();
 
     if (opts.autoInit) {
       this.init();
     }
   }
-
+  registerMakeSendTokenFn(
+    fn: (
+      amount: string,
+      currency: AppCurrency,
+      recipient: string
+    ) => MakeTxResponse | undefined
+  ) {
+    this.makeSendTokenTxFns.push(fn);
+  }
   getOWallet(): Promise<OWallet | undefined> {
     return this.sharedContext.getOWallet();
   }
@@ -242,9 +256,9 @@ export class AccountSetBase<MsgOpts, Queries> {
     return this.sharedContext.getTronWeb();
   }
 
-  get msgOpts(): MsgOpts {
-    return this.opts.msgOpts;
-  }
+  // get msgOpts(): MsgOpts {
+  //   return this.opts.msgOpts;
+  // }
 
   registerSendTokenFn(
     fn: (
@@ -300,7 +314,9 @@ export class AccountSetBase<MsgOpts, Queries> {
   ): Promise<void> {
     await ethereum.experimentalSuggestChain(chainInfo.raw);
   }
-
+  get pubKey(): Uint8Array {
+    return this._pubKey.slice();
+  }
   private readonly handleInit = () => this.init();
 
   @flow
@@ -347,7 +363,7 @@ export class AccountSetBase<MsgOpts, Queries> {
         this._address = key.address;
         this._isNanoLedger = key.isNanoLedger;
         this._name = key.name;
-        this.pubKey = key.pubKey;
+        this._pubKey = key.pubKey;
         this._legacyAddress = key.legacyAddress;
         // Set the wallet status as loaded after getting all necessary infos.
         this._walletStatus = WalletStatus.Loaded;
@@ -360,7 +376,7 @@ export class AccountSetBase<MsgOpts, Queries> {
         this._address = new Uint8Array(0);
         this._isNanoLedger = false;
         this._name = "";
-        this.pubKey = new Uint8Array(0);
+        this._pubKey = new Uint8Array(0);
         this._legacyAddress = "";
       }
     });
@@ -379,7 +395,7 @@ export class AccountSetBase<MsgOpts, Queries> {
     this._legacyAddress = "";
     this._addressType = AddressBtcType.Bech32;
     this._address = null;
-    this.pubKey = new Uint8Array(0);
+    this._pubKey = new Uint8Array(0);
   }
 
   @action
@@ -412,6 +428,8 @@ export class AccountSetBase<MsgOpts, Queries> {
       if (networkType !== "cosmos") {
         const address = findLedgerAddress(
           keyRingLedgerAddresses,
+          //@ts-ignore
+          //TODO: need check
           chainInfo,
           this.addressType
         );
@@ -441,226 +459,226 @@ export class AccountSetBase<MsgOpts, Queries> {
     return this._bech32Address;
   }
 
-  async sendMsgs(
-    type: string | "unknown",
-    msgs:
-      | AminoMsgsOrWithProtoMsgs
-      | (() => Promise<AminoMsgsOrWithProtoMsgs> | AminoMsgsOrWithProtoMsgs),
-    memo: string = "",
-    fee: StdFee,
-    signOptions?: OWalletSignOptions,
-    onTxEvents?:
-      | ((tx: any) => void)
-      | {
-          onBroadcastFailed?: (e?: Error) => void;
-          onBroadcasted?: (txHash: Uint8Array) => void;
-          onFulfill?: (tx: any) => void;
-        },
-    extraOptions?: {
-      type: string;
-      contract_addr: string;
-      token_id?: string;
-      recipient?: string;
-      amount?: string;
-      to?: string;
-    }
-  ) {
-    runInAction(() => {
-      this._isSendingMsg = type;
-    });
+  // async sendMsgs(
+  //   type: string | "unknown",
+  //   msgs:
+  //     | AminoMsgsOrWithProtoMsgs
+  //     | (() => Promise<AminoMsgsOrWithProtoMsgs> | AminoMsgsOrWithProtoMsgs),
+  //   memo: string = "",
+  //   fee: StdFee,
+  //   signOptions?: OWalletSignOptions,
+  //   onTxEvents?:
+  //     | ((tx: any) => void)
+  //     | {
+  //         onBroadcastFailed?: (e?: Error) => void;
+  //         onBroadcasted?: (txHash: Uint8Array) => void;
+  //         onFulfill?: (tx: any) => void;
+  //       },
+  //   extraOptions?: {
+  //     type: string;
+  //     contract_addr: string;
+  //     token_id?: string;
+  //     recipient?: string;
+  //     amount?: string;
+  //     to?: string;
+  //   }
+  // ) {
+  //   runInAction(() => {
+  //     this._isSendingMsg = type;
+  //   });
 
-    let txHash: Uint8Array;
-    try {
-      if (typeof msgs === "function") {
-        msgs = await msgs();
-      }
+  //   let txHash: Uint8Array;
+  //   try {
+  //     if (typeof msgs === "function") {
+  //       msgs = await msgs();
+  //     }
 
-      const result = await this.broadcastMsgs(
-        msgs,
-        fee,
-        memo,
-        signOptions,
-        this.broadcastMode
-      );
+  //     const result = await this.broadcastMsgs(
+  //       msgs,
+  //       fee,
+  //       memo,
+  //       signOptions,
+  //       this.broadcastMode
+  //     );
 
-      txHash = result?.txHash;
-      if (!txHash) throw Error("Transaction Rejected");
-    } catch (e: any) {
-      runInAction(() => {
-        this._isSendingMsg = false;
-      });
+  //     txHash = result?.txHash;
+  //     if (!txHash) throw Error("Transaction Rejected");
+  //   } catch (e: any) {
+  //     runInAction(() => {
+  //       this._isSendingMsg = false;
+  //     });
 
-      if (this.opts.preTxEvents?.onBroadcastFailed) {
-        this.opts.preTxEvents.onBroadcastFailed(e);
-      }
+  //     if (this.opts.preTxEvents?.onBroadcastFailed) {
+  //       this.opts.preTxEvents.onBroadcastFailed(e);
+  //     }
 
-      if (
-        onTxEvents &&
-        "onBroadcastFailed" in onTxEvents &&
-        onTxEvents.onBroadcastFailed
-      ) {
-        onTxEvents.onBroadcastFailed(e);
-      }
+  //     if (
+  //       onTxEvents &&
+  //       "onBroadcastFailed" in onTxEvents &&
+  //       onTxEvents.onBroadcastFailed
+  //     ) {
+  //       onTxEvents.onBroadcastFailed(e);
+  //     }
 
-      throw e;
-    }
+  //     throw e;
+  //   }
 
-    let onBroadcasted: ((txHash: Uint8Array) => void) | undefined;
-    let onFulfill: ((tx: any) => void) | undefined;
+  //   let onBroadcasted: ((txHash: Uint8Array) => void) | undefined;
+  //   let onFulfill: ((tx: any) => void) | undefined;
 
-    if (onTxEvents) {
-      if (typeof onTxEvents === "function") {
-        onFulfill = onTxEvents;
-      } else {
-        onBroadcasted = onTxEvents.onBroadcasted;
-        onFulfill = onTxEvents.onFulfill;
-      }
-    }
+  //   if (onTxEvents) {
+  //     if (typeof onTxEvents === "function") {
+  //       onFulfill = onTxEvents;
+  //     } else {
+  //       onBroadcasted = onTxEvents.onBroadcasted;
+  //       onFulfill = onTxEvents.onFulfill;
+  //     }
+  //   }
 
-    await this.handleBroadcastedTx(txHash, fee, onBroadcasted, onFulfill);
-  }
+  //   await this.handleBroadcastedTx(txHash, fee, onBroadcasted, onFulfill);
+  // }
 
-  async handleBroadcastedTx(
-    txHash: Uint8Array,
-    fee: StdFee,
-    onBroadcasted?: (txHash: Uint8Array) => void,
-    onFulfill?: (tx: any) => void
-  ) {
-    if (this.opts.preTxEvents?.onBroadcasted) {
-      this.opts.preTxEvents.onBroadcasted(txHash);
-    }
-    if (onBroadcasted) {
-      onBroadcasted(txHash);
-    }
-    const chainInfo = this.chainGetter.getChain(this.chainId);
-    const restApi = chainInfo?.rest;
-    const restConfig = chainInfo?.restConfig;
-    const txRestCosmos = new TxRestCosmosClient(restApi, restConfig);
-    const txHashRoot = Buffer.from(txHash).toString("hex");
-    try {
-      const tx = await txRestCosmos.fetchTxPoll(txHashRoot);
-      // After sending tx, the balances is probably changed due to the fee.
-      for (const feeAmount of fee.amount) {
-        const bal = this.queries.queryBalances
-          .getQueryBech32Address(this.bech32Address)
-          .balances.find(
-            (bal) => bal.currency.coinMinimalDenom === feeAmount.denom
-          );
+  // async handleBroadcastedTx(
+  //   txHash: Uint8Array,
+  //   fee: StdFee,
+  //   onBroadcasted?: (txHash: Uint8Array) => void,
+  //   onFulfill?: (tx: any) => void
+  // ) {
+  //   if (this.opts.preTxEvents?.onBroadcasted) {
+  //     this.opts.preTxEvents.onBroadcasted(txHash);
+  //   }
+  //   if (onBroadcasted) {
+  //     onBroadcasted(txHash);
+  //   }
+  //   const chainInfo = this.chainGetter.getChain(this.chainId);
+  //   const restApi = chainInfo?.rest;
+  //   const restConfig = chainInfo?.restConfig;
+  //   const txRestCosmos = new TxRestCosmosClient(restApi, restConfig);
+  //   const txHashRoot = Buffer.from(txHash).toString("hex");
+  //   try {
+  //     const tx = await txRestCosmos.fetchTxPoll(txHashRoot);
+  //     // After sending tx, the balances is probably changed due to the fee.
+  //     for (const feeAmount of fee.amount) {
+  //       const bal = this.queries.queryBalances
+  //         .getQueryBech32Address(this.bech32Address)
+  //         .balances.find(
+  //           (bal) => bal.currency.coinMinimalDenom === feeAmount.denom
+  //         );
 
-        if (bal) {
-          bal.fetch();
-        }
-      }
+  //       if (bal) {
+  //         bal.fetch();
+  //       }
+  //     }
 
-      // Always add the tx hash data.
-      //@ts-ignore
-      if (tx && !tx.hash) {
-        //@ts-ignore
-        tx.hash = Buffer.from(txHash).toString("hex");
-      }
-      if (this.opts.preTxEvents?.onFulfill) {
-        this.opts.preTxEvents.onFulfill(tx);
-      }
+  //     // Always add the tx hash data.
+  //     //@ts-ignore
+  //     if (tx && !tx.hash) {
+  //       //@ts-ignore
+  //       tx.hash = Buffer.from(txHash).toString("hex");
+  //     }
+  //     if (this.opts.preTxEvents?.onFulfill) {
+  //       this.opts.preTxEvents.onFulfill(tx);
+  //     }
 
-      if (onFulfill) {
-        onFulfill(tx);
-      }
-      OwalletEvent.txHashEmit(txHashRoot, tx);
-    } catch (error) {
-      console.log(error, "error");
-      OwalletEvent.txHashEmit(txHashRoot, null);
-    } finally {
-      runInAction(() => {
-        this._isSendingMsg = false;
-      });
-    }
-  }
+  //     if (onFulfill) {
+  //       onFulfill(tx);
+  //     }
+  //     OwalletEvent.txHashEmit(txHashRoot, tx);
+  //   } catch (error) {
+  //     console.log(error, "error");
+  //     OwalletEvent.txHashEmit(txHashRoot, null);
+  //   } finally {
+  //     runInAction(() => {
+  //       this._isSendingMsg = false;
+  //     });
+  //   }
+  // }
 
-  async sendTronToken(
-    amount: string,
-    currency: AppCurrency,
-    recipient: string,
-    address: string,
-    onTxEvents?: {
-      onBroadcasted?: (txHash: Uint8Array) => void;
-      onFulfill?: (tx: any) => void;
-    },
-    tokenTrc20?: object
-  ) {
-    try {
-      runInAction(() => {
-        this._isSendingMsg = "send";
-      });
-      const ethereum = (await this.getEthereum())!;
-      const tx = await ethereum.signAndBroadcastTron(this.chainId, {
-        amount,
-        currency,
-        recipient,
-        address,
-        tokenTrc20,
-      });
-      if (!tx?.txid) throw Error("Transaction Rejected");
-      if (onTxEvents?.onBroadcasted) {
-        onTxEvents?.onBroadcasted(tx.txid);
-      }
+  // async sendTronToken(
+  //   amount: string,
+  //   currency: AppCurrency,
+  //   recipient: string,
+  //   address: string,
+  //   onTxEvents?: {
+  //     onBroadcasted?: (txHash: Uint8Array) => void;
+  //     onFulfill?: (tx: any) => void;
+  //   },
+  //   tokenTrc20?: object
+  // ) {
+  //   try {
+  //     runInAction(() => {
+  //       this._isSendingMsg = "send";
+  //     });
+  //     const ethereum = (await this.getEthereum())!;
+  //     const tx = await ethereum.signAndBroadcastTron(this.chainId, {
+  //       amount,
+  //       currency,
+  //       recipient,
+  //       address,
+  //       tokenTrc20,
+  //     });
+  //     if (!tx?.txid) throw Error("Transaction Rejected");
+  //     if (onTxEvents?.onBroadcasted) {
+  //       onTxEvents?.onBroadcasted(tx.txid);
+  //     }
 
-      // After sending tx, the balances is probably changed due to the fee.
-      this.queriesStore
-        .get(this.chainId)
-        .queryBalances.getQueryBech32Address(this.evmosHexAddress)
-        .fetch();
+  //     // After sending tx, the balances is probably changed due to the fee.
+  //     this.queriesStore
+  //       .get(this.chainId)
+  //       .queryBalances.getQueryBech32Address(this.evmosHexAddress)
+  //       .fetch();
 
-      this.queriesStore
-        .get(this.chainId)
-        //@ts-ignore
-        .tron.queryAccount.getQueryWalletAddress(
-          getBase58Address(this.evmosHexAddress)
-        )
-        .fetch();
+  //     this.queriesStore
+  //       .get(this.chainId)
+  //       //@ts-ignore
+  //       .tron.queryAccount.getQueryWalletAddress(
+  //         getBase58Address(this.evmosHexAddress)
+  //       )
+  //       .fetch();
 
-      if (this.opts.preTxEvents?.onFulfill) {
-        this.opts.preTxEvents.onFulfill({
-          ...tx,
-          code: 0,
-        });
-      }
+  //     if (this.opts.preTxEvents?.onFulfill) {
+  //       this.opts.preTxEvents.onFulfill({
+  //         ...tx,
+  //         code: 0,
+  //       });
+  //     }
 
-      if (onTxEvents?.onFulfill) {
-        onTxEvents?.onFulfill({
-          ...tx,
-          code: 0,
-        });
-      }
-      OwalletEvent.txHashEmit(tx.txid, {
-        ...tx,
-        code: 0,
-      });
-      // }
-    } catch (error) {
-      // OwalletEvent.txHashEmit(txId, null);
-      if (this.opts.preTxEvents?.onBroadcastFailed) {
-        this.opts.preTxEvents.onBroadcastFailed(error);
-      }
+  //     if (onTxEvents?.onFulfill) {
+  //       onTxEvents?.onFulfill({
+  //         ...tx,
+  //         code: 0,
+  //       });
+  //     }
+  //     OwalletEvent.txHashEmit(tx.txid, {
+  //       ...tx,
+  //       code: 0,
+  //     });
+  //     // }
+  //   } catch (error) {
+  //     // OwalletEvent.txHashEmit(txId, null);
+  //     if (this.opts.preTxEvents?.onBroadcastFailed) {
+  //       this.opts.preTxEvents.onBroadcastFailed(error);
+  //     }
 
-      if (
-        onTxEvents &&
-        "onBroadcastFailed" in onTxEvents &&
-        onTxEvents.onBroadcastFailed
-      ) {
-        //@ts-ignore
-        onTxEvents.onBroadcastFailed(error);
-      }
-      console.log(error, "error");
-      runInAction(() => {
-        this._isSendingMsg = false;
-      });
-      throw error;
-    } finally {
-      runInAction(() => {
-        this._isSendingMsg = false;
-      });
-    }
-  }
+  //     if (
+  //       onTxEvents &&
+  //       "onBroadcastFailed" in onTxEvents &&
+  //       onTxEvents.onBroadcastFailed
+  //     ) {
+  //       //@ts-ignore
+  //       onTxEvents.onBroadcastFailed(error);
+  //     }
+  //     console.log(error, "error");
+  //     runInAction(() => {
+  //       this._isSendingMsg = false;
+  //     });
+  //     throw error;
+  //   } finally {
+  //     runInAction(() => {
+  //       this._isSendingMsg = false;
+  //     });
+  //   }
+  // }
 
   async sleep(milliseconds) {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
@@ -932,234 +950,234 @@ export class AccountSetBase<MsgOpts, Queries> {
     return parseInt(chainId);
   }
 
-  protected async processSignedTxCosmos(
-    msgs: AminoMsgsOrWithProtoMsgs,
-    fee: StdFee,
-    memo: string = "",
-    owallet: any,
-    signOptions?: OWalletSignOptions
-  ) {
-    const isDirectSign = !msgs.aminoMsgs || msgs.aminoMsgs.length === 0;
-    const aminoMsgs: Msg[] = msgs.aminoMsgs || [];
-    const protoMsgs: Any[] = msgs.protoMsgs;
+  // protected async processSignedTxCosmos(
+  //   msgs: AminoMsgsOrWithProtoMsgs,
+  //   fee: StdFee,
+  //   memo: string = "",
+  //   owallet: any,
+  //   signOptions?: OWalletSignOptions
+  // ) {
+  //   const isDirectSign = !msgs.aminoMsgs || msgs.aminoMsgs.length === 0;
+  //   const aminoMsgs: Msg[] = msgs.aminoMsgs || [];
+  //   const protoMsgs: Any[] = msgs.protoMsgs;
 
-    if (!protoMsgs || protoMsgs.length === 0) {
-      throw new Error("There is no msg to send");
-    }
-    const chainIsInjective = this.chainId.startsWith("injective");
-    if (!aminoMsgs || aminoMsgs.length === 0) {
-      throw new Error("There is no msg to send");
-    }
-    if (!isDirectSign) {
-      if (!aminoMsgs || !protoMsgs || aminoMsgs.length !== protoMsgs.length) {
-        throw new Error("The length of aminoMsgs and protoMsgs are different");
-      }
-    }
-    if (
-      this.hasNoLegacyStdFeature() &&
-      (!protoMsgs || protoMsgs.length === 0)
-    ) {
-      throw new Error(
-        "Chain can't send legecy stdTx. But, proto any type msgs are not provided"
-      );
-    }
+  //   if (!protoMsgs || protoMsgs.length === 0) {
+  //     throw new Error("There is no msg to send");
+  //   }
+  //   const chainIsInjective = this.chainId.startsWith("injective");
+  //   if (!aminoMsgs || aminoMsgs.length === 0) {
+  //     throw new Error("There is no msg to send");
+  //   }
+  //   if (!isDirectSign) {
+  //     if (!aminoMsgs || !protoMsgs || aminoMsgs.length !== protoMsgs.length) {
+  //       throw new Error("The length of aminoMsgs and protoMsgs are different");
+  //     }
+  //   }
+  //   if (
+  //     this.hasNoLegacyStdFeature() &&
+  //     (!protoMsgs || protoMsgs.length === 0)
+  //   ) {
+  //     throw new Error(
+  //       "Chain can't send legecy stdTx. But, proto any type msgs are not provided"
+  //     );
+  //   }
 
-    const coinType = this.chainGetter.getChain(this.chainId).bip44.coinType;
+  //   const coinType = this.chainGetter.getChain(this.chainId).bip44.coinType;
 
-    const account = await BaseAccount.fetchFromRest(
-      this.instance,
-      this.bech32Address,
-      true
-    );
+  //   const account = await BaseAccount.fetchFromRest(
+  //     this.instance,
+  //     this.bech32Address,
+  //     true
+  //   );
 
-    // const signDocAmino = makeSignDoc(aminoMsgs, fee, this.chainId, memo, account.getAccountNumber().toString(), account.getSequence().toString());
-    const useEthereumSign =
-      this.chainGetter
-        .getChain(this.chainId)
-        .features?.includes("eth-key-sign") === true;
+  //   // const signDocAmino = makeSignDoc(aminoMsgs, fee, this.chainId, memo, account.getAccountNumber().toString(), account.getSequence().toString());
+  //   const useEthereumSign =
+  //     this.chainGetter
+  //       .getChain(this.chainId)
+  //       .features?.includes("eth-key-sign") === true;
 
-    const eip712Signing = useEthereumSign && this.isNanoLedger;
-    if (eip712Signing && isDirectSign) {
-      throw new Error("EIP712 signing is not supported for proto signing");
-    }
-    if (eip712Signing && !msgs.rlpTypes) {
-      throw new Error(
-        "RLP types information is needed for signing tx for ethermint chain with ledger"
-      );
-    }
+  //   const eip712Signing = useEthereumSign && this.isNanoLedger;
+  //   if (eip712Signing && isDirectSign) {
+  //     throw new Error("EIP712 signing is not supported for proto signing");
+  //   }
+  //   if (eip712Signing && !msgs.rlpTypes) {
+  //     throw new Error(
+  //       "RLP types information is needed for signing tx for ethermint chain with ledger"
+  //     );
+  //   }
 
-    const signDocRaw: StdSignDoc = {
-      chain_id: this.chainId,
-      account_number: account.getAccountNumber().toString(),
-      sequence: account.getSequence().toString(),
-      fee: fee,
-      msgs: aminoMsgs,
-      memo: escapeHTML(memo),
-    };
+  //   const signDocRaw: StdSignDoc = {
+  //     chain_id: this.chainId,
+  //     account_number: account.getAccountNumber().toString(),
+  //     sequence: account.getSequence().toString(),
+  //     fee: fee,
+  //     msgs: aminoMsgs,
+  //     memo: escapeHTML(memo),
+  //   };
 
-    if (eip712Signing) {
-      if (chainIsInjective) {
-        // Due to injective's problem, it should exist if injective with ledger.
-        // There is currently no effective way to handle this in keplr. Just set a very large number.
-        (signDocRaw as Mutable<StdSignDoc>).timeout_height =
-          Number.MAX_SAFE_INTEGER.toString();
-      } else {
-        // If not injective (evmos), they require fee payer.
-        // XXX: "feePayer" should be "payer". But, it maybe from ethermint team's mistake.
-        //      That means this part is not standard.
-        (signDocRaw as Mutable<StdSignDoc>).fee = {
-          ...signDocRaw.fee,
-          feePayer: this.bech32Address,
-        };
-      }
-    }
+  //   if (eip712Signing) {
+  //     if (chainIsInjective) {
+  //       // Due to injective's problem, it should exist if injective with ledger.
+  //       // There is currently no effective way to handle this in keplr. Just set a very large number.
+  //       (signDocRaw as Mutable<StdSignDoc>).timeout_height =
+  //         Number.MAX_SAFE_INTEGER.toString();
+  //     } else {
+  //       // If not injective (evmos), they require fee payer.
+  //       // XXX: "feePayer" should be "payer". But, it maybe from ethermint team's mistake.
+  //       //      That means this part is not standard.
+  //       (signDocRaw as Mutable<StdSignDoc>).fee = {
+  //         ...signDocRaw.fee,
+  //         feePayer: this.bech32Address,
+  //       };
+  //     }
+  //   }
 
-    // Should use bind to avoid "this" problem
-    let signAmino = owallet.signAmino.bind(owallet);
+  //   // Should use bind to avoid "this" problem
+  //   let signAmino = owallet.signAmino.bind(owallet);
 
-    // Should use bind to avoid "this" problem
-    let experimentalSignEIP712CosmosTx_v0 =
-      owallet.experimentalSignEIP712CosmosTx_v0.bind(owallet);
+  //   // Should use bind to avoid "this" problem
+  //   let experimentalSignEIP712CosmosTx_v0 =
+  //     owallet.experimentalSignEIP712CosmosTx_v0.bind(owallet);
 
-    const signDocAmino = sortObjectByKey(signDocRaw);
-    const signResponse: AminoSignResponse = await (async () => {
-      if (!eip712Signing) {
-        return await signAmino(
-          this.chainId,
-          this.bech32Address,
-          signDocAmino,
-          signOptions
-        );
-      }
-      return await experimentalSignEIP712CosmosTx_v0(
-        this.chainId,
-        this.bech32Address,
-        getEip712TypedDataBasedOnChainId(this.chainId, msgs),
-        signDocAmino,
-        signOptions
-      );
-    })();
-    if (!signResponse) throw Error("Transaction Rejected!");
-    const signDoc = {
-      bodyBytes: TxBody.encode(
-        TxBody.fromPartial({
-          messages: protoMsgs,
-          memo: signResponse.signed.memo,
-          timeoutHeight: signResponse.signed.timeout_height,
-          extensionOptions: eip712Signing
-            ? [
-                {
-                  typeUrl: (() => {
-                    if (chainIsInjective) {
-                      return "/injective.types.v1beta1.ExtensionOptionsWeb3Tx";
-                    }
+  //   const signDocAmino = sortObjectByKey(signDocRaw);
+  //   const signResponse: AminoSignResponse = await (async () => {
+  //     if (!eip712Signing) {
+  //       return await signAmino(
+  //         this.chainId,
+  //         this.bech32Address,
+  //         signDocAmino,
+  //         signOptions
+  //       );
+  //     }
+  //     return await experimentalSignEIP712CosmosTx_v0(
+  //       this.chainId,
+  //       this.bech32Address,
+  //       getEip712TypedDataBasedOnChainId(this.chainId, msgs),
+  //       signDocAmino,
+  //       signOptions
+  //     );
+  //   })();
+  //   if (!signResponse) throw Error("Transaction Rejected!");
+  //   const signDoc = {
+  //     bodyBytes: TxBody.encode(
+  //       TxBody.fromPartial({
+  //         messages: protoMsgs,
+  //         memo: signResponse.signed.memo,
+  //         timeoutHeight: signResponse.signed.timeout_height,
+  //         extensionOptions: eip712Signing
+  //           ? [
+  //               {
+  //                 typeUrl: (() => {
+  //                   if (chainIsInjective) {
+  //                     return "/injective.types.v1beta1.ExtensionOptionsWeb3Tx";
+  //                   }
 
-                    return "/ethermint.types.v1.ExtensionOptionsWeb3Tx";
-                  })(),
-                  value: ExtensionOptionsWeb3Tx.encode(
-                    ExtensionOptionsWeb3Tx.fromPartial({
-                      typedDataChainId: EthermintChainIdHelper.parse(
-                        this.chainId
-                      ).ethChainId.toString(),
-                      feePayer: !chainIsInjective
-                        ? signResponse.signed.fee.feePayer
-                        : undefined,
-                      feePayerSig: !chainIsInjective
-                        ? Buffer.from(
-                            signResponse.signature.signature,
-                            "base64"
-                          )
-                        : undefined,
-                    })
-                  ).finish(),
-                },
-              ]
-            : undefined,
-        })
-      ).finish(),
-      authInfoBytes: AuthInfo.encode({
-        signerInfos: [
-          {
-            publicKey: {
-              typeUrl: (() => {
-                if (!chainIsInjective && coinType === 60) {
-                  return "/ethermint.crypto.v1.ethsecp256k1.PubKey";
-                }
-                if (chainIsInjective) {
-                  return "/injective.crypto.v1beta1.ethsecp256k1.PubKey";
-                }
-                return "/cosmos.crypto.secp256k1.PubKey";
-              })(),
-              value: PubKey.encode({
-                key: Buffer.from(
-                  signResponse.signature.pub_key.value,
-                  "base64"
-                ),
-              }).finish(),
-            },
-            modeInfo: {
-              single: {
-                mode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
-              },
-              multi: undefined,
-            },
-            sequence: signResponse.signed.sequence,
-          },
-        ],
-        fee: Fee.fromPartial({
-          amount: signResponse.signed.fee.amount as Coin[],
-          gasLimit: Long.fromString(signResponse.signed.fee.gas),
-          payer:
-            eip712Signing && !chainIsInjective
-              ? // Fee delegation feature not yet supported. But, for eip712 ethermint signing, we must set fee payer.
-                signResponse.signed.fee.feePayer
-              : undefined,
-        }),
-      }).finish(),
-      accountNumber: Long.fromString(signResponse.signed.account_number),
-      chainId: this.chainId,
-    };
+  //                   return "/ethermint.types.v1.ExtensionOptionsWeb3Tx";
+  //                 })(),
+  //                 value: ExtensionOptionsWeb3Tx.encode(
+  //                   ExtensionOptionsWeb3Tx.fromPartial({
+  //                     typedDataChainId: EthermintChainIdHelper.parse(
+  //                       this.chainId
+  //                     ).ethChainId.toString(),
+  //                     feePayer: !chainIsInjective
+  //                       ? signResponse.signed.fee.feePayer
+  //                       : undefined,
+  //                     feePayerSig: !chainIsInjective
+  //                       ? Buffer.from(
+  //                           signResponse.signature.signature,
+  //                           "base64"
+  //                         )
+  //                       : undefined,
+  //                   })
+  //                 ).finish(),
+  //               },
+  //             ]
+  //           : undefined,
+  //       })
+  //     ).finish(),
+  //     authInfoBytes: AuthInfo.encode({
+  //       signerInfos: [
+  //         {
+  //           publicKey: {
+  //             typeUrl: (() => {
+  //               if (!chainIsInjective && coinType === 60) {
+  //                 return "/ethermint.crypto.v1.ethsecp256k1.PubKey";
+  //               }
+  //               if (chainIsInjective) {
+  //                 return "/injective.crypto.v1beta1.ethsecp256k1.PubKey";
+  //               }
+  //               return "/cosmos.crypto.secp256k1.PubKey";
+  //             })(),
+  //             value: PubKey.encode({
+  //               key: Buffer.from(
+  //                 signResponse.signature.pub_key.value,
+  //                 "base64"
+  //               ),
+  //             }).finish(),
+  //           },
+  //           modeInfo: {
+  //             single: {
+  //               mode: SignMode.SIGN_MODE_LEGACY_AMINO_JSON,
+  //             },
+  //             multi: undefined,
+  //           },
+  //           sequence: signResponse.signed.sequence,
+  //         },
+  //       ],
+  //       fee: Fee.fromPartial({
+  //         amount: signResponse.signed.fee.amount as Coin[],
+  //         gasLimit: Long.fromString(signResponse.signed.fee.gas),
+  //         payer:
+  //           eip712Signing && !chainIsInjective
+  //             ? // Fee delegation feature not yet supported. But, for eip712 ethermint signing, we must set fee payer.
+  //               signResponse.signed.fee.feePayer
+  //             : undefined,
+  //       }),
+  //     }).finish(),
+  //     accountNumber: Long.fromString(signResponse.signed.account_number),
+  //     chainId: this.chainId,
+  //   };
 
-    const signedTx = TxRaw.encode({
-      bodyBytes: signDoc.bodyBytes, // has to collect body bytes & auth info bytes since OWallet overrides data when signing
-      authInfoBytes: signDoc.authInfoBytes,
-      signatures:
-        !eip712Signing || chainIsInjective
-          ? [Buffer.from(signResponse.signature.signature, "base64")]
-          : [new Uint8Array(0)],
-    }).finish();
-    return signedTx;
-  }
+  //   const signedTx = TxRaw.encode({
+  //     bodyBytes: signDoc.bodyBytes, // has to collect body bytes & auth info bytes since OWallet overrides data when signing
+  //     authInfoBytes: signDoc.authInfoBytes,
+  //     signatures:
+  //       !eip712Signing || chainIsInjective
+  //         ? [Buffer.from(signResponse.signature.signature, "base64")]
+  //         : [new Uint8Array(0)],
+  //   }).finish();
+  //   return signedTx;
+  // }
 
   // TODO; do we have to add a new broadcast msg for Ethereum? -- Update: Added done
   // Return the tx hash.
-  protected async broadcastMsgs(
-    msgs: AminoMsgsOrWithProtoMsgs,
-    fee: StdFee,
-    memo: string = "",
-    signOptions?: OWalletSignOptions,
-    mode: "block" | "async" | "sync" = "async"
-  ): Promise<{
-    txHash: Uint8Array;
-  }> {
-    if (this.walletStatus !== WalletStatus.Loaded) {
-      throw new Error(`Wallet is not loaded: ${this.walletStatus}`);
-    }
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const owallet = (await this.getOWallet())!;
+  // protected async broadcastMsgs(
+  //   msgs: AminoMsgsOrWithProtoMsgs,
+  //   fee: StdFee,
+  //   memo: string = "",
+  //   signOptions?: OWalletSignOptions,
+  //   mode: "block" | "async" | "sync" = "async"
+  // ): Promise<{
+  //   txHash: Uint8Array;
+  // }> {
+  //   if (this.walletStatus !== WalletStatus.Loaded) {
+  //     throw new Error(`Wallet is not loaded: ${this.walletStatus}`);
+  //   }
+  //   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  //   const owallet = (await this.getOWallet())!;
 
-    let sendTx = owallet.sendTx.bind(owallet);
-    const signedTx = await this.processSignedTxCosmos(
-      msgs,
-      fee,
-      memo,
-      owallet,
-      signOptions
-    );
-    return {
-      txHash: await sendTx(this.chainId, signedTx, mode as BroadcastMode),
-    };
-  }
+  //   let sendTx = owallet.sendTx.bind(owallet);
+  //   const signedTx = await this.processSignedTxCosmos(
+  //     msgs,
+  //     fee,
+  //     memo,
+  //     owallet,
+  //     signOptions
+  //   );
+  //   return {
+  //     txHash: await sendTx(this.chainId, signedTx, mode as BroadcastMode),
+  //   };
+  // }
 
   protected async broadcastBtcMsgs(
     msgs: any,
@@ -1285,7 +1303,7 @@ export class AccountSetBase<MsgOpts, Queries> {
       ...{
         baseURL: chainInfo.rest,
       },
-      ...chainInfo.restConfig,
+      // ...chainInfo.restConfig,
       adapter: "fetch",
     });
   }
@@ -1346,9 +1364,9 @@ export class AccountSetBase<MsgOpts, Queries> {
     return ETH.encoder(address);
   }
 
-  protected get queries(): DeepReadonly<QueriesSetBase & Queries> {
-    return this.queriesStore.get(this.chainId);
-  }
+  // protected get queries(): DeepReadonly<QueriesSetBase & Queries> {
+  //   return this.queriesStore.get(this.chainId);
+  // }
 
   protected hasNoLegacyStdFeature(): boolean {
     const chainInfo = this.chainGetter.getChain(this.chainId);
@@ -1356,5 +1374,17 @@ export class AccountSetBase<MsgOpts, Queries> {
       chainInfo.features != null &&
       chainInfo.features.includes("no-legacy-stdTx")
     );
+  }
+}
+export class AccountSetBaseSuper extends AccountSetBase {
+  constructor(...params: ConstructorParameters<typeof AccountSetBase>) {
+    super(...params);
+
+    makeObservable(this);
+  }
+
+  @action
+  setTxTypeInProgress(type: string): void {
+    this._txTypeInProgress = type;
   }
 }

@@ -1,9 +1,9 @@
 import { CWStargate, fetchTaxRate, ChainIdEnum } from "@owallet/common";
 import { oraichainNetwork } from "@oraichain/oraidex-common";
 import { useEffect, useState } from "react";
-import { AccountWithAll } from "@owallet/stores";
+// import { AccountWithAll } from "@owallet/stores";
 
-export const useTaxRate = (accountOrai: AccountWithAll) => {
+export const useTaxRate = (accountOrai) => {
   const [taxRate, setTaxRate] = useState("");
 
   const queryTaxRate = async () => {

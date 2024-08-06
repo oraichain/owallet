@@ -3,9 +3,10 @@ import {
   CosmosMsgOpts,
   CosmwasmMsgOpts,
   Erc20MsgOpts,
+  IQueriesStore,
   ObservableQueryBitcoinBalance,
-  QueriesWrappedTron,
   SecretMsgOpts,
+  TronQueries,
 } from "@owallet/stores";
 import { ObservableQueryBalances } from "@owallet/stores";
 import { useMemoConfig } from "./memo";
@@ -22,7 +23,7 @@ export const useSendTxTronConfig = (
   sendMsgOpts: MsgOpts["send"],
   sender: string,
   queryBalances: ObservableQueryBalances,
-  queriesStore: QueriesWrappedTron,
+  queriesStore: IQueriesStore<TronQueries>,
   ensEndpoint?: string,
   queryBtcBalances?: ObservableQueryBitcoinBalance
 ) => {

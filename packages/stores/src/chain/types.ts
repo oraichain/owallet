@@ -28,6 +28,7 @@ export interface IChainStore<C extends ChainInfo = ChainInfo>
 }
 
 export interface IChainInfoImpl<C extends ChainInfo = ChainInfo> {
+  raw?: ChainInfo;
   addUnknownDenoms(...coinMinimalDenoms: string[]): void;
   addUnknownDenomsWithoutReaction(...coinMinimalDenoms: string[]): void;
   findCurrency(
@@ -48,6 +49,7 @@ export interface IChainInfoImpl<C extends ChainInfo = ChainInfo> {
   readonly embedded: C;
   readonly chainId: string;
   readonly chainIdentifier: string;
+  readonly networkType?: any;
   readonly stakeCurrency: Currency | undefined;
   readonly currencies: AppCurrency[];
   readonly alternativeBIP44s: BIP44[] | undefined;

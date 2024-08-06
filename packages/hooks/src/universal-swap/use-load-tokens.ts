@@ -24,9 +24,10 @@ import {
 } from "@oraichain/oraidex-common";
 import { ChainIdEnum, isEvmNetworkNativeSwapSupported } from "@owallet/common";
 import { CWStargate } from "@owallet/common";
-import { AccountWithAll } from "@owallet/stores";
+// import { AccountWithAll } from "@owallet/stores";
 import { uniqBy } from "lodash";
 import axios from "axios";
+import { CosmosAccountImpl } from "@owallet/stores";
 
 export const getUtxos = async (address: string, baseUrl: string) => {
   if (!address) throw Error("Address is not empty");
@@ -43,7 +44,7 @@ const EVM_BALANCE_RETRY_COUNT = 2;
 const COSMOS_BALANCE_RETRY_COUNT = 4;
 
 export type CWStargateType = {
-  account: AccountWithAll;
+  account: CosmosAccountImpl;
   chainId: string;
   rpc: string;
 };

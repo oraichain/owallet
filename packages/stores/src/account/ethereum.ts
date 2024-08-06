@@ -6,8 +6,8 @@ import { DenomHelper, EVMOS_NETWORKS } from "@owallet/common";
 import { Dec, DecUtils, Int } from "@owallet/unit";
 
 import {
-  HasCosmosQueries,
-  HasEvmQueries,
+  EvmQueries,
+  IQueriesStore,
   QueriesSetBase,
   QueriesStore,
 } from "../query";
@@ -15,9 +15,9 @@ import { DeepReadonly } from "utility-types";
 import { ChainGetter, StdFeeEthereum } from "../common";
 import Web3 from "web3";
 
-export interface HasEthereumAccount {
-  ethereum: DeepReadonly<EthereumAccount>;
-}
+// export interface HasEthereumAccount {
+//   ethereum: DeepReadonly<EthereumAccount>;
+// }
 
 export interface EthereumMsgOpts {
   readonly send: {
@@ -31,56 +31,65 @@ export interface Erc20MsgOpts {
   };
 }
 
-export class AccountWithEthereum
-  extends AccountSetBase<EthereumMsgOpts, HasEvmQueries>
-  implements HasEthereumAccount
-{
-  public readonly ethereum: DeepReadonly<EthereumAccount>;
+// export class AccountWithEthereum
+//   extends AccountSetBase
+//   implements HasEthereumAccount
+// {
+//   public readonly ethereum: DeepReadonly<EthereumAccount>;
 
-  static readonly defaultMsgOpts: EthereumMsgOpts = {
-    send: {
-      native: {
-        type: "send",
-        gas: 80000,
-      },
-    },
-  };
+//   static readonly defaultMsgOpts: EthereumMsgOpts = {
+//     send: {
+//       native: {
+//         type: "send",
+//         gas: 80000,
+//       },
+//     },
+//   };
 
+//   constructor(
+//     protected readonly eventListener: {
+//       addEventListener: (type: string, fn: () => unknown) => void;
+//       removeEventListener: (type: string, fn: () => unknown) => void;
+//     },
+//     protected readonly chainGetter: ChainGetter,
+//     protected readonly chainId: string,
+//     protected readonly queriesStore: QueriesStore<
+//       QueriesSetBase & HasEvmQueries
+//     >,
+//     protected readonly opts: AccountSetOpts
+//   ) {
+//     super(eventListener, chainGetter, chainId, queriesStore, opts);
+
+//     this.ethereum = new EthereumAccount(
+//       this,
+//       chainGetter,
+//       chainId,
+//       queriesStore
+//     );
+//   }
+// }
+
+export class EthereumAccountImpl {
   constructor(
-    protected readonly eventListener: {
-      addEventListener: (type: string, fn: () => unknown) => void;
-      removeEventListener: (type: string, fn: () => unknown) => void;
-    },
+    protected readonly base: AccountSetBase,
     protected readonly chainGetter: ChainGetter,
     protected readonly chainId: string,
-    protected readonly queriesStore: QueriesStore<
-      QueriesSetBase & HasEvmQueries
-    >,
-    protected readonly opts: AccountSetOpts<EthereumMsgOpts>
+    protected readonly queriesStore: IQueriesStore<EvmQueries>,
+    protected readonly _msgOpts: EthereumMsgOpts,
+    protected readonly txOpts: {
+      wsObject?: new (url: string, protocols?: string | string[]) => WebSocket;
+      preTxEvents?: {
+        onBroadcastFailed?: (chainId: string, e?: Error) => void;
+        onBroadcasted?: (chainId: string, txHash: Uint8Array) => void;
+        onFulfill?: (chainId: string, tx: any) => void;
+      };
+    }
   ) {
-    super(eventListener, chainGetter, chainId, queriesStore, opts);
-
-    this.ethereum = new EthereumAccount(
-      this,
-      chainGetter,
-      chainId,
-      queriesStore
-    );
+    this.base.registerMakeSendTokenFn(this.processSendToken.bind(this));
   }
-}
-
-export class EthereumAccount {
-  constructor(
-    protected readonly base: AccountSetBase<EthereumMsgOpts, HasEvmQueries>,
-    protected readonly chainGetter: ChainGetter,
-    protected readonly chainId: string,
-    protected readonly queriesStore: QueriesStore<
-      QueriesSetBase & HasEvmQueries
-    >
-  ) {
-    this.base.registerSendTokenFn(this.processSendToken.bind(this));
+  get msgOpts(): EthereumMsgOpts {
+    return this._msgOpts;
   }
-
   //send token
   protected async processSendToken(
     amount: string,
@@ -155,7 +164,7 @@ export class EthereumAccount {
           })();
 
           const msg = {
-            type: this.base.msgOpts.send.native.type,
+            type: this.msgOpts.send.native.type,
             value: {
               from_address: this.base.bech32Address,
               to_address: recipient,
@@ -243,7 +252,7 @@ export class EthereumAccount {
     };
   }
 
-  protected get queries(): DeepReadonly<QueriesSetBase & HasEvmQueries> {
+  protected get queries(): DeepReadonly<QueriesSetBase> {
     return this.queriesStore.get(this.chainId);
   }
 

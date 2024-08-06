@@ -3,7 +3,8 @@ import { TxChainSetter } from "./chain";
 import {
   ChainGetter,
   CoinPrimitive,
-  QueriesWrappedTron,
+  IQueriesStore,
+  TronQueries,
 } from "@owallet/stores";
 import { action, computed, makeObservable, observable } from "mobx";
 import { Coin, CoinPretty, DecUtils, Int } from "@owallet/unit";
@@ -28,7 +29,7 @@ export class FeeTronConfig extends TxChainSetter implements IFeeTronConfig {
     initialChainId: string,
     sender: string,
     queryBalances: ObservableQueryBalances,
-    protected readonly queryStore: QueriesWrappedTron
+    protected readonly queryStore: IQueriesStore<TronQueries>
   ) {
     super(chainGetter, initialChainId);
 
@@ -152,7 +153,7 @@ export const useFeeTronConfig = (
   chainId: string,
   sender: string,
   queryBalances: ObservableQueryBalances,
-  queryStore: QueriesWrappedTron
+  queryStore: IQueriesStore<TronQueries>
 ) => {
   const [config] = useState(
     () =>

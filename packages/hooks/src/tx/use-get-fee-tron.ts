@@ -9,10 +9,10 @@ import {
   TronWebProvider,
 } from "@owallet/common";
 import {
-  ChainInfoImpl,
   CoinPrimitive,
   KeyRingStore,
   TronQueries,
+  TronQueriesImpl,
 } from "@owallet/stores";
 import { ChainInfoWithEmbed } from "@owallet/background";
 import { useEffect, useState } from "react";
@@ -32,7 +32,7 @@ export const useGetFeeTron = (
   addressTronBase58: string,
   amountConfig: AmountConfig,
   recipientConfig: RecipientConfig,
-  queriesTron: TronQueries,
+  queriesTron: TronQueriesImpl,
   chainInfo: ChainInfo,
   keyRingStore: KeyRingStore,
   dataSign: any
