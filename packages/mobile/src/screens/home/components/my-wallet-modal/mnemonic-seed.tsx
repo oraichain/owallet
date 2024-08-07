@@ -46,11 +46,11 @@ const MnemonicSeed = () => {
     );
   }, [keyRingStore.multiKeyStoreInfo]);
 
-  const selectKeyStore = useCallback(async (keyStore: any) => {
+  const selectKeyStore = useCallback((keyStore: any) => {
     const index = keyRingStore.multiKeyStoreInfo.indexOf(keyStore);
     if (index >= 0) {
       universalSwapStore.setLoaded(false);
-      await keyRingStore.changeKeyRing(index);
+      keyRingStore.changeKeyRing(index);
     }
   }, []);
   const { totalPriceBalance } = appInitStore.getMultipleAssets;
@@ -69,7 +69,7 @@ const MnemonicSeed = () => {
             setIsLoading(true);
             await modalStore.close();
             analyticsStore.logEvent("Account changed");
-            await selectKeyStore(item);
+            selectKeyStore(item);
             universalSwapStore.clearAmounts();
             setIsLoading(false);
           }}

@@ -381,6 +381,8 @@ const handleGetKeyMsg: (
         ? bech32Address.toBech32Btc(bech32PrefixAccAddr)
         : bech32Address.toBech32(bech32PrefixAccAddr);
 
+    console.log("handleGetKeyMsg ", msg.chainId, Date.now());
+
     return {
       name: service.getKeyStoreMeta("name"),
       algo: "secp256k1",

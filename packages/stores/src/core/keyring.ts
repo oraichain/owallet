@@ -25,6 +25,7 @@ import {
   ExportKeyRingData,
   ExportKeyRingDatasMsg,
   ChangeChainMsg,
+  MultiKeyStoreInfoWithSelectedElem,
 } from "@owallet/background";
 import { BIP44HDPath, ISimulateSignTron } from "@owallet/types";
 import { computed, flow, makeObservable, observable, runInAction } from "mobx";
@@ -388,6 +389,13 @@ export class KeyRingStore {
       BACKGROUND_PORT,
       new CheckPasswordMsg(password)
     );
+  }
+
+  getSelectedKeyring(): MultiKeyStoreInfoWithSelectedElem {
+    const selectedIndex = this.multiKeyStoreInfo.findIndex(
+      (keyStore) => keyStore.selected
+    );
+    return this.multiKeyStoreInfo[selectedIndex];
   }
 
   getKeyStoreSelectables(chainId: string): KeyRingSelectablesStore {

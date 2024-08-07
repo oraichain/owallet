@@ -93,18 +93,16 @@ export const SettingSelectAccountScreen: FunctionComponent = observer(() => {
   ) => {
     const index = keyRingStore.multiKeyStoreInfo.indexOf(keyStore);
     if (index >= 0) {
-      await keyRingStore.changeKeyRing(index);
       smartNavigation.navigateSmart("Home", {});
+      keyRingStore.changeKeyRing(index);
     }
   };
-  const handleOnKeyStore = useCallback(async (keyStore) => {
+  const handleOnKeyStore = useCallback((keyStore) => {
     loadingScreen.setIsLoading(true);
-    universalSwapStore.setLoaded(false);
-    universalSwapStore.clearAmounts();
+
     analyticsStore.logEvent("Account changed");
-    await selectKeyStore(keyStore);
+    selectKeyStore(keyStore);
     loadingScreen.setIsLoading(false);
-    universalSwapStore.setLoaded(true);
   }, []);
 
   const renderKeyStoreItem = (keyStore, i) => {

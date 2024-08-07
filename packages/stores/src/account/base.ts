@@ -323,6 +323,7 @@ export class AccountSetBase<MsgOpts, Queries> {
       return;
     }
 
+    //it may get here
     const key = yield* toGenerator(owallet.getKey(this.chainId));
 
     this._bech32Address = key.bech32Address;

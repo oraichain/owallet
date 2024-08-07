@@ -854,6 +854,8 @@ export class KeyRing {
     coinType: number,
     chainId?: string | number
   ): Promise<Key> {
+    console.log("get here", Date.now());
+
     if (this.status !== KeyRingStatus.UNLOCKED) {
       throw new Error("Key ring is not unlocked");
     }
@@ -872,6 +874,8 @@ export class KeyRing {
       }
       return coinType === 60;
     })();
+
+    console.log("after isEthermint", Date.now());
 
     if (coinType === 474) {
       const signerPublicKey = await this.loadPublicKeyOasis();
@@ -894,7 +898,7 @@ export class KeyRing {
       }
       return pubKey.getCosmosAddress();
     })();
-
+    console.log("after address", Date.now());
     const legacyAddress = await (async () => {
       if (chainId) {
         const chainInfo = await this.chainsService.getChainInfo(
@@ -915,6 +919,7 @@ export class KeyRing {
       }
       return null;
     })();
+    console.log("after legacyAddress", Date.now());
     return {
       name: this.getKeyStoreMeta("name"),
       algo: isEthermint ? "ethsecp256k1" : "secp256k1",
