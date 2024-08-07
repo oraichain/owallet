@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { FC, useMemo, useState } from "react";
 import SlidingPane from "react-sliding-pane";
 import styles from "./style.module.scss";
 import { SearchInput } from "../components/search-input";
@@ -15,8 +15,9 @@ import { initPrice } from "../../../hooks/use-multiple-assets";
 import { HeaderModal } from "../components/header-modal";
 import { ViewRawToken, ViewTokenData } from "@owallet/types";
 import { CoinPretty, PricePretty } from "@owallet/unit";
-import { useNotification } from "components/notification";
+
 import { useConfirm } from "components/confirm";
+import { toast } from "react-toastify";
 
 export const ModalNetwork: FC<{
   isOpen: boolean;
@@ -24,7 +25,13 @@ export const ModalNetwork: FC<{
   isHideAllNetwork?: boolean;
 }> = observer(({ isOpen, isHideAllNetwork, onRequestClose }) => {
   const [keyword, setKeyword] = useState("");
-  const { chainStore, accountStore, priceStore, keyRingStore } = useStore();
+  const {
+    chainStore,
+    accountStore,
+    hugeQueriesStore,
+    priceStore,
+    keyRingStore,
+  } = useStore();
   const onChangeInput = (e) => {
     setKeyword(e.target.value);
   };
@@ -40,40 +47,23 @@ export const ModalNetwork: FC<{
         Number(a.balance?.toDec()?.toString())
     );
   };
-  const dataTokens = [...(chainStore.multipleAssets.dataTokens || [])];
-  let totalPrice = initPrice;
-  const dataTokensByChainMap = new Map<ChainIdEnum | string, ViewTokenData>();
-  (dataTokens || []).map((item: ViewRawToken, index) => {
-    const coinData = new CoinPretty(item.token.currency, item.token.amount);
-    const priceData = priceStore.calculatePrice(coinData);
-    totalPrice = totalPrice.add(priceData || initPrice);
-
-    //caculator total price by chainID
-    dataTokensByChainMap.set(item.chainInfo.chainId, {
-      ...chainStore.multipleAssets.dataTokensByChain[item.chainInfo.chainId],
-      totalBalance: (
-        new PricePretty(
-          fiatCurrency,
-          dataTokensByChainMap.get(item.chainInfo.chainId)?.totalBalance
-        ) || initPrice
-      )
-        .add(priceData || initPrice)
-        .toDec()
-        .toString(),
-    });
-    return {
-      ...item,
-      price: priceData?.toDec()?.toString() || initPrice?.toDec()?.toString(),
-    };
-  });
 
   const chainsInfoWithBalance = chainStore.chainInfos.map((item, index) => {
+    let balances = hugeQueriesStore.allKnownBalances.filter(
+      (token) => token.chainInfo.chainId === item.chainId
+    );
+    let result: PricePretty | undefined;
+    for (const bal of balances) {
+      if (bal.price) {
+        if (!result) {
+          result = bal.price;
+        } else {
+          result = result.add(bal.price);
+        }
+      }
+    }
     //@ts-ignore
-    item.balance =
-      new PricePretty(
-        fiatCurrency,
-        dataTokensByChainMap.get(item.chainId)?.totalBalance
-      ) || initPrice;
+    item.balance = result || initPrice;
     return item;
   });
   const mainnet = chainsInfoWithBalance.filter(
@@ -86,7 +76,7 @@ export const ModalNetwork: FC<{
       item?.chainName?.toLowerCase()?.includes("test") &&
       item?.chainName?.toLowerCase()?.includes(keyword?.toLowerCase())
   );
-  const notification = useNotification();
+
   const confirm = useConfirm();
   const selected = keyRingStore?.multiKeyStoreInfo?.find(
     (keyStore) => keyStore?.selected
@@ -119,20 +109,17 @@ export const ModalNetwork: FC<{
             },
           })
         ) {
-          notification.push({
-            placement: "top-center",
-            type: "warning",
-            duration: 5,
-            content: `You are switching to ${
+          toast(
+            `You are switching to ${
               COINTYPE_NETWORK[chainInfo.coinType ?? chainInfo.bip44.coinType]
             } network. Please confirm that you have ${
               COINTYPE_NETWORK[chainInfo.coinType ?? chainInfo.bip44.coinType]
             } App opened before switch network`,
-            canDelete: true,
-            transition: {
-              duration: 0.25,
-            },
-          });
+            {
+              type: "warning",
+            }
+          );
+
           const { networkType } = chainStore.getChain(chainInfo?.chainId);
           const keyDerivation = (() => {
             const keyMain = getKeyDerivationFromAddressType(
@@ -175,6 +162,20 @@ export const ModalNetwork: FC<{
     chainStore.selectChain(chainInfo.chainId);
     chainStore.saveLastViewChainId();
   };
+  const availableTotalPrice = useMemo(() => {
+    let result: PricePretty | undefined;
+    let balances = hugeQueriesStore.allKnownBalances;
+    for (const bal of balances) {
+      if (bal.price) {
+        if (!result) {
+          result = bal.price;
+        } else {
+          result = result.add(bal.price);
+        }
+      }
+    }
+    return result;
+  }, [hugeQueriesStore.allKnownBalances, chainStore.isAllNetwork]);
   // const account = accountStore.getAccount(chainStore.current.chainId);
   const switchChain = async (chainInfo) => {
     try {
@@ -225,31 +226,7 @@ export const ModalNetwork: FC<{
           onChange={onChangeInput}
           placeholder={"Search for a chain"}
         />
-        {/* <div className={styles.containerTypeNetwork}>
-          {typeNetwork.map((item, index) => (
-            <div
-              onClick={() => activeTab(item)}
-              key={item.id}
-              className={classnames([
-                styles.itemTypeNetwork,
-                tab.id === item.id
-                  ? styles.activeBorderBottom
-                  : styles.inactiveBorderBottom,
-              ])}
-            >
-              <span
-                className={classnames([
-                  styles.titleTxtItem,
-                  tab.id === item.id
-                    ? styles.activeTxtColor
-                    : styles.inactiveTxtColor,
-                ])}
-              >
-                {item.title}
-              </span>
-            </div>
-          ))}
-        </div> */}
+
         <div className={styles.containerListChain}>
           {chains?.length > 0 &&
             [...allNetworkData, ...sortChainsByPrice(chains)].map(
@@ -284,7 +261,7 @@ export const ModalNetwork: FC<{
                         </span>
                         <span className={styles.subTitlePrice}>
                           {item.chainId === "isAll"
-                            ? (totalPrice || initPrice)?.toString()
+                            ? (availableTotalPrice || initPrice)?.toString()
                             : (item.balance || initPrice)?.toString()}
                         </span>
                       </div>

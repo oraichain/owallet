@@ -92,6 +92,7 @@ export const NewSendScreen: FunctionComponent = observer(() => {
           currency?: string;
           recipient?: string;
           contractAddress?: string;
+          denom?: string;
         }
       >,
       string
@@ -126,7 +127,10 @@ export const NewSendScreen: FunctionComponent = observer(() => {
           if (
             cur?.coinMinimalDenom
               ?.toLowerCase()
-              ?.includes(route?.params?.contractAddress?.toLowerCase())
+              ?.includes(
+                route?.params?.contractAddress?.toLowerCase() ||
+                  route?.params?.denom?.toLowerCase()
+              )
           )
             return true;
           if (
