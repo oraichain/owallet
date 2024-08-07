@@ -60,6 +60,7 @@ export class RootStore {
   public readonly priceStore: CoinGeckoPriceStore;
   public readonly tokensStore: TokensStore<ChainInfoWithEmbed>;
   public readonly hugeQueriesStore: HugeQueriesStore;
+  public readonly hugeQueriesNewStore: HugeQueriesStore;
 
   protected readonly ibcCurrencyRegistrar: IBCCurrencyRegsitrar<ChainInfoWithEmbed>;
 
@@ -288,6 +289,7 @@ export class RootStore {
       this.priceStore,
       this.keyRingStore
     );
+
     this.analyticsStore = new AnalyticsStore(
       (() => {
         if (!AmplitudeApiKey) {

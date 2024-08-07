@@ -51,6 +51,7 @@ export class RootStore {
   public readonly ledgerInitStore: LedgerInitStore;
   public readonly signInteractionStore: SignInteractionStore;
   public readonly hugeQueriesStore: HugeQueriesStore;
+
   public readonly queriesStore: QueriesStore<QueriesWrappedTron>;
   public readonly accountStore: AccountStore<AccountWithAll>;
   public readonly priceStore: CoinGeckoPriceStore;
@@ -316,6 +317,7 @@ export class RootStore {
       this.priceStore,
       this.keyRingStore
     );
+
     this.notificationStore = notification;
     this.sendStore = new SendStore();
     this.txsStore = (currentChain: ChainInfoInner<ChainInfo>): TxsStore =>
