@@ -29,6 +29,7 @@ export class RNMessageRequesterBase implements MessageRequester {
     msg: M
   ): Promise<M extends Message<infer R> ? R : never> {
     msg.validateBasic();
+    console.log("msg.type", msg.type(), Date.now());
 
     const sender = this.getSender();
 
@@ -58,7 +59,7 @@ export class RNMessageRequesterBase implements MessageRequester {
         });
       })
     );
-
+    console.log("msg.result", result, Date.now());
     if (!result) {
       throw new Error("Null result");
     }

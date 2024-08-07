@@ -61,6 +61,7 @@ describe("signEIP712", () => {
       timeout_height: "9007199254740991",
     };
     const mockKeyInfo = {
+      name: "any",
       algo: "ethsecp256k1",
       pubKey: new Uint8Array([
         2, 59, 29, 39, 166, 47, 187, 235, 126, 180, 207, 194, 215, 129, 131,
