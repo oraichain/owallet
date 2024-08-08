@@ -1,4 +1,3 @@
-import { DenomHelper } from "@owallet/common";
 import {
   BalanceRegistry,
   ChainGetter,
@@ -8,10 +7,13 @@ import {
 import { AppCurrency, ChainInfo } from "@owallet/types";
 import { CoinPretty, Int } from "@owallet/unit";
 import { computed, makeObservable } from "mobx";
+import bigInteger from "big-integer";
+import { erc20ContractInterface } from "../constants";
+import { DenomHelper } from "@owallet/common";
 import { EthereumAccountBase } from "../account";
 import { ObservableEvmChainJsonRpcQuery } from "./evm-chain-json-rpc";
 
-export class ObservableQueryEthAccountBalanceImpl
+export class ObservableQueryEthereumERC20BalanceImpl
   extends ObservableEvmChainJsonRpcQuery<string>
   implements IObservableQueryBalanceImpl
 {
@@ -20,37 +22,43 @@ export class ObservableQueryEthAccountBalanceImpl
     chainId: string,
     chainGetter: ChainGetter,
     protected readonly denomHelper: DenomHelper,
-    protected readonly ethereumHexAddress: string
+    protected readonly ethereumHexAddress: string,
+    protected readonly contractAddress: string
   ) {
-    super(sharedContext, chainId, chainGetter, "eth_getBalance", [
-      ethereumHexAddress,
+    super(sharedContext, chainId, chainGetter, "eth_call", [
+      {
+        to: contractAddress,
+        data: erc20ContractInterface.encodeFunctionData("balanceOf", [
+          ethereumHexAddress,
+        ]),
+      },
       "latest",
     ]);
 
     makeObservable(this);
   }
 
-  protected override canFetch(): boolean {
-    // If ethereum hex address is empty, it will always fail, so don't need to fetch it.
-    return this.ethereumHexAddress.length > 0;
-  }
-
   @computed
   get balance(): CoinPretty {
     const denom = this.denomHelper.denom;
+
     const chainInfo = this.chainGetter.getChain(this.chainId);
     const currency = chainInfo.currencies.find(
       (cur) => cur.coinMinimalDenom === denom
     );
+
     if (!currency) {
-      throw new Error(`Unknown currency: ${denom}`);
+      throw new Error(`Unknown currency: ${this.contractAddress}`);
     }
 
     if (!this.response || !this.response.data) {
       return new CoinPretty(currency, new Int(0)).ready(false);
     }
 
-    return new CoinPretty(currency, new Int(BigInt(this.response.data)));
+    return new CoinPretty(
+      currency,
+      new Int(bigInteger(this.response.data.replace("0x", ""), 16).toString())
+    );
   }
 
   @computed
@@ -61,7 +69,8 @@ export class ObservableQueryEthAccountBalanceImpl
     return chainInfo.forceFindCurrency(denom);
   }
 }
-export class ObservableQueryEthAccountBalanceRegistry
+
+export class ObservableQueryEthereumERC20BalanceRegistry
   implements BalanceRegistry
 {
   constructor(protected readonly sharedContext: QuerySharedContext) {}
@@ -73,19 +82,19 @@ export class ObservableQueryEthAccountBalanceRegistry
     minimalDenom: string
   ): IObservableQueryBalanceImpl | undefined {
     const denomHelper = new DenomHelper(minimalDenom);
-    const chainInfo = chainGetter.getChain(chainId);
     const isHexAddress =
       EthereumAccountBase.isEthereumHexAddressWithChecksum(address);
-    if (denomHelper.type !== "native" || !isHexAddress) {
+    if (denomHelper.type !== "erc20" || !isHexAddress) {
       return;
     }
 
-    return new ObservableQueryEthAccountBalanceImpl(
+    return new ObservableQueryEthereumERC20BalanceImpl(
       this.sharedContext,
       chainId,
       chainGetter,
       denomHelper,
-      address
+      address,
+      denomHelper.contractAddress
     );
   }
 }

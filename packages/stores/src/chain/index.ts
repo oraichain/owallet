@@ -166,6 +166,9 @@ export class ChainInfoInner<C extends ChainInfo = ChainInfo>
   get raw(): C {
     return this._chainInfo;
   }
+  get evmRpc(): string {
+    return this._chainInfo.evmRpc;
+  }
 
   get networkType(): NetworkType {
     return this._chainInfo.networkType || "cosmos";

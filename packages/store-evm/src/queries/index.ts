@@ -12,7 +12,7 @@ import { ObservableQueryEthAccountBalanceRegistry } from "./balance";
 // import { ObservableQueryEthereumMaxPriorityFee } from "./max-priority-fee";
 // import { ObservableQueryThirdpartyERC20BalanceRegistry } from "./erc20-balances";
 // import { ObservableQueryCoingeckoTokenInfo } from "./coingecko-token-info";
-// import { ObservableQueryEthereumERC20BalanceRegistry } from "./erc20-balance";
+import { ObservableQueryEthereumERC20BalanceRegistry } from "./erc20-balance";
 // import { ObservableQueryEthereumGasPrice } from "./gas-price";
 
 export interface EthereumQueries {
@@ -66,9 +66,9 @@ export class EthereumQueriesImpl {
     protected coingeckoAPIBaseURL: string,
     protected coingeckoAPIURI: string
   ) {
-    // base.queryBalances.addBalanceRegistry(
-    //   new ObservableQueryEthereumERC20BalanceRegistry(sharedContext)
-    // );
+    base.queryBalances.addBalanceRegistry(
+      new ObservableQueryEthereumERC20BalanceRegistry(sharedContext)
+    );
     // base.queryBalances.addBalanceRegistry(
     //   new ObservableQueryThirdpartyERC20BalanceRegistry(sharedContext)
     // );
