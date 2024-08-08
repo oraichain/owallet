@@ -1,0 +1,31 @@
+{
+  "name": "@owallet/stores-evm",
+  "version": "0.9.12",
+  "main": "build/index.js",
+  "author": "oraichain labs",
+  "license": "Apache-2.0",
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "clean": "rm -rf node_modules; rm -rf build",
+    "build": "tsc",
+    "dev": "tsc -w",
+    "test": "jest --passWithNoTests",
+    "lint-test": "eslint \"src/**/*\" && prettier --check \"src/**/*\"",
+    "lint-fix": "eslint --fix \"src/**/*\" && prettier --write \"src/**/*\""
+  },
+  "dependencies": {
+    "@owallet/common": "^0.9.10",
+    "@owallet/simple-fetch": "^0.9.12",
+    "@owallet/stores": "^0.9.16",
+    "@owallet/types": "^0.9.12",
+    "@owallet/unit": "^0.9.12",
+    "big-integer": "^1.6.48",
+    "utility-types": "^3.10.0"
+  },
+  "peerDependencies": {
+    "mobx": "^6",
+    "mobx-utils": "^6"
+  }
+}

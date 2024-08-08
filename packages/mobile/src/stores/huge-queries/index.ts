@@ -5,8 +5,10 @@ import {
   AccountStore,
   QueriesStore,
   QueryError,
-  QueriesWrappedTron,
-  AccountWithAll,
+  IAccountStore,
+  IQueriesStore,
+  // QueriesWrappedTron,
+  // AccountWithAll,
 } from "@owallet/stores";
 import { CoinPretty, Dec, PricePretty } from "@owallet/unit";
 import { action, autorun, computed } from "mobx";
@@ -44,8 +46,8 @@ export class HugeQueriesStore {
 
   constructor(
     protected readonly chainStore: ChainStore,
-    protected readonly queriesStore: QueriesStore<QueriesWrappedTron>,
-    protected readonly accountStore: AccountStore<AccountWithAll>,
+    protected readonly queriesStore: IQueriesStore<CosmosQueries>,
+    protected readonly accountStore: IAccountStore,
     protected readonly priceStore: CoinGeckoPriceStore
   ) {
     let balanceDisposal: (() => void) | undefined;
@@ -130,9 +132,14 @@ export class HugeQueriesStore {
       }
       for (const currency of currencies) {
         const denomHelper = new DenomHelper(currency.coinMinimalDenom);
-        const queryBalance = queries.queryBalances.getQueryBech32Address(
-          account.bech32Address
-        );
+        const queryBalance =
+          chainInfo.networkType === "evm"
+            ? queries.queryBalances.getQueryEthereumHexAddress(
+                account.evmHexAddress
+              )
+            : queries.queryBalances.getQueryBech32Address(
+                account.bech32Address
+              );
         const key = `${chainInfo.chainId}/${currency.coinMinimalDenom}`;
         if (!keysUsed.get(key)) {
           if (

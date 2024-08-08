@@ -36,6 +36,7 @@ import {
   EmbedChainInfos,
   UIConfigStore,
   FiatCurrencies,
+  CoinGeckoAPIEndPoint,
 } from "@owallet/common";
 import { AnalyticsStore, NoopAnalyticsClient } from "@owallet/analytics";
 import { ChainIdHelper } from "@owallet/cosmos";
@@ -48,7 +49,11 @@ import { ChainInfo } from "@owallet/types";
 import { TxsStore } from "./txs";
 import { universalSwapStore, UniversalSwapStore } from "./universal_swap";
 import { HugeQueriesStore } from "@src/stores/huge-queries";
-
+import {
+  EthereumAccountStore,
+  EthereumQueries,
+  getEthereumFromWindow,
+} from "@owallet/stores-evm";
 export class RootStore {
   public readonly uiConfigStore: UIConfigStore;
   public readonly chainStore: ChainStore;
@@ -59,7 +64,13 @@ export class RootStore {
   public readonly ledgerInitStore: LedgerInitStore;
   public readonly signInteractionStore: SignInteractionStore;
   public readonly queriesStore: QueriesStore<
-    [CosmosQueries, CosmwasmQueries, SecretQueries, OsmosisQueries]
+    [
+      CosmosQueries,
+      CosmwasmQueries,
+      SecretQueries,
+      OsmosisQueries,
+      EthereumQueries
+    ]
   >;
   public readonly accountStore: AccountStore<
     [CosmosAccount, CosmwasmAccount, SecretAccount]
@@ -104,6 +115,7 @@ export class RootStore {
   public readonly appInitStore: AppInit;
   public readonly universalSwapStore: UniversalSwapStore;
   public readonly notificationStore: Notification;
+  public readonly ethereumAccountStore: EthereumAccountStore;
   public readonly txsStore: (
     currentChain: ChainInfoInner<ChainInfo>
   ) => TxsStore;
@@ -424,7 +436,10 @@ export class RootStore {
     //   this.queriesStore,
     //   this.queriesStore
     // );
-
+    this.ethereumAccountStore = new EthereumAccountStore(
+      this.chainStore,
+      getEthereumFromWindow
+    );
     this.queriesStore = new QueriesStore(
       new AsyncKVStore("store_queries"),
       this.chainStore,
@@ -436,7 +451,11 @@ export class RootStore {
       SecretQueries.use({
         apiGetter: getOWalletFromWindow,
       }),
-      OsmosisQueries.use()
+      OsmosisQueries.use(),
+      EthereumQueries.use({
+        coingeckoAPIBaseURL: CoinGeckoAPIEndPoint,
+        coingeckoAPIURI: "",
+      })
     );
 
     router.listen(APP_PORT);

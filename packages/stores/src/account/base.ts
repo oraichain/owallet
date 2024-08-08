@@ -4,7 +4,8 @@ import { ChainGetter } from "../chain";
 import { DenomHelper, toGenerator } from "@owallet/common";
 import { MakeTxResponse } from "./types";
 import { AccountSharedContext } from "./context";
-
+import bech32, { fromWords } from "bech32";
+import { getAddress as getEthAddress } from "@ethersproject/address";
 export enum WalletStatus {
   NotInit = "NotInit",
   Loading = "Loading",
@@ -299,8 +300,13 @@ export class AccountSetBase {
     );
   }
 
-  get ethereumHexAddress(): string {
-    return this._ethereumHexAddress;
+  get evmHexAddress(): string {
+    if (!this.bech32Address) return "";
+    const hexAddress = Buffer.from(
+      fromWords(bech32.decode(this.bech32Address).words)
+    ).toString("hex");
+    if (hexAddress.length !== 40) return "";
+    return getEthAddress("0x" + hexAddress);
   }
 }
 

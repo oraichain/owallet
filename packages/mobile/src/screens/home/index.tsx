@@ -65,7 +65,7 @@ export const HomeScreen: FunctionComponent = observer((props) => {
   } = useStore();
 
   // const scrollViewRef = useRef<ScrollView | null>(null);
-  // const accountOrai = accountStore.getAccount(ChainIdEnum.Oraichain);
+  const accountEth = accountStore.getAccount(ChainIdEnum.Ethereum);
   // const { totalPriceBalance, dataTokens, dataTokensByChain, isLoading } =
   //   useMultipleAssets(
   //     accountStore,
@@ -366,6 +366,7 @@ export const HomeScreen: FunctionComponent = observer((props) => {
     }
     return result;
   }, [hugeQueriesStore.allKnownBalances, chainStore.current.chainId]);
+  console.log(accountEth.evmHexAddress);
   return (
     <PageWithScrollViewInBottomTabView
     // refreshControl={

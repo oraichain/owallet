@@ -34,6 +34,7 @@
   "dependencies": {
     "react-native-popup-confirm-toast":"2.3.2",
     "react-native-bytebrew-sdk": "^0.1.5",
+    "@owallet/stores-evm": "^0.9.12",
     "@cosmjs/cosmwasm-stargate": "^0.31.0",
     "@cosmjs/launchpad": "^0.27.1",
     "react-native-tab-view": "^3.5.2",
