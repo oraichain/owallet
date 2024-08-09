@@ -79,8 +79,8 @@ export const HomeScreen: FunctionComponent = observer((props) => {
   //   );
   const [isPending, startTransition] = useTransition();
   const accountEth = accountStore.getAccount(ChainIdEnum.Ethereum);
-  // const accountTron = accountStore.getAccount(ChainIdEnum.TRON);
-  // const accountKawaiiCosmos = accountStore.getAccount(ChainIdEnum.KawaiiCosmos);
+  const accountTron = accountStore.getAccount(ChainIdEnum.TRON);
+  const accountKawaiiCosmos = accountStore.getAccount(ChainIdEnum.KawaiiCosmos);
   const currentChain = chainStore.current;
   const currentChainId = currentChain?.chainId;
   // const account = accountStore.getAccount(chainStore.current.chainId);
@@ -160,6 +160,7 @@ export const HomeScreen: FunctionComponent = observer((props) => {
       appInitStore.updateChainInfos(chainInfos);
     }
   }, []);
+
   // useEffect(() => {
   //   onRefresh();
   // }, [address, chainStore.current.chainId]);
@@ -366,7 +367,26 @@ export const HomeScreen: FunctionComponent = observer((props) => {
     }
     return result;
   }, [hugeQueriesStore.allKnownBalances, chainStore.current.chainId]);
-  console.log(accountEth.evmHexAddress);
+  const availableTotalPriceByChain = useMemo(() => {
+    let result: PricePretty | undefined;
+    let balances = hugeQueriesStore.allKnownBalances.filter(
+      (token) => token.chainInfo.chainId === chainStore.current.chainId
+    );
+    for (const bal of balances) {
+      if (bal.price) {
+        if (!result) {
+          result = bal.price;
+        } else {
+          result = result.add(bal.price);
+        }
+      }
+    }
+    return result;
+  }, [hugeQueriesStore.allKnownBalances, chainStore.current.chainId]);
+  const balancesByChain = hugeQueriesStore.filterBalanceTokensByChain(
+    allBalances,
+    chainStore.current.chainId
+  );
   return (
     <PageWithScrollViewInBottomTabView
       refreshControl={
@@ -385,19 +405,17 @@ export const HomeScreen: FunctionComponent = observer((props) => {
       contentContainerStyle={styles.containerStyle}
       ref={scrollViewRef}
     >
-      {/* <OWText>{availableTotalPrice?.toString()}</OWText> */}
-      {/* {allBalances.map((item, index) => (
-        <OWText>{`${item.token.currency.coinDenom}:${
-          item.chainInfo.chainName
-        } - ${item.price?.toString() || 0}`}</OWText>
-      ))} */}
       <AccountBoxAll
         isLoading={false}
-        totalBalanceByChain={new PricePretty(fiatCurrency, 0)?.toString()}
+        totalBalanceByChain={availableTotalPriceByChain?.toString()}
         totalPriceBalance={availableTotalPrice?.toString()}
       />
       <EarningCardNew />
-      <MainTabHome dataTokens={allBalances} />
+      <MainTabHome
+        dataTokens={
+          appInitStore.getInitApp.isAllNetworks ? allBalances : balancesByChain
+        }
+      />
     </PageWithScrollViewInBottomTabView>
   );
 });

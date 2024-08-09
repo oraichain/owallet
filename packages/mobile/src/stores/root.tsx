@@ -507,7 +507,8 @@ export class RootStore {
       this.chainStore,
       this.queriesStore,
       this.accountStore,
-      this.priceStore
+      this.priceStore,
+      this.keyRingStore
     );
     // this.hugeQueriesNewStore = new HugeQueriesNewStore(
     //   this.chainStore,

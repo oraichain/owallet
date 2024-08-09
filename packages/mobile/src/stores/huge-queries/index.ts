@@ -7,18 +7,24 @@ import {
   QueryError,
   IAccountStore,
   IQueriesStore,
+  KeyRingStore,
   // QueriesWrappedTron,
   // AccountWithAll,
 } from "@owallet/stores";
 import { CoinPretty, Dec, PricePretty } from "@owallet/unit";
 import { action, autorun, computed } from "mobx";
-import { DenomHelper } from "@owallet/common";
+import {
+  ChainIdEnum,
+  DenomHelper,
+  getOasisAddress,
+  MapChainIdToNetwork,
+} from "@owallet/common";
 import { computedFn } from "mobx-utils";
 import { BinarySortArray } from "./sort";
 import { ChainInfo } from "@owallet/types";
 import { ChainIdHelper } from "@owallet/cosmos";
 
-interface ViewToken {
+export interface ViewToken {
   chainInfo: ChainInfo;
   token: CoinPretty;
   price: PricePretty | undefined;
@@ -48,7 +54,8 @@ export class HugeQueriesStore {
     protected readonly chainStore: ChainStore,
     protected readonly queriesStore: IQueriesStore<CosmosQueries>,
     protected readonly accountStore: IAccountStore,
-    protected readonly priceStore: CoinGeckoPriceStore
+    protected readonly priceStore: CoinGeckoPriceStore,
+    protected readonly keyRingStore: KeyRingStore
   ) {
     let balanceDisposal: (() => void) | undefined;
     this.balanceBinarySort = new BinarySortArray<ViewToken>(
@@ -112,7 +119,21 @@ export class HugeQueriesStore {
       }
     );
   }
+  filterBalanceTokensByChain = computedFn(
+    (viewTokens: ReadonlyArray<ViewToken>, chainId: string): ViewToken[] => {
+      return viewTokens.filter((viewToken) => {
+        // Hide the unknown ibc tokens.
+        if (
+          "paths" in viewToken.token.currency &&
+          !viewToken.token.currency.originCurrency
+        ) {
+          return false;
+        }
 
+        return viewToken.chainInfo.chainId === chainId;
+      });
+    }
+  );
   @action
   protected updateBalances() {
     const keysUsed = new Map<string, boolean>();
@@ -229,7 +250,24 @@ export class HugeQueriesStore {
       });
     }
   );
-
+  @computed
+  get getAllAddrByChain(): Record<string, string> {
+    const data: Record<string, string> = {};
+    for (const chainInfo of this.chainStore.chainInfosInUI) {
+      const account = this.accountStore.getAccount(chainInfo.chainId);
+      const address = account.getAddressDisplay(
+        this.keyRingStore.keyRingLedgerAddresses
+      );
+      const mapChainNetwork = MapChainIdToNetwork[chainInfo.chainId];
+      if (!mapChainNetwork) continue;
+      data[mapChainNetwork] =
+        chainInfo.chainId === ChainIdEnum.OasisSapphire ||
+        chainInfo.chainId === ChainIdEnum.OasisEmerald
+          ? getOasisAddress(address)
+          : address;
+    }
+    return data;
+  }
   filterLowBalanceTokens = computedFn(
     (viewTokens: ReadonlyArray<ViewToken>): ViewToken[] => {
       return viewTokens.filter((viewToken) => {

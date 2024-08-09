@@ -58,9 +58,9 @@ export const AccountBoxAll: FunctionComponent<{
   const accountOrai = accountStore.getAccount(ChainIdEnum.Oraichain);
 
   const { isTimedOut, setTimer } = useSimpleTimer();
-  // const chainAddress = account.getAddressDisplay(
-  //   keyRingStore.keyRingLedgerAddresses
-  // );
+  const chainAddress = account.getAddressDisplay(
+    keyRingStore.keyRingLedgerAddresses
+  );
 
   const _onPressMyWallet = () => {
     modalStore.setOptions({
@@ -71,9 +71,7 @@ export const AccountBoxAll: FunctionComponent<{
     });
     modalStore.setChildren(<MyWalletModal />);
   };
-  // const address = account.getAddressDisplay(
-  //   keyRingStore.keyRingLedgerAddresses
-  // );
+
   // const accountTronInfo =
   //   chainStore.current.chainId === ChainIdEnum.TRON
   //     ? queries.tron.queryAccount.getQueryWalletAddress(address)
@@ -274,11 +272,11 @@ export const AccountBoxAll: FunctionComponent<{
                 )
               }
               style={styles.copy}
-              // label={shortenAddress(chainAddress)}
-              // onPress={() => {
-              //   Clipboard.setString(chainAddress);
-              //   setTimer(2000);
-              // }}
+              label={shortenAddress(chainAddress)}
+              onPress={() => {
+                Clipboard.setString(chainAddress);
+                setTimer(2000);
+              }}
             />
           )}
         </View>

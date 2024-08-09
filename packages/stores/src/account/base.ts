@@ -1,7 +1,20 @@
 import { action, computed, flow, makeObservable, observable } from "mobx";
-import { AppCurrency, OWallet } from "@owallet/types";
+import {
+  AddressBtcType,
+  AddressesLedger,
+  AppCurrency,
+  OWallet,
+} from "@owallet/types";
 import { ChainGetter } from "../chain";
-import { DenomHelper, toGenerator } from "@owallet/common";
+import {
+  ChainIdEnum,
+  DenomHelper,
+  findLedgerAddress,
+  getBase58Address,
+  getEvmAddress,
+  isBase58,
+  toGenerator,
+} from "@owallet/common";
 import { MakeTxResponse } from "./types";
 import { AccountSharedContext } from "./context";
 import bech32, { fromWords } from "bech32";
@@ -45,6 +58,10 @@ export class AccountSetBase {
   protected _bech32Address: string = "";
   @observable
   protected _ethereumHexAddress: string = "";
+  @observable
+  protected _legacyAddress: string = "";
+  @observable
+  protected _addressType: AddressBtcType = AddressBtcType.Bech32;
   @observable
   protected _isNanoLedger: boolean = false;
   @observable
@@ -164,6 +181,7 @@ export class AccountSetBase {
         // this._ethereumHexAddress = key.ethereumHexAddress;
         this._isNanoLedger = key.isNanoLedger;
         // this._isKeystone = key.isKeystone;
+        this._legacyAddress = key.legacyAddress;
         this._name = key.name;
         this._pubKey = key.pubKey;
 
@@ -173,6 +191,7 @@ export class AccountSetBase {
         // Caught error loading key
         // Reset properties, and set status to Rejected
         this._bech32Address = "";
+        this._legacyAddress = "";
         // this._ethereumHexAddress = "";
         this._isNanoLedger = false;
         // this._isKeystone = false;
@@ -271,10 +290,6 @@ export class AccountSetBase {
     return this._isNanoLedger;
   }
 
-  get isKeystone(): boolean {
-    return this._isKeystone;
-  }
-
   /**
    * Returns the tx type in progress waiting to be committed.
    * If there is no tx type in progress, this returns an empty string ("").
@@ -292,12 +307,7 @@ export class AccountSetBase {
 
   get hasEthereumHexAddress(): boolean {
     const chainInfo = this.chainGetter.getChain(this.chainId);
-    return (
-      chainInfo.evm != null ||
-      chainInfo.bip44.coinType === 60 ||
-      !!chainInfo.features?.includes("eth-address-gen") ||
-      !!chainInfo.features?.includes("eth-key-sign")
-    );
+    return chainInfo.bip44.coinType === 60;
   }
 
   get evmHexAddress(): string {
@@ -307,6 +317,69 @@ export class AccountSetBase {
     ).toString("hex");
     if (hexAddress.length !== 40) return "";
     return getEthAddress("0x" + hexAddress);
+  }
+  get legacyAddress(): string {
+    return this._legacyAddress;
+  }
+  @action
+  public setAddressTypeBtc(type: AddressBtcType): void {
+    this._addressType = type;
+  }
+  @computed
+  get addressType(): AddressBtcType {
+    return this._addressType;
+  }
+
+  @computed
+  get btcAddress(): string {
+    if (this._addressType === AddressBtcType.Legacy) {
+      return this.legacyAddress;
+    }
+    return this._bech32Address;
+  }
+
+  @computed
+  get allBtcAddresses(): { bech32: string; legacy: string } {
+    return { bech32: this._bech32Address, legacy: this.legacyAddress };
+  }
+
+  getAddressDisplay(
+    keyRingLedgerAddresses: AddressesLedger,
+    toDisplay: boolean = true
+  ): string {
+    const chainInfo = this.chainGetter.getChain(this.chainId);
+    const { networkType } = chainInfo;
+    if (this._isNanoLedger) {
+      if (networkType !== "cosmos") {
+        const address = findLedgerAddress(
+          keyRingLedgerAddresses,
+          chainInfo,
+          this.addressType
+        );
+        if (
+          this.chainId === ChainIdEnum.TRON &&
+          isBase58(address) &&
+          !toDisplay
+        ) {
+          return getEvmAddress(address);
+        }
+        return address;
+      }
+    }
+    if (networkType === "evm") {
+      if (!!this.hasEthereumHexAddress) {
+        if (this.chainId === ChainIdEnum.TRON && toDisplay) {
+          return getBase58Address(this.evmHexAddress);
+        }
+
+        return this.evmHexAddress;
+      } else if (this.bech32Address?.startsWith("oasis")) {
+        return this.bech32Address;
+      }
+    } else if (networkType === "bitcoin") {
+      return this.btcAddress;
+    }
+    return this._bech32Address;
   }
 }
 

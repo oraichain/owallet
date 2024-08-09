@@ -201,8 +201,8 @@ export const ModalNetwork: FC<{
       }
     }
     return result;
-  }, [hugeQueriesStore.allKnownBalances, chainStore.isAllNetwork]);
-  // const account = accountStore.getAccount(chainStore.current.chainId);
+  }, [hugeQueriesStore.allKnownBalances]);
+
   const switchChain = async (chainInfo) => {
     try {
       if (chainInfo.chainId === "isAll") {
