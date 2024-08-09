@@ -44,7 +44,7 @@ import images from "@src/assets/images";
 
 export const TokensCardAll: FunctionComponent<{
   containerStyle?: ViewStyle;
-  dataTokens: ViewRawToken[];
+  dataTokens: readonly ViewToken[];
 }> = observer(({ containerStyle, dataTokens }) => {
   const { priceStore, appInitStore } = useStore();
   const [keyword, setKeyword] = useState("");
@@ -57,13 +57,13 @@ export const TokensCardAll: FunctionComponent<{
       })
     : dataTokens;
 
-  const tokensAll =
-    tokens &&
-    tokens.filter((item, index) =>
-      item?.token?.currency?.coinDenom
-        ?.toLowerCase()
-        ?.includes(keyword.toLowerCase())
-    );
+  // const tokensAll =
+  //   tokens &&
+  //   tokens.filter((item, index) =>
+  //     item?.token?.currency?.coinDenom
+  //       ?.toLowerCase()
+  //       ?.includes(keyword.toLowerCase())
+  //   );
 
   const [toggle, setToggle] = useState(
     appInitStore.getInitApp.hideTokensWithoutBalance
@@ -118,8 +118,8 @@ export const TokensCardAll: FunctionComponent<{
           />
         </View>
       </View>
-      {tokensAll?.length > 0 ? (
-        tokensAll.map((item, index) => (
+      {dataTokens?.length > 0 ? (
+        dataTokens.map((item, index) => (
           <TokenItem key={index.toString()} item={item} />
         ))
       ) : (

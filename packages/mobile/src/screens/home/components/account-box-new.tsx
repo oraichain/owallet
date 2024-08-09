@@ -58,9 +58,9 @@ export const AccountBoxAll: FunctionComponent<{
   const accountOrai = accountStore.getAccount(ChainIdEnum.Oraichain);
 
   const { isTimedOut, setTimer } = useSimpleTimer();
-  const chainAddress = account.getAddressDisplay(
-    keyRingStore.keyRingLedgerAddresses
-  );
+  // const chainAddress = account.getAddressDisplay(
+  //   keyRingStore.keyRingLedgerAddresses
+  // );
 
   const _onPressMyWallet = () => {
     modalStore.setOptions({
@@ -71,13 +71,13 @@ export const AccountBoxAll: FunctionComponent<{
     });
     modalStore.setChildren(<MyWalletModal />);
   };
-  const address = account.getAddressDisplay(
-    keyRingStore.keyRingLedgerAddresses
-  );
-  const accountTronInfo =
-    chainStore.current.chainId === ChainIdEnum.TRON
-      ? queries.tron.queryAccount.getQueryWalletAddress(address)
-      : null;
+  // const address = account.getAddressDisplay(
+  //   keyRingStore.keyRingLedgerAddresses
+  // );
+  // const accountTronInfo =
+  //   chainStore.current.chainId === ChainIdEnum.TRON
+  //     ? queries.tron.queryAccount.getQueryWalletAddress(address)
+  //     : null;
   const renderTotalBalance = () => {
     return (
       <>
@@ -175,11 +175,11 @@ export const AccountBoxAll: FunctionComponent<{
                   >
                     My Energy:
                   </OWText>
-                  <OWText
+                  {/* <OWText
                     size={14}
                     weight="600"
                     color={colors["neutral-text-body"]}
-                  >{`${accountTronInfo?.energyRemaining?.toString()}/${accountTronInfo?.energyLimit?.toString()}`}</OWText>
+                  >{`${accountTronInfo?.energyRemaining?.toString()}/${accountTronInfo?.energyLimit?.toString()}`}</OWText> */}
                 </View>
                 <View
                   style={{
@@ -195,11 +195,11 @@ export const AccountBoxAll: FunctionComponent<{
                   >
                     My Bandwidth:
                   </OWText>
-                  <OWText
+                  {/* <OWText
                     size={14}
                     weight="600"
                     color={colors["neutral-text-body"]}
-                  >{`${accountTronInfo?.bandwidthRemaining?.toString()}/${accountTronInfo?.bandwidthLimit?.toString()}`}</OWText>
+                  >{`${accountTronInfo?.bandwidthRemaining?.toString()}/${accountTronInfo?.bandwidthLimit?.toString()}`}</OWText> */}
                 </View>
               </View>
             )}
@@ -274,11 +274,11 @@ export const AccountBoxAll: FunctionComponent<{
                 )
               }
               style={styles.copy}
-              label={shortenAddress(chainAddress)}
-              onPress={() => {
-                Clipboard.setString(chainAddress);
-                setTimer(2000);
-              }}
+              // label={shortenAddress(chainAddress)}
+              // onPress={() => {
+              //   Clipboard.setString(chainAddress);
+              //   setTimer(2000);
+              // }}
             />
           )}
         </View>

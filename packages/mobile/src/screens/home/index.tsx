@@ -28,7 +28,7 @@ import { AccountBoxAll } from "./components/account-box-new";
 
 import { EarningCardNew } from "./components/earning-card-new";
 import { InjectedProviderUrl } from "../web/config";
-import { useMultipleAssets } from "@src/screens/home/hooks/use-multiple-assets";
+// import { useMultipleAssets } from "@src/screens/home/hooks/use-multiple-assets";
 import { IntPretty, PricePretty } from "@owallet/unit";
 import {
   chainInfos,
@@ -47,11 +47,11 @@ import { tracking } from "@src/utils/tracking";
 import OWText from "@src/components/text/ow-text";
 const mixpanel = globalThis.mixpanel as Mixpanel;
 export const HomeScreen: FunctionComponent = observer((props) => {
-  // const [refreshing, setRefreshing] = React.useState(false);
-  // const [refreshDate, setRefreshDate] = React.useState(Date.now());
-  // const { colors } = useTheme();
+  const [refreshing, setRefreshing] = React.useState(false);
+  const [refreshDate, setRefreshDate] = React.useState(Date.now());
+  const { colors } = useTheme();
 
-  // const styles = styling(colors);
+  const styles = styling(colors);
   const {
     chainStore,
     accountStore,
@@ -64,8 +64,8 @@ export const HomeScreen: FunctionComponent = observer((props) => {
     universalSwapStore,
   } = useStore();
 
-  // const scrollViewRef = useRef<ScrollView | null>(null);
-  const accountEth = accountStore.getAccount(ChainIdEnum.Ethereum);
+  const scrollViewRef = useRef<ScrollView | null>(null);
+
   // const { totalPriceBalance, dataTokens, dataTokensByChain, isLoading } =
   //   useMultipleAssets(
   //     accountStore,
@@ -77,132 +77,132 @@ export const HomeScreen: FunctionComponent = observer((props) => {
   //     refreshing,
   //     accountOrai.bech32Address
   //   );
-  // const [isPending, startTransition] = useTransition();
-  // const accountEth = accountStore.getAccount(ChainIdEnum.Ethereum);
+  const [isPending, startTransition] = useTransition();
+  const accountEth = accountStore.getAccount(ChainIdEnum.Ethereum);
   // const accountTron = accountStore.getAccount(ChainIdEnum.TRON);
   // const accountKawaiiCosmos = accountStore.getAccount(ChainIdEnum.KawaiiCosmos);
-  // const currentChain = chainStore.current;
-  // const currentChainId = currentChain?.chainId;
+  const currentChain = chainStore.current;
+  const currentChainId = currentChain?.chainId;
   // const account = accountStore.getAccount(chainStore.current.chainId);
 
   // const address = account.getAddressDisplay(
   //   keyRingStore.keyRingLedgerAddresses,
   //   false
   // );
-  // const previousChainId = usePrevious(currentChainId);
-  // const chainStoreIsInitializing = chainStore.isInitializing;
-  // const previousChainStoreIsInitializing = usePrevious(
-  //   chainStoreIsInitializing,
-  //   true
-  // );
+  const previousChainId = usePrevious(currentChainId);
+  const chainStoreIsInitializing = chainStore.isInitializing;
+  const previousChainStoreIsInitializing = usePrevious(
+    chainStoreIsInitializing,
+    true
+  );
 
-  // useEffect(() => {
-  //   tracking("Home Screen");
-  //   InteractionManager.runAfterInteractions(() => {
-  //     fetch(InjectedProviderUrl)
-  //       .then((res) => {
-  //         return res.text();
-  //       })
-  //       .then((res) => {
-  //         browserStore.update_inject(res);
-  //       })
-  //       .catch((err) => console.log(err));
-  //   });
-  // }, []);
+  useEffect(() => {
+    tracking("Home Screen");
+    InteractionManager.runAfterInteractions(() => {
+      fetch(InjectedProviderUrl)
+        .then((res) => {
+          return res.text();
+        })
+        .then((res) => {
+          browserStore.update_inject(res);
+        })
+        .catch((err) => console.log(err));
+    });
+  }, []);
 
-  // const checkAndUpdateChainInfo = useCallback(() => {
-  //   if (!chainStoreIsInitializing) {
-  //     (async () => {
-  //       const result = await ChainUpdaterService.checkChainUpdate(currentChain);
+  const checkAndUpdateChainInfo = useCallback(() => {
+    if (!chainStoreIsInitializing) {
+      (async () => {
+        const result = await ChainUpdaterService.checkChainUpdate(currentChain);
 
-  //       // TODO: Add the modal for explicit chain update.
-  //       if (result.slient) {
-  //         chainStore.tryUpdateChain(currentChainId);
-  //       }
-  //     })();
-  //   }
-  // }, [chainStore, chainStoreIsInitializing, currentChain, currentChainId]);
+        // TODO: Add the modal for explicit chain update.
+        if (result.slient) {
+          chainStore.tryUpdateChain(currentChainId);
+        }
+      })();
+    }
+  }, [chainStore, chainStoreIsInitializing, currentChain, currentChainId]);
 
-  // useEffect(() => {
-  //   const appStateHandler = (state: AppStateStatus) => {
-  //     if (state === "active") {
-  //       checkAndUpdateChainInfo();
-  //     }
-  //   };
-  //   const subscription = AppState.addEventListener("change", appStateHandler);
-  //   return () => {
-  //     subscription.remove();
-  //   };
-  // }, [checkAndUpdateChainInfo]);
+  useEffect(() => {
+    const appStateHandler = (state: AppStateStatus) => {
+      if (state === "active") {
+        checkAndUpdateChainInfo();
+      }
+    };
+    const subscription = AppState.addEventListener("change", appStateHandler);
+    return () => {
+      subscription.remove();
+    };
+  }, [checkAndUpdateChainInfo]);
 
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     if (
-  //       (chainStoreIsInitializing !== previousChainStoreIsInitializing &&
-  //         !chainStoreIsInitializing) ||
-  //       currentChainId !== previousChainId
-  //     ) {
-  //       checkAndUpdateChainInfo();
-  //     }
-  //   }, [
-  //     chainStoreIsInitializing,
-  //     previousChainStoreIsInitializing,
-  //     currentChainId,
-  //     previousChainId,
-  //     checkAndUpdateChainInfo,
-  //   ])
-  // );
-  // useEffect(() => {
-  //   if (
-  //     appInitStore.getChainInfos?.length <= 0 ||
-  //     !appInitStore.getChainInfos
-  //   ) {
-  //     appInitStore.updateChainInfos(chainInfos);
-  //   }
-  // }, []);
+  useFocusEffect(
+    useCallback(() => {
+      if (
+        (chainStoreIsInitializing !== previousChainStoreIsInitializing &&
+          !chainStoreIsInitializing) ||
+        currentChainId !== previousChainId
+      ) {
+        checkAndUpdateChainInfo();
+      }
+    }, [
+      chainStoreIsInitializing,
+      previousChainStoreIsInitializing,
+      currentChainId,
+      previousChainId,
+      checkAndUpdateChainInfo,
+    ])
+  );
+  useEffect(() => {
+    if (
+      appInitStore.getChainInfos?.length <= 0 ||
+      !appInitStore.getChainInfos
+    ) {
+      appInitStore.updateChainInfos(chainInfos);
+    }
+  }, []);
   // useEffect(() => {
   //   onRefresh();
   // }, [address, chainStore.current.chainId]);
 
-  // const fiatCurrency = priceStore.getFiatCurrency(priceStore.defaultVsCurrency);
+  const fiatCurrency = priceStore.getFiatCurrency(priceStore.defaultVsCurrency);
   // const onRefresh = async () => {
   //   try {
   //     const queries = queriesStore.get(chainStore.current.chainId);
   //     // Because the components share the states related to the queries,
   //     // fetching new query responses here would make query responses on all other components also refresh.
   //     if (chainStore.current.networkType === "bitcoin") {
-  //       await queries.bitcoin.queryBitcoinBalance
-  //         .getQueryBalance(account.bech32Address)
-  //         .waitFreshResponse();
-  //       return;
+  //       // await queries.bitcoin.queryBitcoinBalance
+  //       //   .getQueryBalance(account.bech32Address)
+  //       //   .waitFreshResponse();
+  //       // return;
   //     } else {
   //       await Promise.all([
   //         priceStore.waitFreshResponse(),
   //         ...queries.queryBalances
-  //           .getQueryBech32Address(address)
+  //           .getQueryBech32Address(account.bech32Address)
   //           .balances.map((bal) => {
   //             return bal.waitFreshResponse();
   //           }),
   //       ]);
   //     }
-  //     if (
-  //       accountOrai.bech32Address &&
-  //       accountEth.evmosHexAddress &&
-  //       accountTron.evmosHexAddress &&
-  //       accountKawaiiCosmos.bech32Address
-  //     ) {
-  //       const customChainInfos = appInitStore.getChainInfos ?? chainInfos;
-  //       const currentDate = Date.now();
-  //       const differenceInMilliseconds = Math.abs(currentDate - refreshDate);
-  //       const differenceInSeconds = differenceInMilliseconds / 1000;
-  //       let timeoutId: NodeJS.Timeout;
-  //       if (differenceInSeconds > 10) {
-  //         universalSwapStore.setLoaded(false);
-  //         onFetchAmount(customChainInfos);
-  //       } else {
-  //         console.log("The dates are 10 seconds or less apart.");
-  //       }
-  //     }
+  //     // if (
+  //     //   accountOrai.bech32Address &&
+  //     //   accountEth.evmosHexAddress &&
+  //     //   accountTron.evmosHexAddress &&
+  //     //   accountKawaiiCosmos.bech32Address
+  //     // ) {
+  //     //   const customChainInfos = appInitStore.getChainInfos ?? chainInfos;
+  //     //   const currentDate = Date.now();
+  //     //   const differenceInMilliseconds = Math.abs(currentDate - refreshDate);
+  //     //   const differenceInSeconds = differenceInMilliseconds / 1000;
+  //     //   let timeoutId: NodeJS.Timeout;
+  //     //   if (differenceInSeconds > 10) {
+  //     //     universalSwapStore.setLoaded(false);
+  //     //     onFetchAmount(customChainInfos);
+  //     //   } else {
+  //     //     console.log("The dates are 10 seconds or less apart.");
+  //     //   }
+  //     // }
   //   } catch (e) {
   //     console.log(e);
   //   } finally {
@@ -211,7 +211,7 @@ export const HomeScreen: FunctionComponent = observer((props) => {
   //   }
   // };
   // const loadTokenAmounts = useLoadTokens(universalSwapStore);
-  // // handle fetch all tokens of all chains
+  // handle fetch all tokens of all chains
   // const handleFetchAmounts = async (
   //   params: { orai?: string; eth?: string; tron?: string; kwt?: string },
   //   customChainInfos
@@ -369,41 +369,35 @@ export const HomeScreen: FunctionComponent = observer((props) => {
   console.log(accountEth.evmHexAddress);
   return (
     <PageWithScrollViewInBottomTabView
-    // refreshControl={
-    //   <RefreshControl
-    //     refreshing={refreshing}
-    //     onRefresh={() => {
-    //       setRefreshing(true);
-    //       onRefresh();
-    //       setTimeout(() => {
-    //         setRefreshing(false);
-    //       }, 500);
-    //     }}
-    //   />
-    // }
-    // showsVerticalScrollIndicator={false}
-    // contentContainerStyle={styles.containerStyle}
-    // ref={scrollViewRef}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={() => {
+            // setRefreshing(true);
+            // // onRefresh();
+            // setTimeout(() => {
+            //   setRefreshing(false);
+            // }, 500);
+          }}
+        />
+      }
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={styles.containerStyle}
+      ref={scrollViewRef}
     >
-      <OWText>{availableTotalPrice?.toString()}</OWText>
-      {allBalances.map((item, index) => (
+      {/* <OWText>{availableTotalPrice?.toString()}</OWText> */}
+      {/* {allBalances.map((item, index) => (
         <OWText>{`${item.token.currency.coinDenom}:${
           item.chainInfo.chainName
         } - ${item.price?.toString() || 0}`}</OWText>
-      ))}
-      {/* <AccountBoxAll
-        isLoading={isLoading}
-        totalBalanceByChain={new PricePretty(
-          fiatCurrency,
-          dataTokensByChain?.[chainStore.current.chainId]?.totalBalance
-        )?.toString()}
-        totalPriceBalance={new PricePretty(
-          fiatCurrency,
-          totalPriceBalance
-        )?.toString()}
+      ))} */}
+      <AccountBoxAll
+        isLoading={false}
+        totalBalanceByChain={new PricePretty(fiatCurrency, 0)?.toString()}
+        totalPriceBalance={availableTotalPrice?.toString()}
       />
       <EarningCardNew />
-      <MainTabHome dataTokens={dataTokens} /> */}
+      <MainTabHome dataTokens={allBalances} />
     </PageWithScrollViewInBottomTabView>
   );
 });

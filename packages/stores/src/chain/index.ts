@@ -373,15 +373,15 @@ export class ChainStore<C extends ChainInfo = ChainInfo>
     return find != null;
   }
 
-  addSetChainInfoHandler(handler: (chainInfoInner: ChainInfoInner<C>) => void) {
-    this.setChainInfoHandlers.push(handler);
+  // addSetChainInfoHandler(handler: (chainInfoInner: ChainInfoInner<C>) => void) {
+  //   this.setChainInfoHandlers.push(handler);
 
-    for (const chainInfo of this.chainInfos) {
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const cached = this._cachedChainInfosMap.get(chainInfo.chainId)!;
-      handler(cached);
-    }
-  }
+  //   for (const chainInfo of this.chainInfos) {
+  //     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  //     const cached = this._cachedChainInfosMap.get(chainInfo.chainId)!;
+  //     handler(cached);
+  //   }
+  // }
 
   @action
   protected setChainInfos(chainInfos: C[]) {

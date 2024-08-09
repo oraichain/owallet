@@ -9,9 +9,10 @@ import { HistoryCard } from "@src/screens/transactions";
 import { TokensCardAll } from "./tokens-card-all";
 import { NftCard } from "./nft-card";
 import { useStore } from "@src/stores";
+import { ViewToken } from "@owallet/types";
 
 export const MainTabHome: FC<{
-  dataTokens: ViewRawToken[];
+  dataTokens: readonly ViewToken[];
 }> = observer(({ dataTokens }) => {
   const { colors } = useTheme();
   const { chainStore, appInitStore } = useStore();

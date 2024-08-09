@@ -1208,58 +1208,58 @@ export const EmbedChainInfos: AppChainInfo[] = [
   //     txUrl: "https://scan.kawaii.global/tx/{txHash}",
   //   },
   // },
-  {
-    rpc: "https://tendermint1.kawaii.global",
-    rest: "https://endpoint1.kawaii.global",
-    chainId: "0x1ae6",
-    networkType: "evm",
-    chainName: "Kawaiiverse EVM",
-    stakeCurrency: {
-      coinDenom: "ORAIE",
-      coinMinimalDenom: "oraie",
-      coinDecimals: 18,
-      coinGeckoId: "oraie",
-      coinImageUrl:
-        "https://s2.coinmarketcap.com/static/img/coins/64x64/12313.png",
-      gasPriceStep: {
-        low: 0,
-        average: 0.000025,
-        high: 0.00004,
-      },
-    },
-    bip44: {
-      coinType: 60,
-    },
-    coinType: 60,
-    bech32Config: Bech32Address.defaultBech32Config("evmos"),
-    get currencies() {
-      return [
-        this.stakeCurrency,
-        {
-          coinDenom: "KWT",
-          coinMinimalDenom:
-            "erc20:0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd:Kawaii Islands",
-          coinDecimals: 18,
-          coinGeckoId: "kawaii-islands",
-          coinImageUrl:
-            "https://s2.coinmarketcap.com/static/img/coins/64x64/12313.png",
-        },
-        {
-          coinDenom: "MILKY",
-          coinMinimalDenom:
-            "erc20:0xd567B3d7B8FE3C79a1AD8dA978812cfC4Fa05e75:Milky Token",
-          coinDecimals: 18,
-          coinGeckoId: "milky-token",
-          coinImageUrl:
-            "https://s2.coinmarketcap.com/static/img/coins/64x64/14418.png",
-        },
-      ];
-    },
-    get feeCurrencies() {
-      return [this.stakeCurrency];
-    },
-    features: ["isEvm"],
-  },
+  // {
+  //   rpc: "https://tendermint1.kawaii.global",
+  //   rest: "https://endpoint1.kawaii.global",
+  //   chainId: "0x1ae6",
+  //   networkType: "evm",
+  //   chainName: "Kawaiiverse EVM",
+  //   stakeCurrency: {
+  //     coinDenom: "ORAIE",
+  //     coinMinimalDenom: "oraie",
+  //     coinDecimals: 18,
+  //     coinGeckoId: "oraie",
+  //     coinImageUrl:
+  //       "https://s2.coinmarketcap.com/static/img/coins/64x64/12313.png",
+  //     gasPriceStep: {
+  //       low: 0,
+  //       average: 0.000025,
+  //       high: 0.00004,
+  //     },
+  //   },
+  //   bip44: {
+  //     coinType: 60,
+  //   },
+  //   coinType: 60,
+  //   bech32Config: Bech32Address.defaultBech32Config("evmos"),
+  //   get currencies() {
+  //     return [
+  //       this.stakeCurrency,
+  //       {
+  //         coinDenom: "KWT",
+  //         coinMinimalDenom:
+  //           "erc20:0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd:Kawaii Islands",
+  //         coinDecimals: 18,
+  //         coinGeckoId: "kawaii-islands",
+  //         coinImageUrl:
+  //           "https://s2.coinmarketcap.com/static/img/coins/64x64/12313.png",
+  //       },
+  //       {
+  //         coinDenom: "MILKY",
+  //         coinMinimalDenom:
+  //           "erc20:0xd567B3d7B8FE3C79a1AD8dA978812cfC4Fa05e75:Milky Token",
+  //         coinDecimals: 18,
+  //         coinGeckoId: "milky-token",
+  //         coinImageUrl:
+  //           "https://s2.coinmarketcap.com/static/img/coins/64x64/14418.png",
+  //       },
+  //     ];
+  //   },
+  //   get feeCurrencies() {
+  //     return [this.stakeCurrency];
+  //   },
+  //   features: ["isEvm"],
+  // },
   // {
   //   rpc: "https://testnet.sapphire.oasis.io",
   //   rest: "https://testnet.sapphire.oasis.io",

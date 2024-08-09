@@ -425,7 +425,9 @@ export class RootStore {
       },
       this.chainStore,
       new RNMessageRequesterInternal(),
-      this.interactionStore
+      this.interactionStore,
+      this.accountStore,
+      this.keyRingStore
     );
 
     // this.ibcCurrencyRegistrar = new IBCCurrencyRegsitrar<ChainInfoWithEmbed>(
