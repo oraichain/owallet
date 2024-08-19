@@ -401,6 +401,8 @@ export class Ethereum implements IEthereum {
         args.method,
         args.params
       );
+      console.log("args 2", args.method, args.params, args.chainId);
+
       return await this.requester.sendMessage(BACKGROUND_PORT, msg);
     }
   }

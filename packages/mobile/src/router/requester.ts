@@ -36,6 +36,7 @@ export class RNMessageRequesterBase implements MessageRequester {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     msg["origin"] = sender.origin;
+    console.log("msg,", msg);
 
     if (this.eventEmitter.listenerCount("message") === 0) {
       throw new Error("There is no router to send" + JSON.stringify(msg));
@@ -62,6 +63,8 @@ export class RNMessageRequesterBase implements MessageRequester {
     if (!result) {
       throw new Error("Null result");
     }
+
+    console.log("result,", result);
 
     if (result.error) {
       if (typeof result.error === "string") {

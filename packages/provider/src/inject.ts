@@ -629,7 +629,7 @@ export class InjectedEthereum implements Ethereum {
             }
             break;
           default:
-            console.log("message.args", message.args);
+            console.log("message.args", message.method, message.args);
 
             result = await ethereum.request({
               method: message.method as string,

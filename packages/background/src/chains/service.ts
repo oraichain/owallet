@@ -134,6 +134,9 @@ export class ChainsService {
     networkType?: string
   ): Promise<ChainInfoWithEmbed> {
     let chainInfo: ChainInfoWithEmbed;
+    console.log("chainId getChainInfo", chainId);
+    console.log("networkType", networkType);
+    // need to check here
     if (networkType) {
       chainInfo = (await this.getChainInfos()).find((chainInfo) => {
         if (networkType === "evm") {

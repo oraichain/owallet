@@ -37,7 +37,7 @@ import {
   TriggerSmartContractMsg,
   RequestSendRawTransactionMsg,
   SimulateSignTronMsg,
-  RequestEthereumMsg,
+  // RequestEthereumMsg,
   RequestEthereumPersonalSignMsg,
   RequestSetDappStatusMsg,
   RequestGetDappStatusMsg,
@@ -85,7 +85,7 @@ export function init(router: Router, service: KeyRingService): void {
   router.registerMessage(ExportKeyRingDatasMsg);
   router.registerMessage(RequestSignEIP712CosmosTxMsg_v0);
   router.registerMessage(ChangeChainMsg);
-  router.registerMessage(RequestEthereumMsg);
+  // router.registerMessage(RequestEthereumMsg);
   router.registerMessage(RequestSetDappStatusMsg);
   router.registerMessage(RequestGetDappStatusMsg);
   router.addHandler(ROUTE, getHandler(service));

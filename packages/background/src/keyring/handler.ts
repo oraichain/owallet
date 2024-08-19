@@ -45,10 +45,10 @@ import {
   RequestSignBitcoinMsg,
   TriggerSmartContractMsg,
   RequestSignOasisMsg,
-  RequestEthereumMsg,
   RequestEthereumPersonalSignMsg,
   RequestSetDappStatusMsg,
   RequestGetDappStatusMsg,
+  // RequestEthereumMsg
 } from "./messages";
 import { KeyRingService } from "./service";
 import { Bech32Address } from "@owallet/cosmos";
@@ -213,11 +213,8 @@ export const getHandler: (service: KeyRingService) => Handler = (
         );
       case ChangeChainMsg:
         return handleChangeChainMsg(service)(env, msg as ChangeChainMsg);
-      case RequestEthereumMsg:
-        return handleRequestEthereumMsg(service)(
-          env,
-          msg as RequestEthereumMsg
-        );
+      // case RequestEthereumMsg:
+      //   return handleRequestEthereumMsg(service)(env, msg as RequestEthereumMsg);
       case RequestSetDappStatusMsg:
         return handleSetDappStatus(service)(
           env,
@@ -779,21 +776,16 @@ const handleRequestSignOasisMsg: (
     return { ...response };
   };
 };
-const handleRequestEthereumMsg: (
-  service: KeyRingService
-) => InternalHandler<RequestEthereumMsg> = (service) => {
-  return async (env, msg) => {
-    // await service.permissionService.checkOrGrantBasicAccessPermission(
-    //   env,
-    //   msg.chainId,
-    //   msg.origin
-    // );
+// const handleRequestEthereumMsg: (service: BackgroundTxService) => InternalHandler<RequestEthereumMsg> = service => {
+//   return async (env, msg) => {
+//     // await service.permissionService.checkOrGrantBasicAccessPermission(
+//     //   env,
+//     //   msg.chainId,
+//     //   msg.origin
+//     // );
 
-    return (await service.request_eth(
-      env,
-      msg.chainId,
-      msg.method,
-      msg.params
-    )) as any;
-  };
-};
+//     return await service.request(msg.chainId, msg.method, msg.params);
+
+//     // return (await service.request_eth(env, msg.chainId, msg.method, msg.params)) as any;
+//   };
+// };
