@@ -47,6 +47,8 @@ import {
   privateToPublic,
   publicToAddress,
   toBuffer,
+  hashPersonalMessage,
+  toRpcSig,
 } from "ethereumjs-util";
 import TronWeb from "tronweb";
 import { LedgerService } from "../ledger";
@@ -150,7 +152,7 @@ export class KeyRing {
   private multiKeyStore: KeyStore[];
 
   private password: string = "";
-  private DAPP_CONNECT_STATUS: DAPP_CONNECT_STATUS =
+  private _dappConnectStatus: DAPP_CONNECT_STATUS =
     DAPP_CONNECT_STATUS.ASK_CONNECT;
   private _iv: string;
 
@@ -195,7 +197,12 @@ export class KeyRing {
     }
   }
   public get DappConnectStatus(): DAPP_CONNECT_STATUS {
-    return this.DAPP_CONNECT_STATUS;
+    return this._dappConnectStatus;
+  }
+  public setDappConnectStatus(status: DAPP_CONNECT_STATUS) {
+    if (!status) throw Error("Not Found Dapp Connect Status");
+    this._dappConnectStatus = status;
+    return this._dappConnectStatus;
   }
 
   public static getLedgerAddressOfKeyStore(
@@ -311,14 +318,6 @@ export class KeyRing {
     if (!this.keyStore) {
       throw new Error("Key Store is empty");
     }
-
-    // // Need to check network type by chain id instead of coin type
-    // const networkType = getNetworkTypeByChainId(chainId);
-    // console.log("networkType", chainId, networkType);
-
-    // if (networkType === "evm" && chainId !== ChainIdEnum.Oasis) {
-    //   return Number(ChainIdHelper.parse(chainId).identifier) ?? defaultCoinType;
-    // }
 
     return this.keyStore.coinTypeForChain
       ? this.keyStore.coinTypeForChain[
@@ -1003,12 +1002,20 @@ export class KeyRing {
   }
 
   async simulateSignTron(transaction: any) {
-    const privKey = this.loadPrivKey(195);
-    const signedTxn = TronWeb.utils.crypto.signTransaction(
-      privKey.toBytes(),
-      transaction
-    );
-    return signedTxn;
+    try {
+      const privKey = this.loadPrivKey(195);
+      const signedTxn = TronWeb.utils.crypto.signTransaction(
+        privKey.toBytes(),
+        transaction
+      );
+      return signedTxn;
+    } catch (error) {
+      throw new OWalletError(
+        "keyring",
+        500,
+        `Failed to simulate sign Tron: ${error.message}`
+      );
+    }
   }
 
   public async sign(
@@ -1546,12 +1553,10 @@ export class KeyRing {
     chainId,
     defaultCoinType,
   }: {
-    // typedMessage: V extends "V1" ? TypedDataV1 : TypedMessage<T>;
     typedMessage: string;
     version: V;
     chainId: string;
     defaultCoinType: number;
-    // }): Promise<ECDSASignature> {
   }): Promise<string> {
     try {
       this.validateVersion(version);
@@ -1559,11 +1564,7 @@ export class KeyRing {
         throw new Error("Missing data parameter");
       }
 
-      // const coinType = this.computeKeyStoreCoinType(chainId, defaultCoinType);
-
-      // Need to check network type by chain id instead of coin type
       const networkType = getNetworkTypeByChainId(chainId);
-      // if (coinType !== 60) {
       if (networkType !== "evm") {
         throw new Error(
           "Invalid coin type passed in to Ethereum signing (expected 60)"
@@ -1592,7 +1593,27 @@ export class KeyRing {
       const signatureHex = `0x${rHex}${sHex}${vHex}`;
 
       return signatureHex;
-      // return signature;
+    } catch (error) {
+      console.log("Error on sign typed data: ", error);
+    }
+  }
+
+  public async signEthereumPersonalSign({
+    data,
+    chainId,
+  }: {
+    data: any;
+    chainId: string;
+  }): Promise<string> {
+    try {
+      const priKey = this.loadPrivKey(60).toBytes();
+
+      const wallet = new ethers.Wallet(priKey);
+      const signature = await wallet.signMessage(
+        ethers.utils.arrayify(data[0])
+      );
+
+      return signature;
     } catch (error) {
       console.log("Error on sign typed data: ", error);
     }
@@ -2312,6 +2333,7 @@ export class KeyRing {
           : await this.chainsService.getChainInfo(inputChainId);
 
         return chainInfo.chainId;
+
       default:
         chainInfo = await this.chainsService.getChainInfo(chainId);
         if (!chainInfo.rest)

@@ -19,6 +19,7 @@ import {
   ECDSASignature,
   ExportKeyRingData,
   MessageTypes,
+  PersonalSignObject,
   SignEthereumTypedDataObject,
   SignTypedDataVersion,
   TypedMessage,
@@ -684,6 +685,26 @@ export class KeyRingService {
     }
   }
 
+  async requestEthereumPersonalSign(
+    env: Env,
+    chainId: string,
+    data: any
+  ): Promise<string> {
+    // Need to check ledger here and ledger app type by chainId
+    try {
+      const rawTxHex = await this.keyRing.signEthereumPersonalSign({
+        data,
+        chainId,
+      });
+
+      return rawTxHex;
+    } catch (e) {
+      console.log("e", e.message);
+    } finally {
+      this.interactionService.dispatchEvent(APP_PORT, "request-sign-end", {});
+    }
+  }
+
   async requestSignBitcoin(
     env: Env,
     chainId: string,
@@ -818,9 +839,6 @@ export class KeyRingService {
         mode: "direct",
         data: {
           ...data,
-          // estimatedGasPrice: (data as any)?.gasPrice ,
-          // estimatedGasLimit: (data as any)?.gas ,
-          // decimals,
         },
       }
     )) as any;
@@ -829,7 +847,6 @@ export class KeyRingService {
       gasPrice: approveData.gasPrice ?? "0x0",
       memo: approveData.memo ?? "",
       gasLimit: approveData.gasLimit,
-      // fees: approveData.fees,
     };
 
     return { ...data, gasPrice, gasLimit, memo };
@@ -1184,15 +1201,16 @@ export class KeyRingService {
       "this.keyRing.DappConnectStatus"
     );
     // if (this.keyRing.DappConnectStatus == DAPP_CONNECT_STATUS.ASK_CONNECT) {
-    //   await this.interactionService.waitApprove(
-    //     env,
-    //     "/ask-connect-dapp",
-    //     "ask-connect-dapp",
-    //     {}
-    //   );
+    //   await this.interactionService.waitApprove(env, "/ask-connect-dapp", "ask-connect-dapp", {});
     //   return;
     // }
     const rs = await this.keyRing.request_eth(chainId, method, params);
     return rs;
+  }
+  setDappConnectStatus(status: DAPP_CONNECT_STATUS) {
+    return this.keyRing.setDappConnectStatus(status);
+  }
+  getDappConnectStatus(): DAPP_CONNECT_STATUS {
+    return this.keyRing.DappConnectStatus;
   }
 }

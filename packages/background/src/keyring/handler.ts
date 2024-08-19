@@ -46,6 +46,9 @@ import {
   TriggerSmartContractMsg,
   RequestSignOasisMsg,
   RequestEthereumMsg,
+  RequestEthereumPersonalSignMsg,
+  RequestSetDappStatusMsg,
+  RequestGetDappStatusMsg,
 } from "./messages";
 import { KeyRingService } from "./service";
 import { Bech32Address } from "@owallet/cosmos";
@@ -142,6 +145,11 @@ export const getHandler: (service: KeyRingService) => Handler = (
           env,
           msg as RequestSignEthereumTypedDataMsg
         );
+      case RequestEthereumPersonalSignMsg:
+        return handleRequestEthereumPersonalSign(service)(
+          env,
+          msg as RequestEthereumPersonalSignMsg
+        );
       case RequestPublicKeyMsg:
         return handleRequestPublicKey(service)(env, msg as RequestPublicKeyMsg);
       case RequestSignDecryptDataMsg:
@@ -209,6 +217,16 @@ export const getHandler: (service: KeyRingService) => Handler = (
         return handleRequestEthereumMsg(service)(
           env,
           msg as RequestEthereumMsg
+        );
+      case RequestSetDappStatusMsg:
+        return handleSetDappStatus(service)(
+          env,
+          msg as RequestSetDappStatusMsg
+        );
+      case RequestGetDappStatusMsg:
+        return handleGetDappStatus(service)(
+          env,
+          msg as RequestGetDappStatusMsg
         );
       default:
         throw new Error("Unknown msg type");
@@ -342,6 +360,24 @@ const handleLockKeyRingMsg: (
   return () => {
     return {
       status: service.lock(),
+    };
+  };
+};
+const handleSetDappStatus: (
+  service: KeyRingService
+) => InternalHandler<RequestSetDappStatusMsg> = (service) => {
+  return async (_, msg) => {
+    return {
+      status: service.setDappConnectStatus(msg.status),
+    };
+  };
+};
+const handleGetDappStatus: (
+  service: KeyRingService
+) => InternalHandler<RequestGetDappStatusMsg> = (service) => {
+  return async (_) => {
+    return {
+      status: service.getDappConnectStatus(),
     };
   };
 };
@@ -494,6 +530,19 @@ const handleRequestSignEthereumTypedData: (
 ) => InternalHandler<RequestSignEthereumTypedDataMsg> = (service) => {
   return async (env, msg) => {
     const response = await service.requestSignEthereumTypedData(
+      env,
+      msg.chainId,
+      msg.data
+    );
+    return { result: response };
+  };
+};
+
+const handleRequestEthereumPersonalSign: (
+  service: KeyRingService
+) => InternalHandler<RequestEthereumPersonalSignMsg> = (service) => {
+  return async (env, msg) => {
+    const response = await service.requestEthereumPersonalSign(
       env,
       msg.chainId,
       msg.data

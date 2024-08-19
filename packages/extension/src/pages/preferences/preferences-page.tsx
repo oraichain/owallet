@@ -5,23 +5,32 @@ import styles from "./preferences.module.scss";
 import { getFavicon, limitString } from "@owallet/common";
 import { useStore } from "../../stores";
 import { ModalCurrency } from "./modal/modal-currency";
+import { ModalDefaultWallet } from "./modal/modal-default-wallet";
 import { useHistory } from "react-router";
+import { OWIcon } from "components/icon/Icon";
+import colors from "theme/colors";
 
 enum MenuEnum {
   LANGUAGE = "LANGUAGE",
   CURRENCY = "CURRENCY",
+  DEFAULT_WALLET = "DEFAULT_WALLET",
 }
 
 const dataPreferences = [
   {
     id: MenuEnum.LANGUAGE,
     name: "Language",
-    icon: require("assets/svg/ow_translate-1.svg"),
+    icon: "tdesigntranslate-1",
   },
   {
     id: MenuEnum.CURRENCY,
     name: "Currency",
-    icon: require("assets/svg/ow_currency-exchange.svg"),
+    icon: "tdesigncurrency-exchange",
+  },
+  {
+    id: MenuEnum.DEFAULT_WALLET,
+    name: "Default wallet",
+    icon: "tdesignwallet",
   },
 ];
 export const PreferencesPage = observer(() => {
@@ -31,8 +40,11 @@ export const PreferencesPage = observer(() => {
   >({
     [MenuEnum.LANGUAGE]: "English",
     [MenuEnum.CURRENCY]: priceStore.defaultVsCurrency?.toUpperCase(),
+    [MenuEnum.DEFAULT_WALLET]: "",
   });
+
   const [isOpenCurrency, setIsOpenCurrency] = useState(false);
+  const [isOpenDefaultWallet, setIsOpenDefaultWallet] = useState(false);
   useEffect(() => {
     if (priceStore.defaultVsCurrency) {
       setValueDataPreferences((prev) => ({
@@ -45,6 +57,9 @@ export const PreferencesPage = observer(() => {
     switch (item.id) {
       case MenuEnum.CURRENCY:
         setIsOpenCurrency(true);
+        break;
+      case MenuEnum.DEFAULT_WALLET:
+        setIsOpenDefaultWallet(true);
         break;
     }
   };
@@ -69,7 +84,11 @@ export const PreferencesPage = observer(() => {
               >
                 <div className={styles.leftBlock}>
                   <div className={styles.wrapImg}>
-                    <img src={item.icon} className={styles.img} />
+                    <OWIcon
+                      icon={item.icon}
+                      size={20}
+                      color={colors["neutral-icon-on-light"]}
+                    />
                   </div>
                   <span className={styles.urlText}>
                     {limitString(item.name, 24)}
@@ -77,7 +96,7 @@ export const PreferencesPage = observer(() => {
                 </div>
                 <div className={styles.rightBlock}>
                   <span className={styles.valueRight}>
-                    {valueDataPreferences[item.id] || "---"}
+                    {valueDataPreferences[item.id] || ""}
                   </span>
                   <img
                     src={require("assets/svg/tdesign_chevron_right.svg")}
@@ -92,6 +111,10 @@ export const PreferencesPage = observer(() => {
       <ModalCurrency
         isOpen={isOpenCurrency}
         onRequestClose={() => setIsOpenCurrency(false)}
+      />
+      <ModalDefaultWallet
+        isOpen={isOpenDefaultWallet}
+        onRequestClose={() => setIsOpenDefaultWallet(false)}
       />
     </LayoutWithButtonBottom>
   );
