@@ -160,8 +160,6 @@ export class BackgroundTxService {
     switch (method) {
       case "eth_accounts":
       case "eth_requestAccounts":
-        console.log("method 2", method);
-        console.log("chainId 2", chainId);
         chainInfo = await this.chainsService.getChainInfo(chainId);
         if (chainInfo.coinType !== 60) return undefined;
         const chainIdOrCoinType = params.length ? parseInt(params[0]) : chainId; // default is cointype 60 for ethereum based
