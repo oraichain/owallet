@@ -240,6 +240,7 @@ PODS:
   - hermes-engine (0.72.15):
     - hermes-engine/Pre-built (= 0.72.15)
   - hermes-engine/Pre-built (0.72.15)
+  - HMSegmentedControl (1.5.6)
   - JWT (3.0.0-beta.14):
     - Base64 (~> 1.1.2)
   - libevent (2.1.12)
@@ -722,6 +723,19 @@ PODS:
     - React-jsi (= 0.72.15)
     - React-logger (= 0.72.15)
     - React-perflogger (= 0.72.15)
+  - ReactNativeNavigation (7.40.1):
+    - HMSegmentedControl
+    - React-Core
+    - React-CoreModules
+    - React-RCTImage
+    - React-RCTText
+    - ReactNativeNavigation/Core (= 7.40.1)
+  - ReactNativeNavigation/Core (7.40.1):
+    - HMSegmentedControl
+    - React-Core
+    - React-CoreModules
+    - React-RCTImage
+    - React-RCTText
   - RNCAsyncStorage (1.24.0):
     - React-Core
   - RNCMaskedView (0.2.9):
@@ -881,6 +895,7 @@ DEPENDENCIES:
   - React-runtimescheduler (from `../node_modules/react-native/ReactCommon/react/renderer/runtimescheduler`)
   - React-utils (from `../node_modules/react-native/ReactCommon/react/utils`)
   - ReactCommon/turbomodule/core (from `../node_modules/react-native/ReactCommon`)
+  - ReactNativeNavigation (from `../node_modules/react-native-navigation`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNCMaskedView (from `../node_modules/@react-native-masked-view/masked-view`)"
   - RNDeviceInfo (from `../node_modules/react-native-device-info`)
@@ -932,6 +947,7 @@ SPEC REPOS:
     - GoogleAppMeasurement
     - GoogleDataTransport
     - GoogleUtilities
+    - HMSegmentedControl
     - JWT
     - libevent
     - libwebp
@@ -1064,6 +1080,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon/react/utils"
   ReactCommon:
     :path: "../node_modules/react-native/ReactCommon"
+  ReactNativeNavigation:
+    :path: "../node_modules/react-native-navigation"
   RNCAsyncStorage:
     :path: "../node_modules/@react-native-async-storage/async-storage"
   RNCMaskedView:
@@ -1146,6 +1164,7 @@ SPEC CHECKSUMS:
   GoogleDataTransport: 6c09b596d841063d76d4288cc2d2f42cc36e1e2a
   GoogleUtilities: ea963c370a38a8069cc5f7ba4ca849a60b6d7d15
   hermes-engine: 5b340c6a5affbf3aba22185be41563bbb2426654
+  HMSegmentedControl: 34c1f54d822d8308e7b24f5d901ec674dfa31352
   JWT: ef71dfb03e1f842081e64dc42eef0e164f35d251
   libevent: 4049cae6c81cdb3654a443be001fb9bdceff7913
   libwebp: 1786c9f4ff8a279e4dac1e8f385004d5fc253009
@@ -1202,6 +1221,7 @@ SPEC CHECKSUMS:
   React-runtimescheduler: ae08ede2e0267be2a4d8ba82a54d5908949d5a34
   React-utils: 8eb3c12fd4a4da6df3824f7d9a961d73a6ed6e5d
   ReactCommon: d2de36ed3eebe700d7169b9e80f7d1a4b98e178d
+  ReactNativeNavigation: 84cfcceb62947491beda20b96c5999c15ff5b959
   RNCAsyncStorage: ec53e44dc3e75b44aa2a9f37618a49c3bc080a7a
   RNCMaskedView: 949696f25ec596bfc697fc88e6f95cf0c79669b6
   RNDeviceInfo: 25d818c85db769cc0e7083d39efaa01a6f450df3

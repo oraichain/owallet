@@ -2,6 +2,7 @@
 
 buildscript {
     ext {
+        RNNKotlinVersion = "1.7.10"
         buildToolsVersion = '34.0.0'
         minSdkVersion = 24
         compileSdkVersion = 34
@@ -18,6 +19,7 @@ buildscript {
         
     }
     dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$RNNKotlinVersion"
         classpath('com.android.tools.build:gradle')
         classpath 'com.google.gms:google-services:4.3.15'
         classpath 'com.google.firebase:firebase-crashlytics-gradle:2.9.2'

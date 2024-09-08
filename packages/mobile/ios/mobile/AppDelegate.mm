@@ -1,4 +1,5 @@
 #import "AppDelegate.h"
+#import <ReactNativeNavigation/ReactNativeNavigation.h>
 
 #import <React/RCTBundleURLProvider.h>
 #import <Firebase.h>
@@ -16,11 +17,7 @@
   [AppCenterReactNativeCrashes registerWithAutomaticProcessing];
   [FIRApp configure];
   [RNBranch initSessionWithLaunchOptions:launchOptions isReferrable:YES];
-  self.moduleName = @"mobile";
-  // You can add your custom initial props in the dictionary below.
-  // They will be passed down to the ViewController used by React Native.
-  self.initialProps = @{};
-
+  
   return [super application:application didFinishLaunchingWithOptions:launchOptions];
 }
 - (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
