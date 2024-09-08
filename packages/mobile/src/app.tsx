@@ -78,8 +78,8 @@ const AppIntlProviderWithStorage = ({ children }) => {
   );
 };
 
-export const App = () => {
-  const [isInit, setIsInit] = useState(true);
+export const withProviders = (Component) => (props) => {
+  // const [isInit, setIsInit] = useState(true);
 
   const enableAnalytics = async () => {
     await analytics().setAnalyticsCollectionEnabled(true);
@@ -89,20 +89,20 @@ export const App = () => {
     enableAnalytics();
     return () => {};
   }, []);
-  if (isInit) {
-    return (
-      <LottieView
-        source={require("@src/assets/animations/splashscreen.json")}
-        style={{ width: metrics.screenWidth, height: metrics.screenHeight }}
-        resizeMode={"cover"}
-        autoPlay
-        loop={false}
-        onAnimationFinish={() => {
-          setIsInit(false);
-        }}
-      />
-    );
-  }
+  // if (isInit) {
+  //   return (
+  //     <LottieView
+  //       source={require("@src/assets/animations/splashscreen.json")}
+  //       style={{ width: metrics.screenWidth, height: metrics.screenHeight }}
+  //       resizeMode={"cover"}
+  //       autoPlay
+  //       loop={false}
+  //       onAnimationFinish={() => {
+  //         setIsInit(false);
+  //       }}
+  //     />
+  //   );
+  // }
   return (
     <ErrorBoundary FallbackComponent={ErrorBoundaryFallback}>
       <GestureHandlerRootView
@@ -122,7 +122,7 @@ export const App = () => {
                           <ConfirmModalProvider>
                             <InteractionModalsProivder>
                               <QueryClientProvider client={queryClient}>
-                                <AppNavigation />
+                                <Component {...props} />
                               </QueryClientProvider>
                             </InteractionModalsProivder>
                           </ConfirmModalProvider>

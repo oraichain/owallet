@@ -111,7 +111,8 @@ export const AppNavigation: FunctionComponent = observer(() => {
   return (
     <PageScrollPositionProvider>
       <FocusedScreenProvider>
-        <NavigationContainer
+        <View></View>
+        {/* <NavigationContainer
           theme={
             {
               colors: {
@@ -162,7 +163,6 @@ export const AppNavigation: FunctionComponent = observer(() => {
                 headerRight: () => (
                   <HeaderRightButton
                     onPress={() => {
-                      // analyticsStore.logEvent("Add additional account started");
                       navigate(SCREENS.RegisterIntro, {
                         canBeBack: true,
                       });
@@ -293,7 +293,6 @@ export const AppNavigation: FunctionComponent = observer(() => {
               name={SCREENS.SettingBackupMnemonic}
               component={BackupMnemonicScreen}
             />
-            {/*<Stack.Screen name={SCREENS.NewSend} component={NewSendScreen} />*/}
             <Stack.Screen name={SCREENS.NewSend} component={NewSendScreen} />
             <Stack.Screen name={SCREENS.SendEvm} component={SendEvmScreen} />
             <Stack.Screen name={SCREENS.SendOasis} component={SendEvmScreen} />
@@ -358,7 +357,7 @@ export const AppNavigation: FunctionComponent = observer(() => {
               component={TxFailedResultScreen}
             />
           </Stack.Navigator>
-        </NavigationContainer>
+        </NavigationContainer> */}
       </FocusedScreenProvider>
     </PageScrollPositionProvider>
   );
