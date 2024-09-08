@@ -5,8 +5,9 @@ import "text-encoding";
 import "react-native-url-polyfill/auto";
 import * as Sentry from "@sentry/react-native";
 import { NativeModules, Platform } from "react-native";
-
-import { AppRegistry } from "react-native";
+import { Navigation } from "react-native-navigation";
+import "./src/register-screen";
+// import { AppRegistry } from "react-native";
 // add router to send message
 import "./init";
 import messaging from "@react-native-firebase/messaging";
@@ -14,23 +15,58 @@ import CodePush from "react-native-code-push";
 import { name as appName } from "./app.json";
 import firebase from "@react-native-firebase/app";
 import ByteBrew from "react-native-bytebrew-sdk";
+import { SCREENS } from "@src/common/constants";
+Navigation.setDefaultOptions({
+  statusBar: {
+    backgroundColor: "#4d089a",
+  },
+  topBar: {
+    title: {
+      color: "black",
+    },
+    backButton: {
+      color: "white",
+    },
+    background: {
+      color: "#4d089a",
+    },
+  },
+  bottomTab: {
+    fontSize: 14,
+    selectedFontSize: 14,
+    textColor: "red",
+  },
+});
 const { App } = require("./src/app");
 const config = {
   apiKey: process.env.API_KEY,
   projectId: "owallet-829a1",
   messagingSenderId: process.env.SENDER_ID,
-  appId: process.env.APP_ID
+  appId: process.env.APP_ID,
 };
 if (!__DEV__) {
   firebase.initializeApp(config);
   messaging().setBackgroundMessageHandler(async (remoteMessage) => {
     console.log("remoteMessage background", remoteMessage);
   });
-  const { BYTE_BREW_ID_ANDROID, BYTE_BREW_SDK_KEY_ANDROID,BYTE_BREW_ID_IOS,BYTE_BREW_SDK_KEY_IOS } = process.env;
+  const {
+    BYTE_BREW_ID_ANDROID,
+    BYTE_BREW_SDK_KEY_ANDROID,
+    BYTE_BREW_ID_IOS,
+    BYTE_BREW_SDK_KEY_IOS,
+  } = process.env;
   // Initialize the ByteBrew SDK
-  if (Platform.OS == "android" && BYTE_BREW_ID_ANDROID && BYTE_BREW_SDK_KEY_ANDROID) {
+  if (
+    Platform.OS == "android" &&
+    BYTE_BREW_ID_ANDROID &&
+    BYTE_BREW_SDK_KEY_ANDROID
+  ) {
     ByteBrew.Initialize(BYTE_BREW_ID_ANDROID, BYTE_BREW_SDK_KEY_ANDROID);
-  } else if (Platform.OS == "ios" && BYTE_BREW_ID_IOS && BYTE_BREW_SDK_KEY_IOS) {
+  } else if (
+    Platform.OS == "ios" &&
+    BYTE_BREW_ID_IOS &&
+    BYTE_BREW_SDK_KEY_IOS
+  ) {
     ByteBrew.Initialize(BYTE_BREW_ID_IOS, BYTE_BREW_SDK_KEY_IOS);
   }
   Sentry.init({
@@ -49,19 +85,35 @@ if (!__DEV__) {
       /Bad status on response/,
       "Operation was cancelled",
       /App hanging/,
-      "TypeError: t.fetchNativePackageName"
-    ]
+      "TypeError: t.fetchNativePackageName",
+    ],
   });
 }
 if (__DEV__ && Platform.OS === "ios") {
   NativeModules.DevSettings.setIsDebuggingRemotely(false);
 }
+
 // not using CodePush for development
 const CodePushApp = __DEV__
   ? App
   : CodePush({
       // installMode: CodePush.InstallMode.IMMEDIATE
-      checkFrequency: CodePush.CheckFrequency.MANUAL
+      checkFrequency: CodePush.CheckFrequency.MANUAL,
     })(App);
-
-AppRegistry.registerComponent(appName, () => CodePushApp);
+// Navigation.registerComponent(appName, () => CodePushApp);
+Navigation.events().registerAppLaunchedListener(() => {
+  Navigation.setRoot({
+    root: {
+      stack: {
+        children: [
+          {
+            component: {
+              name: SCREENS.STACK.PincodeUnlock,
+            },
+          },
+        ],
+      },
+    },
+  });
+});
+// AppRegistry.registerComponent(appName, () => CodePushApp);
