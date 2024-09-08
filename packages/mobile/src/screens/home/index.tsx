@@ -21,7 +21,7 @@ import { useStore } from "../../stores";
 import { observer } from "mobx-react-lite";
 import { usePrevious } from "../../hooks";
 import { useTheme } from "@src/themes/theme-provider";
-import { useFocusEffect } from "@react-navigation/native";
+// import { useFocusEffect } from "@react-navigation/native";
 import { ChainInfoWithEmbed, ChainUpdaterService } from "@owallet/background";
 import {
   addressToPublicKey,
@@ -39,7 +39,7 @@ import {
 
 import { AccountBoxAll } from "./components/account-box-new";
 
-import { EarningCardNew } from "./components/earning-card-new";
+// import { EarningCardNew } from "./components/earning-card-new";
 import { InjectedProviderUrl } from "../web/config";
 import {
   initPrice,
@@ -157,23 +157,23 @@ export const HomeScreen: FunctionComponent = observer((props) => {
     };
   }, [checkAndUpdateChainInfo]);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (
-        (chainStoreIsInitializing !== previousChainStoreIsInitializing &&
-          !chainStoreIsInitializing) ||
-        currentChainId !== previousChainId
-      ) {
-        checkAndUpdateChainInfo();
-      }
-    }, [
-      chainStoreIsInitializing,
-      previousChainStoreIsInitializing,
-      currentChainId,
-      previousChainId,
-      checkAndUpdateChainInfo,
-    ])
-  );
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     if (
+  //       (chainStoreIsInitializing !== previousChainStoreIsInitializing &&
+  //         !chainStoreIsInitializing) ||
+  //       currentChainId !== previousChainId
+  //     ) {
+  //       checkAndUpdateChainInfo();
+  //     }
+  //   }, [
+  //     chainStoreIsInitializing,
+  //     previousChainStoreIsInitializing,
+  //     currentChainId,
+  //     previousChainId,
+  //     checkAndUpdateChainInfo,
+  //   ])
+  // );
   useEffect(() => {
     if (
       appInitStore.getChainInfos?.length <= 0 ||
@@ -1049,7 +1049,7 @@ export const HomeScreen: FunctionComponent = observer((props) => {
         )?.toString()}
         totalPriceBalance={(availableTotalPrice || initPrice)?.toString()}
       />
-      <EarningCardNew />
+      {/* <EarningCardNew /> */}
       <MainTabHome
         dataTokens={
           appInitStore.getInitApp.isAllNetworks

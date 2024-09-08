@@ -10,7 +10,7 @@ import {
 import { useStyle } from "../../styles";
 import { GradientBackground } from "../svg";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { usePageRegisterScrollYValue, useSetFocusedScreen } from "./utils";
+// import { usePageRegisterScrollYValue, useSetFocusedScreen } from "./utils";
 import { useTheme } from "@src/themes/theme-provider";
 
 const AnimatedKeyboardAwareScrollView = Animated.createAnimatedComponent(
@@ -30,8 +30,8 @@ export const PageWithScrollView = forwardRef<
 >((props, ref) => {
   const styles = useStyle();
 
-  useSetFocusedScreen();
-  const scrollY = usePageRegisterScrollYValue();
+  // useSetFocusedScreen();
+  // const scrollY = usePageRegisterScrollYValue();
   const { colors } = useTheme();
   const {
     style,
@@ -84,14 +84,14 @@ export const PageWithScrollView = forwardRef<
             style,
           ])}
           keyboardOpeningTime={0}
-          onScroll={Animated.event(
-            [
-              {
-                nativeEvent: { contentOffset: { y: scrollY } },
-              },
-            ],
-            { useNativeDriver: true, listener: onScroll }
-          )}
+          // onScroll={Animated.event(
+          //   [
+          //     // {
+          //     //   nativeEvent: { contentOffset: { y: scrollY } },
+          //     // },
+          //   ],
+          //   { useNativeDriver: true, listener: onScroll }
+          // )}
           keyboardShouldPersistTaps="handled"
           {...restProps}
         />

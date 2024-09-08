@@ -22,7 +22,7 @@ import { observer } from "mobx-react-lite";
 import { TextInput } from "../../components/input";
 import delay from "delay";
 import { useStore } from "../../stores";
-import { StackActions, useNavigation } from "@react-navigation/native";
+
 import { KeyRingStatus } from "@owallet/background";
 import { AccountStore, KeyRingStore, WalletStatus } from "@owallet/stores";
 import { autorun } from "mobx";
@@ -43,9 +43,10 @@ import NumericPad from "react-native-numeric-pad";
 import OWText from "@src/components/text/ow-text";
 import { ChainStore } from "@src/stores/chain";
 import { tracking } from "@src/utils/tracking";
-import { navigate, resetTo } from "@src/router/root";
+// import { navigate, resetTo } from "@src/router/root";
 import { SCREENS } from "@src/common/constants";
 import { KeychainStore } from "@src/stores/keychain";
+import { Navigation } from "react-native-navigation";
 export const useAutoBiomtric = (
   keychainStore: KeychainStore,
   tryEnabled: boolean
@@ -285,8 +286,8 @@ export const PincodeUnlockScreen: FunctionComponent = observer(() => {
     appInitStore,
     hugeQueriesStore,
   } = useStore();
-  tracking(`Unlock Screen`);
-  const navigation = useNavigation();
+  // tracking(`Unlock Screen`);
+
   const { colors } = useTheme();
   const styles = styling(colors);
   const [downloading, setDownloading] = useState(false);
@@ -304,15 +305,68 @@ export const PincodeUnlockScreen: FunctionComponent = observer(() => {
         chainId?.startsWith("inj") &&
         isLedger
       ) {
-        resetTo(SCREENS.STACK.MainTab);
+        // Navigation.setRoot({
+        //   root: {
+        //     stack: {
+        //       children: [
+        //         {
+        //           component: {
+        //             name: SCREENS.STACK.PincodeUnlock,
+        //           },
+        //         },
+        //       ],
+        //     },
+        //   },
+        // });
+        // resetTo(SCREENS.STACK.MainTab);
       } else {
         await waitAccountInit(chainStore, accountStore, keyRingStore);
-
-        resetTo(SCREENS.STACK.MainTab);
+        Navigation.setRoot({
+          root: {
+            bottomTabs: {
+              children: [
+                {
+                  stack: {
+                    children: [
+                      {
+                        component: {
+                          name: SCREENS.Home,
+                        },
+                      },
+                    ],
+                  },
+                },
+                // {
+                //   stack: {
+                //     children: [
+                //       {
+                //         component: {
+                //           name: SCREENS.Invest,
+                //         },
+                //       },
+                //     ],
+                //   },
+                // },
+                {
+                  stack: {
+                    children: [
+                      {
+                        component: {
+                          name: SCREENS.Browser,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            },
+          },
+        });
+        // resetTo(SCREENS.STACK.MainTab);
       }
     }
     navigateToHomeOnce.current = true;
-  }, [accountStore, chainStore, navigation]);
+  }, [accountStore, chainStore]);
 
   const autoBiometryStatus = useAutoBiomtric(
     keychainStore,
@@ -434,10 +488,10 @@ export const PincodeUnlockScreen: FunctionComponent = observer(() => {
     ) {
       (() => {
         routeToRegisterOnce.current = true;
-        navigation.dispatch(StackActions.replace(SCREENS.RegisterIntro));
+        // navigation.dispatch(StackActions.replace(SCREENS.RegisterIntro));
       })();
     }
-  }, [keyRingStore.status, navigation]);
+  }, [keyRingStore.status]);
 
   useEffect(() => {
     const appStateHandler = (state: AppStateStatus) => {
@@ -464,89 +518,89 @@ export const PincodeUnlockScreen: FunctionComponent = observer(() => {
   }, [keyRingStore.status, navigateToHome, downloading]);
 
   // Notification setup section
-  const regisFcmToken = useCallback(async (FCMToken) => {
-    await AsyncStorage.setItem("FCM_TOKEN", FCMToken);
-  }, []);
+  // const regisFcmToken = useCallback(async (FCMToken) => {
+  //   await AsyncStorage.setItem("FCM_TOKEN", FCMToken);
+  // }, []);
 
-  const getToken = useCallback(async () => {
-    const fcmToken = await AsyncStorage.getItem("FCM_TOKEN");
+  // const getToken = useCallback(async () => {
+  //   const fcmToken = await AsyncStorage.getItem("FCM_TOKEN");
 
-    if (!fcmToken) {
-      messaging()
-        .getToken()
-        .then(async (FCMToken) => {
-          if (FCMToken) {
-            regisFcmToken(FCMToken);
-          } else {
-            // Alert.alert('[FCMService] User does not have a device token');
-          }
-        })
-        .catch((error) => {
-          // let err = `FCM token get error: ${error}`;
-          // Alert.alert(err);
-          console.log("[FCMService] getToken rejected ", error);
-        });
-    } else {
-      // regisFcmToken(fcmToken);
-    }
-  }, [regisFcmToken]);
+  //   if (!fcmToken) {
+  //     messaging()
+  //       .getToken()
+  //       .then(async (FCMToken) => {
+  //         if (FCMToken) {
+  //           regisFcmToken(FCMToken);
+  //         } else {
+  //           // Alert.alert('[FCMService] User does not have a device token');
+  //         }
+  //       })
+  //       .catch((error) => {
+  //         // let err = `FCM token get error: ${error}`;
+  //         // Alert.alert(err);
+  //         console.log("[FCMService] getToken rejected ", error);
+  //       });
+  //   } else {
+  //     // regisFcmToken(fcmToken);
+  //   }
+  // }, [regisFcmToken]);
 
-  const registerAppWithFCM = useCallback(() => {
-    if (Platform.OS === "ios") {
-      messaging()
-        .registerDeviceForRemoteMessages()
-        .then((register) => {
-          getToken();
-        });
-      //await messaging().setAutoInitEnabled(true);
-    } else {
-      getToken();
-    }
-  }, [getToken]);
+  // const registerAppWithFCM = useCallback(() => {
+  //   if (Platform.OS === "ios") {
+  //     messaging()
+  //       .registerDeviceForRemoteMessages()
+  //       .then((register) => {
+  //         getToken();
+  //       });
+  //     //await messaging().setAutoInitEnabled(true);
+  //   } else {
+  //     getToken();
+  //   }
+  // }, [getToken]);
 
-  const requestPermission = useCallback(() => {
-    messaging()
-      .requestPermission()
-      .then(() => {
-        registerAppWithFCM();
-      })
-      .catch((error) => {
-        console.log("[FCMService] Requested persmission rejected ", error);
-      });
-  }, [registerAppWithFCM]);
+  // const requestPermission = useCallback(() => {
+  //   messaging()
+  //     .requestPermission()
+  //     .then(() => {
+  //       registerAppWithFCM();
+  //     })
+  //     .catch((error) => {
+  //       console.log("[FCMService] Requested persmission rejected ", error);
+  //     });
+  // }, [registerAppWithFCM]);
 
-  const checkPermission = useCallback(() => {
-    messaging()
-      .hasPermission()
-      .then((enabled) => {
-        if (enabled) {
-          //user has permission
-          registerAppWithFCM();
-        } else {
-          //user don't have permission
-          requestPermission();
-        }
-      })
-      .catch((error) => {
-        requestPermission();
-        let err = `check permission error${error}`;
-        Alert.alert(err);
-        // console.log("[FCMService] Permission rejected", error)
-      });
-  }, [registerAppWithFCM, requestPermission]);
+  // const checkPermission = useCallback(() => {
+  //   messaging()
+  //     .hasPermission()
+  //     .then((enabled) => {
+  //       if (enabled) {
+  //         //user has permission
+  //         registerAppWithFCM();
+  //       } else {
+  //         //user don't have permission
+  //         requestPermission();
+  //       }
+  //     })
+  //     .catch((error) => {
+  //       requestPermission();
+  //       let err = `check permission error${error}`;
+  //       Alert.alert(err);
+  //       // console.log("[FCMService] Permission rejected", error)
+  //     });
+  // }, [registerAppWithFCM, requestPermission]);
 
-  useEffect(() => {
-    checkPermission();
-  }, [checkPermission]);
+  // useEffect(() => {
+  //   checkPermission();
+  // }, [checkPermission]);
 
-  useEffect(() => {
-    requestPermission();
-  }, [requestPermission]);
+  // useEffect(() => {
+  //   requestPermission();
+  // }, [requestPermission]);
 
-  useEffect(() => {
-    const unsubscribe = messaging().onMessage(async (remoteMessage) => {});
-    return unsubscribe;
-  }, []);
+  // useEffect(() => {
+  //   const unsubscribe = messaging().onMessage(async (remoteMessage) => {});
+  //   return unsubscribe;
+  // }, []);
 
   const onSwitchPad = (type) => {
     setCode("");

@@ -26,6 +26,7 @@ import OWButtonIcon from "@src/components/button/ow-button-icon";
 import { tracking } from "@src/utils/tracking";
 import SkeletonPlaceholder from "react-native-skeleton-placeholder";
 import {
+  PageWithScrollViewInBottomTabView,
   PageWithView,
   PageWithViewInBottomTabView,
 } from "@src/components/page";
@@ -123,7 +124,7 @@ export const BrowserScreen = observer(() => {
     }
   };
   return (
-    <PageWithViewInBottomTabView
+    <PageWithScrollViewInBottomTabView
       // disableSafeArea={true}
       style={{
         backgroundColor: colors["neutral-surface-action"],
@@ -320,6 +321,6 @@ export const BrowserScreen = observer(() => {
           flex: 1,
         }}
       />
-    </PageWithViewInBottomTabView>
+    </PageWithScrollViewInBottomTabView>
   );
 });

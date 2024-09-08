@@ -13,7 +13,7 @@ export const PageWithScrollViewInBottomTabView = React.forwardRef<
     }
   >
 >((props, ref) => {
-  const bottomTabBarHeight = useBottomTabBarHeight();
+  // const bottomTabBarHeight = useBottomTabBarHeight();
 
   const { style, ...rest } = props;
 
@@ -21,7 +21,7 @@ export const PageWithScrollViewInBottomTabView = React.forwardRef<
     <PageWithScrollView
       disableSafeArea={true}
       {...rest}
-      style={StyleSheet.flatten([{ marginBottom: bottomTabBarHeight }, style])}
+      // style={StyleSheet.flatten([{ marginBottom: bottomTabBarHeight }, style])}
       ref={ref}
     />
   );
