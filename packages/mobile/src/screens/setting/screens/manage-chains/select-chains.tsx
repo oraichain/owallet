@@ -7,9 +7,14 @@ import React, {
 import { observer } from "mobx-react-lite";
 import { PageWithScrollView, PageWithView } from "@components/page";
 import { OWBox } from "@components/card";
-import { TouchableOpacity, View } from "react-native";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import OWIcon from "@components/ow-icon/ow-icon";
-import { fetchRetry, limitString, unknownToken } from "@owallet/common";
+import {
+  EmbedChainInfos,
+  fetchRetry,
+  limitString,
+  unknownToken,
+} from "@owallet/common";
 import { useTheme } from "@src/themes/theme-provider";
 import OWText from "@components/text/ow-text";
 import OWFlatList from "@components/page/ow-flat-list";
@@ -17,6 +22,8 @@ import { Toggle } from "@components/toggle";
 import { OWSearchInput } from "@components/ow-search-input";
 import { useStore } from "@src/stores";
 import { _keyExtract, showToast } from "@utils/helper";
+import { SkeletonNft } from "@screens/nfts/components/nft-skeleton";
+import { colors } from "@src/themes";
 
 export const SelectChainsScreen: FunctionComponent = observer(() => {
   const { colors } = useTheme();
@@ -29,23 +36,29 @@ export const SelectChainsScreen: FunctionComponent = observer(() => {
   useEffect(() => {
     (async () => {
       try {
-        setChainEnables(true);
+        setIsLoading(true);
         const data = await fetchRetry(
           "https://keplr-chain-registry.vercel.app/api/chains"
         );
         if (!data.chains) return;
+        const chainsFilter = data.chains.filter(
+          (chain) =>
+            !EmbedChainInfos.some(
+              (embedChain) => embedChain.chainId === chain.chainId
+            ) &&
+            !/test|dev/i.test(chain?.chainName) &&
+            !chain?.chainId.includes("eip155")
+        );
+        const sortedChains = chainsFilter.sort((a, b) => {
+          const aHasChainInfo = chainInfoExists(a.chainId);
+          const bHasChainInfo = chainInfoExists(b.chainId);
+          // Sort: true comes first, false comes later
+          return aHasChainInfo === bHasChainInfo ? 0 : aHasChainInfo ? -1 : 1;
+        });
 
-        const sortedChains = [...data.chains]
-          .filter((item) => !item?.chainId.includes("eip155"))
-          .sort((a, b) => {
-            const aHasChainInfo = chainInfoExists(a.chainId);
-            const bHasChainInfo = chainInfoExists(b.chainId);
-            // Sort: true comes first, false comes later
-            return aHasChainInfo === bHasChainInfo ? 0 : aHasChainInfo ? -1 : 1;
-          });
         setChains(sortedChains);
       } finally {
-        setChainEnables(false);
+        setIsLoading(false);
       }
     })();
   }, []);
@@ -99,8 +112,10 @@ export const SelectChainsScreen: FunctionComponent = observer(() => {
       return false;
     }
   };
+
   useEffect(() => {
     if (!chains?.length) return;
+
     const chainInfoCheck = {};
     for (const chain of chains) {
       chainInfoCheck[chain.chainId] = chainInfoExists(chain.chainId);
@@ -108,45 +123,21 @@ export const SelectChainsScreen: FunctionComponent = observer(() => {
     setChainEnables(chainInfoCheck);
   }, [chains]);
 
+  const styles = styling(colors);
   const renderChain = ({ item }) => {
     return (
       <TouchableOpacity
         onPress={() => onEnableOrDisableChain(item)}
-        style={{
-          flexDirection: "row",
-          alignItems: "center",
-          paddingVertical: 12,
-          paddingHorizontal: 8,
-          borderBottomWidth: 0.5,
-          borderBottomColor: colors["neutral-border-default"],
-          justifyContent: "space-between",
-        }}
+        style={styles.chainContainer}
       >
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 16,
-          }}
-        >
-          <View
-            style={{
-              alignItems: "center",
-              justifyContent: "center",
-              width: 44,
-              height: 44,
-              borderRadius: 44,
-              backgroundColor: colors["neutral-surface-action"],
-            }}
-          >
+        <View style={styles.chainInfo}>
+          <View style={styles.chainIcon}>
             <OWIcon
               type="images"
               source={{
                 uri: item?.chainSymbolImageUrl || unknownToken.coinImageUrl,
               }}
-              style={{
-                borderRadius: 999,
-              }}
+              style={styles.chainIconImage}
               size={38}
             />
           </View>
@@ -168,19 +159,13 @@ export const SelectChainsScreen: FunctionComponent = observer(() => {
       </TouchableOpacity>
     );
   };
+  console.log(chains, "chains kaka");
   return (
     <PageWithView>
-      <OWBox
-        style={{
-          paddingHorizontal: 16,
-          marginTop: 0,
-        }}
-      >
+      <OWBox style={styles.pageContainer}>
         <View>
           <OWSearchInput
-            containerStyle={{
-              paddingBottom: 20,
-            }}
+            containerStyle={styles.searchContainer}
             onValueChange={(txt) => {
               setKeyword(txt);
             }}
@@ -189,9 +174,7 @@ export const SelectChainsScreen: FunctionComponent = observer(() => {
         </View>
         <OWFlatList
           loading={isLoading}
-          style={{
-            marginTop: 35,
-          }}
+          style={styles.flatList}
           data={chains.filter((chain, index) =>
             chain.chainName?.toLowerCase().includes(keyword?.toLowerCase())
           )}
@@ -202,3 +185,42 @@ export const SelectChainsScreen: FunctionComponent = observer(() => {
     </PageWithView>
   );
 });
+const styling = (colors) => {
+  return StyleSheet.create({
+    pageContainer: {
+      paddingHorizontal: 16,
+      marginTop: 0,
+    },
+    searchContainer: {
+      paddingBottom: 20,
+    },
+    flatList: {
+      marginTop: 35,
+    },
+    chainContainer: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      paddingHorizontal: 8,
+      borderBottomWidth: 0.5,
+      borderBottomColor: colors["neutral-border-default"],
+      justifyContent: "space-between",
+    },
+    chainInfo: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 16,
+    },
+    chainIcon: {
+      alignItems: "center",
+      justifyContent: "center",
+      width: 44,
+      height: 44,
+      borderRadius: 44,
+      backgroundColor: colors["neutral-surface-action"],
+    },
+    chainIconImage: {
+      borderRadius: 999,
+    },
+  });
+};
